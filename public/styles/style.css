@@ -1,3 +1,44 @@
 body {
-    background-color: aquamarine;
+  margin: 0;
+}
+
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+#main {
+  flex-grow: 1;
+  display: flex;
+}
+
+#menu {
+  height: 45pt;
+  background-color: green;
+}
+
+#tools {
+  width: 90pt;
+  background-color: greenyellow;
+}
+
+#footer {
+  background-color: darkgreen;
+  height: 35pt;
+}
+
+#canvas-parent {
+  flex-grow: 1;
+  background-color: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#sidebar {
+  width: 200pt;
+  background-color: lightgreen;
 }
