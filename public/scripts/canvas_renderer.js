@@ -4,9 +4,9 @@ Set of functions which define how canvas is rendered into HTML.
 import { Canvas } from './canvas.js';
 
 let drawing = false;
-const pencilColor = '#ff00ddff';
+let lastCoordinates = undefined;
 
-let lastCoordinates;
+const pencilColor = '#ff00ddff';
 
 export const renderCanvas = (width, height) => {
   const canvas = new Canvas(width, height);
@@ -23,7 +23,7 @@ function renderElement(canvasElement) {
   return canvasElement;
 }
 
-export function setPixelEvents(canvas) {
+function setPixelEvents(canvas) {
   canvas.element.onmousedown = (event) => { //if mouse button is held pressed, we draw
     lastCoordinates = getCoordinates(canvas.element, event);
     drawing = true;
@@ -35,25 +35,35 @@ export function setPixelEvents(canvas) {
 
   canvas.element.onmousemove = (event) => {
     if (drawing) {
-      const coordinates = getCoordinates(canvas.element, event);
-      canvas.context.strokeStyle = pencilColor;
-
-      canvas.context.beginPath();
-      canvas.context.moveTo(lastCoordinates.x, lastCoordinates.y);
-      canvas.context.lineTo(coordinates.x, coordinates.y);
-
-      canvas.context.strokeWidth = 1;
-      canvas.context.stroke();
-
-      canvas.context.closePath();
-
-      lastCoordinates = coordinates;
+      drawCanvasLine(canvas, event);
     }
   };
 }
 
+function drawCanvasLine(canvas, event) {
+  const coordinates = getCoordinates(canvas.element, event);
+  const ctx = canvas.context;
+  ctx.strokeStyle = pencilColor;
+
+  ctx.beginPath();
+  ctx.moveTo(lastCoordinates.x, lastCoordinates.y);
+  ctx.lineTo(coordinates.x, coordinates.y);
+
+  ctx.strokeWidth = 1;
+  ctx.stroke();
+
+  ctx.closePath();
+
+  lastCoordinates = coordinates;
+}
+
 function getCoordinates(canvasElement, event) {
-  const x = (event.clientX - canvasElement.offsetLeft) * canvasElement.width / canvasElement.offsetWidth;
-  const y = (event.clientY - canvasElement.offsetTop) * canvasElement.height / canvasElement.offsetHeight;
+  const relX = event.clientX - canvasElement.offsetLeft;
+  const relY = event.clientY - canvasElement.offsetTop;
+
+  const x = relX * canvasElement.width / canvasElement.offsetWidth;
+  const y = relY * canvasElement.height / canvasElement.offsetHeight;
   return { 'x': Math.floor(x), 'y': Math.floor(y) };
 }
+
+export { setPixelEvents };
