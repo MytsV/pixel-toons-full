@@ -8,17 +8,17 @@ import { Color } from './color.js';
 const colorParameterCount = 4;
 
 //Set color to a pixel with (i, j) coordinates
-const setPixelColor = (i, j, { r, g, b, alpha }) => {
+function setPixelColor(i, j, { r, g, b, alpha }) {
   const position = this.getPixelPosition(i, j);
 
   const colorArray = [r, g, b, alpha];
   for (let i = 0; i < colorArray.length; i++) {
     this.data[position + i] = colorArray[i];
   }
-};
+}
 
 //Get color of a pixel with (i, j) coordinates
-const getPixelColor = (i, j) => {
+function getPixelColor(i, j) {
   const position = this.getPixelPosition(i, j);
 
   const colorArray = [];
@@ -26,10 +26,12 @@ const getPixelColor = (i, j) => {
     colorArray[i] = this.data[position + i];
   }
   return new Color(...colorArray);
-};
+}
 
 //Get array index of a pixel with (i, j) coordinates
-const getPixelPosition = (i, j) => i * this.width * colorParameterCount + j * colorParameterCount;
+function getPixelPosition(i, j) {
+  return i * this.width * colorParameterCount + j * colorParameterCount;
+}
 
 const mixin = {
   setPixelColor,
