@@ -1,3 +1,5 @@
+import { applyImageMixin } from './image.js';
+
 class Canvas {
   #element;
   #context;
@@ -11,6 +13,7 @@ class Canvas {
     this.#element = canvasElement;
     this.#context = canvasElement.getContext('2d');
     this.#image = this.#context.getImageData(0, 0, width, height);
+    applyImageMixin(this.#image);
   }
 
   update() {
