@@ -1,3 +1,5 @@
+import { renderCanvas } from './canvas_renderer.js';
+
 window.onload = () => {
-  console.log('Example loaded successfully!');
+  renderCanvas(50, 50);
 };

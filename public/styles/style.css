@@ -42,3 +42,8 @@ body {
   width: 200pt;
   background-color: lightgreen;
 }
+
+.canvas-element {
+  height: 100%;
+  image-rendering: pixelated;
+}
