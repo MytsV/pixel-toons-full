@@ -3,6 +3,13 @@ Set of functions which define how canvas is rendered into HTML.
  */
 import { Canvas } from './canvas.js';
 
+class Coordinates {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+}
+
 let drawing = false;
 let last = undefined;
 
@@ -25,7 +32,7 @@ function renderElement(canvasElement) {
 
 function setPixelEvents(canvas) {
   canvas.element.onmousedown = (event) => { //if mouse button is held pressed, we draw
-    last = { 'x': event.clientX, 'y': event.clientY };
+    last = new Coordinates(event.clientX, event.clientY);
     drawing = true;
   };
 
@@ -56,7 +63,7 @@ function drawCanvasLine(canvas, event) {
 
   ctx.closePath();
 
-  last = { 'x': event.clientX, 'y': event.clientY };
+  last = new Coordinates(event.clientX, event.clientY);
 }
 
 function isOffsetValid(canvasElement, event) {
@@ -70,7 +77,7 @@ function getRealCoordinates(canvasElement, clientX, clientY) {
 
   const x = relX * canvasElement.width / canvasElement.offsetWidth;
   const y = relY * canvasElement.height / canvasElement.offsetHeight;
-  return { 'x': Math.floor(x), 'y': Math.floor(y) };
+  return new Coordinates(Math.floor(x), Math.floor(y));
 }
 
 export { renderCanvas };
