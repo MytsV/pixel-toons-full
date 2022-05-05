@@ -95,69 +95,33 @@ function drawCanvasLine(canvas, event) {
   last = new Coordinates(event.clientX, event.clientY);
 }
 
-/*We wouldn't like to use anti-aliasing,
+/*We wouldn't like to use antialiasing,
 hence instead of native lineTo() function we use Bresenham's algorithm to draw a line.
 
 Implementation is taken from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
  */
 function plotBresenhamLine(src, dest, drawPoint) {
-  if (Math.abs(dest.y - src.y) < Math.abs(dest.x - src.x)) {
-    if (src.x > dest.x) {
-      plotLineLow(dest, src, drawPoint);
-    } else {
-      plotLineLow(src, dest, drawPoint);
-    }
-  } else if (src.y > dest.y) {
-    plotLineHigh(dest, src, drawPoint);
-  } else {
-    plotLineHigh(src, dest, drawPoint);
-  }
-}
+  const dx = Math.abs(dest.x - src.x);
+  const sx = src.x < dest.x ? 1 : -1;
+  const dy = -Math.abs(dest.y - src.y);
+  const sy = src.y < dest.y ? 1 : -1;
+  let error = dx + dy;
 
-function plotLineLow(src, dest, drawPoint) {
-  const dx = dest.x - src.x;
-  let dy = dest.y - src.y;
-
-  let yi = 1;
-  if (dy < 0) {
-    yi = -1;
-    dy = -dy;
-  }
-
-  let diff = (2 * dy) - dx;
+  let x = src.x;
   let y = src.y;
 
-  for (let x = src.x; x <= dest.x; x++) {
+  while (true) {
     drawPoint(x, y);
-    if (diff > 0) {
-      y += yi;
-      diff += 2 * (dy - dx);
+    if (x === dest.x && y === dest.y) break;
+    const e2 = 2 * error;
+    if (e2 >= dy) {
+      if (x === dest.x) break;
+      error += dy;
+      x += sx;
     } else {
-      diff += 2 * dy;
-    }
-  }
-}
-
-function plotLineHigh(src, dest, drawPoint) {
-  let dx = dest.x - src.x;
-  const dy = dest.y - src.y;
-
-  let xi = 1;
-  if (dx < 0) {
-    xi = -1;
-    dx = -dx;
-  }
-
-  let diff = (2 * dx) - dy;
-  let x = src.x;
-
-  for (let y = src.y; y <= dest.y; y++) {
-    drawPoint(x, y);
-    if (diff > 0) {
-      x += xi;
-      diff += 2 * (dx - dy);
-    } else {
-      diff += 2 * dx;
+      if (y === dest.y) break;
+      error += dx;
+      y += sy;
     }
   }
 }
