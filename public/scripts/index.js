@@ -1,4 +1,4 @@
-import { renderCanvas } from './core/canvas_renderer.js';
+import { renderCanvas, setUpColorPicker } from './core/canvas_renderer.js';
 import { zoom } from './core/zoom.js';
 import { Canvas } from './core/canvas.js';
 import { download } from './utilities/file_download.js';
@@ -9,6 +9,7 @@ const canvas = new Canvas(50, 50);
 window.onload = () => {
   renderCanvas(canvas);
   setUpExporter();
+  setUpColorPicker();
 };
 
 const downloadImage = () => {
