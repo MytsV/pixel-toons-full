@@ -7,12 +7,12 @@ let zoomValue = 1;
 function zoom(positive) {
   if (!canScale(positive)) return;
 
-  const elements = document.querySelectorAll('.canvas-element');
+  const elements = document.querySelectorAll('#canvas-wrapper');
   const element = elements[0];
 
   zoomValue = positive ? zoomValue + STEP : zoomValue - STEP;
 
-  element.style.transform = `scale(${zoomValue})`;
+  element.style.height = `${zoomValue * 100}%`;
 }
 
 function canScale(positive) {

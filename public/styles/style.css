@@ -31,16 +31,23 @@ body {
 }
 
 #canvas-parent {
-  flex-grow: 1;
+  width: 100%;
+  width: -moz-available;
+  width: -webkit-fill-available;
+  width: fill-available;
   background-color: #676767;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  display: block;
+  overflow: scroll;
 }
 
 #sidebar {
   width: 200pt;
   background-color: lightgreen;
+}
+
+#canvas-wrapper {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .canvas-element {
