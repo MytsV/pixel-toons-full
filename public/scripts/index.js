@@ -1,5 +1,5 @@
-import { renderCanvas } from './canvas_renderer.js';
-import { zoom } from './zoom.js';
+import { renderCanvas } from './core/canvas_renderer.js';
+import { zoom } from './core/zoom.js';
 
 window.onload = () => {
   renderCanvas(50, 50);

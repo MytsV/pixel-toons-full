@@ -2,30 +2,8 @@
 Set of functions which define how canvas is rendered into HTML.
  */
 import { Canvas } from './canvas.js';
-import { Color } from './color.js';
-
-class Coordinates {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-
-  equalX(coordinates) {
-    return this.x === coordinates.x;
-  }
-
-  equalY(coordinates) {
-    return this.y === coordinates.y;
-  }
-
-  equal(coordinates) {
-    return this.equalX(coordinates) && this.equalY(coordinates);
-  }
-
-  static getDifference(src, dest) {
-    return new Coordinates(dest.x - src.x, dest.y - src.y);
-  }
-}
+import { Color } from '../utilities/color.js';
+import { Coordinates } from '../utilities/coordinates.js';
 
 let drawing = false;
 let last = undefined;
@@ -61,8 +39,9 @@ function createBasicBackground(canvas) {
 
   for (let i = 0; i < image.height; i++) {
     for (let j = 0; j < image.width; j++) {
-      const pixelColor = getClearPixelColor(i, j);
-      image.setPixelColor(i, j, Color.fromHex(pixelColor));
+      const coords = new Coordinates(i, j);
+      const pixelColor = getClearPixelColor(coords);
+      image.setPixelColor(coords, Color.fromHex(pixelColor));
     }
   }
 
@@ -70,8 +49,8 @@ function createBasicBackground(canvas) {
 }
 
 //Get color of transparent pixel based on its coordinates
-function getClearPixelColor(i, j) {
-  if (i % 2 !== j % 2) { //the condition makes sure that neighbouring pixels are always of different color
+function getClearPixelColor(coords) {
+  if (coords.x % 2 !== coords.y % 2) { //the condition makes sure that neighbouring pixels are always of different color
     return transparentColorFirst; //first pixel is always white
   } else {
     return transparentColorSecond;

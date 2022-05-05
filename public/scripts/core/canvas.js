@@ -1,4 +1,4 @@
-import { applyImageMixin } from './image.js';
+import { applyImageMixin } from '../utilities/image.js';
 
 class Canvas {
   #element;
