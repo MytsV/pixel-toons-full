@@ -84,7 +84,7 @@ function drawCanvasLine(canvas, event) {
 
   const coordinates = getRealCoordinates(canvas.element, event.clientX, event.clientY);
   const lastReal = getRealCoordinates(canvas.element, last.x, last.y);
-  
+
   const drawPoint = (x, y) => {
     canvas.context.fillStyle = pencilColor;
     canvas.context.fillRect(x, y, 1, 1);
@@ -101,19 +101,64 @@ hence instead of native lineTo() function we use Bresenham's algorithm to draw a
 Implementation is taken from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
  */
 function plotBresenhamLine(src, dest, drawPoint) {
-  const dx = dest.x - src.x;
-  const dy = dest.y - src.y;
+  if (Math.abs(dest.y - src.y) < Math.abs(dest.x - src.x)) {
+    if (src.x > dest.x) {
+      plotLineLow(dest, src, drawPoint);
+    } else {
+      plotLineLow(src, dest, drawPoint);
+    }
+  } else if (src.y > dest.y) {
+    plotLineHigh(dest, src, drawPoint);
+  } else {
+    plotLineHigh(src, dest, drawPoint);
+  }
+}
 
-  let diff = 2 * dy - dx;
+function plotLineLow(src, dest, drawPoint) {
+  const dx = dest.x - src.x;
+  let dy = dest.y - src.y;
+
+  let yi = 1;
+  if (dy < 0) {
+    yi = -1;
+    dy = -dy;
+  }
+
+  let diff = (2 * dy) - dx;
   let y = src.y;
 
   for (let x = src.x; x <= dest.x; x++) {
     drawPoint(x, y);
     if (diff > 0) {
-      y += 1;
-      diff -= 2 * dx;
+      y += yi;
+      diff += 2 * (dy - dx);
+    } else {
+      diff += 2 * dy;
     }
-    diff += 2 * dy;
+  }
+}
+
+function plotLineHigh(src, dest, drawPoint) {
+  let dx = dest.x - src.x;
+  const dy = dest.y - src.y;
+
+  let xi = 1;
+  if (dx < 0) {
+    xi = -1;
+    dx = -dx;
+  }
+
+  let diff = (2 * dx) - dy;
+  let x = src.x;
+
+  for (let y = src.y; y <= dest.y; y++) {
+    drawPoint(x, y);
+    if (diff > 0) {
+      x += xi;
+      diff += 2 * (dx - dy);
+    } else {
+      diff += 2 * dx;
+    }
   }
 }
 
