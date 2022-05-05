@@ -44,9 +44,7 @@ function createBasicBackground(canvas) {
   for (let i = 0; i < image.height; i++) {
     for (let j = 0; j < image.width; j++) {
       const pixelColor = getClearPixelColor(i, j);
-      const colorProcessed = Color.fromHex(pixelColor);
-      colorProcessed.alpha *= 255; //really bad - to be deleted
-      image.setPixelColor(i, j, colorProcessed);
+      image.setPixelColor(i, j, Color.fromHex(pixelColor));
     }
   }
 
