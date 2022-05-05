@@ -4,15 +4,16 @@ const STEP = 1;
 
 let zoomValue = 1;
 
+const translation = 50;
+
 function zoom(positive) {
   if (!canScale(positive)) return;
 
-  const elements = document.querySelectorAll('#canvas-wrapper');
-  const element = elements[0];
-
+  const element = document.getElementById('canvas-wrapper');
   zoomValue = positive ? zoomValue + STEP : zoomValue - STEP;
-
   element.style.height = `${zoomValue * 100}%`;
+
+  handleCentering(element);
 }
 
 function canScale(positive) {
@@ -21,6 +22,13 @@ function canScale(positive) {
   } else {
     return zoomValue > MIN_ZOOM;
   }
+}
+
+function handleCentering(element) {
+  const centered = zoomValue <= 1;
+  element.style.transform = centered ? `translate(-${translation}%, -${translation}%)` : 'none';
+  element.style.left = centered ? `${translation}%` : '0pt';
+  element.style.top = centered ? `${translation}%` : '0pt';
 }
 
 export { zoom };

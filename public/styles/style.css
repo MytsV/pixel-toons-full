@@ -38,6 +38,7 @@ body {
   background-color: #676767;
   display: block;
   overflow: scroll;
+  position: relative;
 }
 
 #sidebar {
@@ -46,8 +47,11 @@ body {
 }
 
 #canvas-wrapper {
-  margin-left: auto;
-  margin-right: auto;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  height: 100%;
 }
 
 .canvas-element {
