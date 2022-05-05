@@ -84,22 +84,19 @@ function drawCanvasLine(canvas, event) {
 
   const coordinates = getRealCoordinates(canvas.element, event.clientX, event.clientY);
   const lastReal = getRealCoordinates(canvas.element, last.x, last.y);
+  
+  const drawPoint = (x, y) => {
+    canvas.context.fillStyle = pencilColor;
+    canvas.context.fillRect(x, y, 1, 1);
+  };
 
-  const ctx = canvas.context;
-  ctx.strokeStyle = pencilColor;
-
-  ctx.beginPath();
-  ctx.moveTo(lastReal.x, lastReal.y);
-  ctx.lineTo(coordinates.x, coordinates.y);
-  ctx.stroke();
-
-  ctx.closePath();
+  plotBresenhamLine(coordinates, lastReal, drawPoint);
 
   last = new Coordinates(event.clientX, event.clientY);
 }
 
 /*We wouldn't like to use anti-aliasing,
-hence instead of native lineTo() function we use Bresenham's algorithm.
+hence instead of native lineTo() function we use Bresenham's algorithm to draw a line.
 
 Implementation is taken from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
  */
