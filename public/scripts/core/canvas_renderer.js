@@ -71,7 +71,7 @@ function setPixelEvents(canvas) {
     drawing = false;
   };
 
-  canvas.element.onmousemove = (event) => {
+  document.onmousemove = (event) => {
     if (drawing) {
       drawCanvasLine(canvas, event);
     }
@@ -138,8 +138,21 @@ function getRealCoordinates(canvasElement, clientX, clientY) {
   const relX = clientX - rect.left;
   const relY = clientY - rect.top;
 
-  const x = relX * canvasElement.width / canvasElement.offsetWidth;
-  const y = relY * canvasElement.height / canvasElement.offsetHeight;
+  let x = relX * canvasElement.width / canvasElement.offsetWidth;
+  let y = relY * canvasElement.height / canvasElement.offsetHeight;
+
+  if (x > canvasElement.width - 1) {
+    x = canvasElement.width - 1;
+  } else if (x < 0) {
+    x = 0;
+  }
+
+  if (y > canvasElement.height - 1) {
+    y = canvasElement.height - 1;
+  } else if (y < 0) {
+    y = 0;
+  }
+
   return new Coordinates(Math.floor(x), Math.floor(y));
 }
 
