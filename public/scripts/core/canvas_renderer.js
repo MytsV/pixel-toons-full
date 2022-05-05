@@ -84,7 +84,7 @@ function drawCanvasLine(canvas, event) {
   const coordinates = getRealCoordinates(canvas.element, event.clientX, event.clientY);
   const lastReal = getRealCoordinates(canvas.element, last.x, last.y);
 
-  plotBresenhamLine(coordinates, lastReal, ({ x, y }) => drawPoint(canvas, { x, y }));
+  plotBresenhamLine(lastReal, coordinates, ({ x, y }) => drawPoint(canvas, { x, y }));
 
   last = new Coordinates(event.clientX, event.clientY);
 }
@@ -107,6 +107,7 @@ function plotBresenhamLine(src, dest, plotPoint) {
 
   do {
     plotPoint(curr);
+    if (curr.equal(dest)) break;
     const doubleError = 2 * error;
 
     if (doubleError >= diff.y) {
@@ -118,7 +119,7 @@ function plotBresenhamLine(src, dest, plotPoint) {
       error += diff.x;
       curr.y += signY;
     }
-  } while (!curr.equal(dest));
+  } while (true);
 }
 
 function drawPoint(canvas, { x, y }) {
