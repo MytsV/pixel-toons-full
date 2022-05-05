@@ -98,6 +98,28 @@ function drawCanvasLine(canvas, event) {
   last = new Coordinates(event.clientX, event.clientY);
 }
 
+/*We wouldn't like to use anti-aliasing,
+hence instead of native lineTo() function we use Bresenham's algorithm.
+
+Implementation is taken from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
+ */
+function plotBresenhamLine(src, dest, drawPoint) {
+  const dx = dest.x - src.x;
+  const dy = dest.y - src.y;
+
+  let diff = 2 * dy - dx;
+  let y = src.y;
+
+  for (let x = src.x; x <= dest.x; x++) {
+    drawPoint(x, y);
+    if (diff > 0) {
+      y += 1;
+      diff -= 2 * dx;
+    }
+    diff += 2 * dy;
+  }
+}
+
 function isOffsetValid(canvasElement, event) {
   const plausible = canvasElement.offsetWidth / canvasElement.width;
   return Math.abs(event.clientX - last.x) >= plausible || Math.abs(event.clientY - last.y) >= plausible;
