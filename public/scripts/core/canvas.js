@@ -12,7 +12,11 @@ class Canvas {
 
     this.#element = canvasElement;
     this.#context = canvasElement.getContext('2d');
-    this.#image = this.#context.getImageData(0, 0, width, height);
+    this.updateImageData();
+  }
+
+  updateImageData() {
+    this.#image = this.#context.getImageData(0, 0, this.#element.width, this.#element.height);
     applyImageMixin(this.#image);
   }
 
