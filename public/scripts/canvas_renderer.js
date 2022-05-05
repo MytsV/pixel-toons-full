@@ -1,7 +1,6 @@
 /*
 Set of functions which define how canvas is rendered into HTML.
  */
-import { Canvas } from './canvas.js';
 import { Color } from './color.js';
 
 class Coordinates {
@@ -16,8 +15,7 @@ let last = undefined;
 
 const pencilColor = '#ff00ddff';
 
-const renderCanvas = (width, height) => {
-  const canvas = new Canvas(width, height);
+const renderCanvas = (canvas) => {
   createBasicBackground(canvas);
 
   renderElement(canvas.element);
