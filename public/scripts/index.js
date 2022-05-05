@@ -1,8 +1,8 @@
 import { renderCanvas } from './core/canvas_renderer.js';
 import { zoom } from './core/zoom.js';
 import { Canvas } from './core/canvas.js';
-import { download } from './file_download.js';
-import { BmpEncoder } from './bmp_encoder.js';
+import { download } from './utilities/file_download.js';
+import { BmpEncoder } from './utilities/bmp_encoder.js';
 
 const canvas = new Canvas(50, 50);
 
