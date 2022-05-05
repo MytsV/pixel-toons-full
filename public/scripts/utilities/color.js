@@ -29,6 +29,17 @@ class Color {
     return new Color(r, g, b);
   }
 
+  blend(color) {
+    const newAlpha = color.alpha / range + this.alpha / range * (1 - color.alpha / range);
+    const getNewParameter = (parameterA, parameterB) => {
+      const numerator = parameterA * color.alpha / range + parameterB * (1 - color.alpha / range);
+      return Math.floor(numerator / newAlpha);
+    };
+
+    return new Color(getNewParameter(color.r, this.r), getNewParameter(color.g, this.g),
+      getNewParameter(color.b, this.b), newAlpha);
+  }
+
   //Converts color to RGBA CSS format. Use when passing color to CSS style parameter
   toString() {
     return `rgba(${this.r},${this.g},${this.b},${this.alpha / range})`;
