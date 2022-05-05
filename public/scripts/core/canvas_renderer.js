@@ -39,9 +39,8 @@ function createBasicBackground(canvas) {
 
   for (let i = 0; i < image.height; i++) {
     for (let j = 0; j < image.width; j++) {
-      const coords = new Coordinates(i, j);
-      const pixelColor = getClearPixelColor(coords);
-      image.setPixelColor(coords, Color.fromHex(pixelColor));
+      const pixelColor = getClearPixelColor(i, j);
+      image.setPixelColor(i, j, Color.fromHex(pixelColor));
     }
   }
 
@@ -49,8 +48,8 @@ function createBasicBackground(canvas) {
 }
 
 //Get color of transparent pixel based on its coordinates
-function getClearPixelColor(coords) {
-  if (coords.x % 2 !== coords.y % 2) { //the condition makes sure that neighbouring pixels are always of different color
+function getClearPixelColor(i, j) {
+  if (i % 2 !== j % 2) { //the condition makes sure that neighbouring pixels are always of different color
     return transparentColorFirst; //first pixel is always white
   } else {
     return transparentColorSecond;

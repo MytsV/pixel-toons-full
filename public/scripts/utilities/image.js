@@ -7,9 +7,9 @@ import { Color } from './color.js';
 //The number is four, because we use RGBA as our main format
 const colorParameterCount = 4;
 
-//Set color to a pixel with set coordinates
-function setPixelColor(coords, { r, g, b, alpha }) {
-  const position = this.getPixelPosition(coords);
+//Set color to a pixel with (i, j) coordinates
+function setPixelColor(i, j, { r, g, b, alpha }) {
+  const position = this.getPixelPosition(i, j);
 
   const colorArray = [r, g, b, alpha];
   for (let i = 0; i < colorArray.length; i++) {
@@ -17,9 +17,9 @@ function setPixelColor(coords, { r, g, b, alpha }) {
   }
 }
 
-//Get color of a pixel with set coordinates
-function getPixelColor(coords) {
-  const position = this.getPixelPosition(coords);
+//Get color of a pixel with (i, j) coordinates
+function getPixelColor(i, j) {
+  const position = this.getPixelPosition(i, j);
 
   const colorArray = [];
   for (let i = 0; i < colorParameterCount; i++) {
@@ -28,9 +28,9 @@ function getPixelColor(coords) {
   return new Color(...colorArray);
 }
 
-//Get array index of a pixel with set coordinates
-function getPixelPosition(coords) {
-  return coords.x * this.width * colorParameterCount + coords.y * colorParameterCount;
+//Get array index of a pixel with (i, j) coordinates
+function getPixelPosition(i, j) {
+  return i * this.width * colorParameterCount + j * colorParameterCount;
 }
 
 const mixin = {
