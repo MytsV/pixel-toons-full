@@ -17,10 +17,15 @@ class Color {
   //"Factory method" that creates color from given HEX value
   static fromHex(hexColor) {
     const radix = 16;
+    const noAlphaLength = 7;
 
     const r = parseInt(hexColor.slice(1, 3), radix);
     const g = parseInt(hexColor.slice(3, 5), radix);
     const b = parseInt(hexColor.slice(5, 7), radix);
+    if (hexColor.length > noAlphaLength) {
+      const alpha = parseInt(hexColor.slice(7, 9), radix);
+      return new Color(r, g, b, alpha);
+    }
     return new Color(r, g, b);
   }
 
