@@ -10,6 +10,8 @@ let last = undefined;
 const pencilColor = '#ff00ddff';
 
 const renderCanvas = (canvas) => {
+  canvas.element.oncontextmenu = () => false; //we disable right click context menu on canvas
+
   createBasicBackground(canvas);
 
   renderElement(canvas.element);
