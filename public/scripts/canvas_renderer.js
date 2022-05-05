@@ -9,6 +9,22 @@ class Coordinates {
     this.x = x;
     this.y = y;
   }
+
+  equalX(coordinates) {
+    return this.x === coordinates.x;
+  }
+
+  equalY(coordinates) {
+    return this.y === coordinates.y;
+  }
+
+  equal(coordinates) {
+    return this.equalX(coordinates) && this.equalY(coordinates);
+  }
+
+  static getDifference(src, dest) {
+    return new Coordinates(dest.x - src.x, dest.y - src.y);
+  }
 }
 
 let drawing = false;
@@ -101,29 +117,30 @@ hence instead of native lineTo() function we use Bresenham's algorithm to draw a
 Implementation is taken from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
  */
 function plotBresenhamLine(src, dest, drawPoint) {
-  const dx = Math.abs(dest.x - src.x);
-  const sx = src.x < dest.x ? 1 : -1;
-  const dy = -Math.abs(dest.y - src.y);
-  const sy = src.y < dest.y ? 1 : -1;
-  let error = dx + dy;
+  const diff = Coordinates.getDifference(src, dest);
+  const signX = Math.sign(diff.x);
+  const signY = Math.sign(diff.y);
+  diff.x = Math.abs(diff.x);
+  diff.y = -Math.abs(diff.y);
 
-  let x = src.x;
-  let y = src.y;
+  //Error allows us to perform all octant drawing. The algorithm is still precise.
+  let error = diff.x + diff.y;
+  const curr = new Coordinates(src.x, src.y);
 
-  while (true) {
-    drawPoint(x, y);
-    if (x === dest.x && y === dest.y) break;
-    const e2 = 2 * error;
-    if (e2 >= dy) {
-      if (x === dest.x) break;
-      error += dy;
-      x += sx;
-    } else {
-      if (y === dest.y) break;
-      error += dx;
-      y += sy;
+  do {
+    drawPoint(curr.x, curr.y);
+    const doubleError = 2 * error;
+
+    if (doubleError >= diff.y) {
+      if (curr.equalX(dest)) break;
+      error += diff.y;
+      curr.x += signX;
+    } else if (doubleError <= diff.x) {
+      if (curr.equalY(dest)) break;
+      error += diff.x;
+      curr.y += signY;
     }
-  }
+  } while (!curr.equal(dest));
 }
 
 function isOffsetValid(canvasElement, event) {
