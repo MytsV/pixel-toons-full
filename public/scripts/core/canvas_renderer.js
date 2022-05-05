@@ -62,6 +62,11 @@ function setPixelEvents(canvas) {
     drawing = true;
   };
 
+  canvas.element.onclick = (event) => {
+    const coordinates = getRealCoordinates(canvas.element, event.clientX, event.clientY);
+    drawPoint(canvas, coordinates);
+  };
+
   document.onmouseup = () => { //if mouse button is released anywhere, we stop drawing
     drawing = false;
   };
@@ -79,12 +84,7 @@ function drawCanvasLine(canvas, event) {
   const coordinates = getRealCoordinates(canvas.element, event.clientX, event.clientY);
   const lastReal = getRealCoordinates(canvas.element, last.x, last.y);
 
-  const drawPoint = (x, y) => {
-    canvas.context.fillStyle = pencilColor;
-    canvas.context.fillRect(x, y, 1, 1);
-  };
-
-  plotBresenhamLine(coordinates, lastReal, drawPoint);
+  plotBresenhamLine(coordinates, lastReal, ({ x, y }) => drawPoint(canvas, { x, y }));
 
   last = new Coordinates(event.clientX, event.clientY);
 }
@@ -94,7 +94,7 @@ hence instead of native lineTo() function we use Bresenham's algorithm to draw a
 
 Implementation is taken from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
  */
-function plotBresenhamLine(src, dest, drawPoint) {
+function plotBresenhamLine(src, dest, plotPoint) {
   const diff = Coordinates.getDifference(src, dest);
   const signX = Math.sign(diff.x);
   const signY = Math.sign(diff.y);
@@ -106,7 +106,7 @@ function plotBresenhamLine(src, dest, drawPoint) {
   const curr = new Coordinates(src.x, src.y);
 
   do {
-    drawPoint(curr.x, curr.y);
+    plotPoint(curr);
     const doubleError = 2 * error;
 
     if (doubleError >= diff.y) {
@@ -119,6 +119,11 @@ function plotBresenhamLine(src, dest, drawPoint) {
       curr.y += signY;
     }
   } while (!curr.equal(dest));
+}
+
+function drawPoint(canvas, { x, y }) {
+  canvas.context.fillStyle = pencilColor;
+  canvas.context.fillRect(x, y, 1, 1);
 }
 
 function isOffsetValid(canvasElement, event) {
