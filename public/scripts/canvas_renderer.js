@@ -28,9 +28,11 @@ function renderElement(canvasElement) {
   const canvasParent = document.getElementById('canvas-parent'); //parent-wrapper is needed for effective zooming
   canvasElement.classList.add('canvas-element');
 
-  canvasParent.appendChild(canvasElement);
+  const canvasWrapper = document.createElement('div');
+  canvasWrapper.id = 'canvas-wrapper';
 
-  return canvasElement;
+  canvasWrapper.appendChild(canvasElement);
+  canvasParent.appendChild(canvasWrapper);
 }
 
 //Colors for creating a basic grey-white background
@@ -102,8 +104,10 @@ function isOffsetValid(canvasElement, event) {
 }
 
 function getRealCoordinates(canvasElement, clientX, clientY) {
-  const relX = clientX - canvasElement.offsetLeft;
-  const relY = clientY - canvasElement.offsetTop;
+  const rect = canvasElement.getBoundingClientRect();
+
+  const relX = clientX - rect.left;
+  const relY = clientY - rect.top;
 
   const x = relX * canvasElement.width / canvasElement.offsetWidth;
   const y = relY * canvasElement.height / canvasElement.offsetHeight;
