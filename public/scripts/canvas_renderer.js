@@ -9,6 +9,22 @@ class Coordinates {
     this.x = x;
     this.y = y;
   }
+
+  equalX(coordinates) {
+    return this.x === coordinates.x;
+  }
+
+  equalY(coordinates) {
+    return this.y === coordinates.y;
+  }
+
+  equal(coordinates) {
+    return this.equalX(coordinates) && this.equalY(coordinates);
+  }
+
+  static getDifference(src, dest) {
+    return new Coordinates(dest.x - src.x, dest.y - src.y);
+  }
 }
 
 let drawing = false;
@@ -85,17 +101,46 @@ function drawCanvasLine(canvas, event) {
   const coordinates = getRealCoordinates(canvas.element, event.clientX, event.clientY);
   const lastReal = getRealCoordinates(canvas.element, last.x, last.y);
 
-  const ctx = canvas.context;
-  ctx.strokeStyle = pencilColor;
+  const drawPoint = (x, y) => {
+    canvas.context.fillStyle = pencilColor;
+    canvas.context.fillRect(x, y, 1, 1);
+  };
 
-  ctx.beginPath();
-  ctx.moveTo(lastReal.x, lastReal.y);
-  ctx.lineTo(coordinates.x, coordinates.y);
-  ctx.stroke();
-
-  ctx.closePath();
+  plotBresenhamLine(coordinates, lastReal, drawPoint);
 
   last = new Coordinates(event.clientX, event.clientY);
+}
+
+/*We wouldn't like to use antialiasing,
+hence instead of native lineTo() function we use Bresenham's algorithm to draw a line.
+
+Implementation is taken from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
+ */
+function plotBresenhamLine(src, dest, drawPoint) {
+  const diff = Coordinates.getDifference(src, dest);
+  const signX = Math.sign(diff.x);
+  const signY = Math.sign(diff.y);
+  diff.x = Math.abs(diff.x);
+  diff.y = -Math.abs(diff.y);
+
+  //Error allows us to perform all octant drawing. The algorithm is still precise.
+  let error = diff.x + diff.y;
+  const curr = new Coordinates(src.x, src.y);
+
+  do {
+    drawPoint(curr.x, curr.y);
+    const doubleError = 2 * error;
+
+    if (doubleError >= diff.y) {
+      if (curr.equalX(dest)) break;
+      error += diff.y;
+      curr.x += signX;
+    } else if (doubleError <= diff.x) {
+      if (curr.equalY(dest)) break;
+      error += diff.x;
+      curr.y += signY;
+    }
+  } while (!curr.equal(dest));
 }
 
 function isOffsetValid(canvasElement, event) {
