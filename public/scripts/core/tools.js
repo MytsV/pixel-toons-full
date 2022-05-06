@@ -4,9 +4,9 @@ import { Color } from '../utilities/color.js';
 /*
 An abstract class which defines drawing operations
  */
-class Instrument {
+class Tool {
   constructor() {
-    if (new.target === Instrument) {
+    if (new.target === Tool) {
       throw Error('Abstract class cannot be instantiated');
     }
   }
@@ -22,9 +22,9 @@ class Instrument {
 }
 
 /*
-Instrument which draws simple lines on the canvas
+Tool which draws simple lines on the canvas
  */
-class Pencil extends Instrument {
+class Pencil extends Tool {
   #lastCoordinates;
   #drawing;
 
@@ -107,7 +107,7 @@ function drawPoint(color, { x, y }) {
 }
 
 /*
-Instrument which turns canvas pixels fully transparent
+Tool which turns canvas pixels fully transparent
  */
 class Eraser extends Pencil {
   getColor() {

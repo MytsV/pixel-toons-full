@@ -4,12 +4,18 @@ import { Color } from '../utilities/color.js';
 const BASE_COLOR = '#000000';
 const IMAGE_POS = 0;
 
+/*
+A class with some canvas-specific variables
+ */
 class CanvasState {
   constructor() {
     this.color = Color.fromHex(BASE_COLOR);
   }
 }
 
+/*
+A class which wraps HTML <canvas> element
+ */
 class Canvas {
   constructor(width, height) {
     const canvasElement = createCanvasElement(width, height);
