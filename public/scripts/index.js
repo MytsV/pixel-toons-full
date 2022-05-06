@@ -33,8 +33,8 @@ class ToolInfo {
 
 function createToolbar() {
   const toolsInfo = [
-    new ToolInfo(new Pencil(), 'Pencil', '../images/favicon.ico'),
-    new ToolInfo(new Eraser(), 'Eraser', '../images/favicon.ico'),
+    new ToolInfo(new Pencil(), 'Pencil', './images/favicon.ico'),
+    new ToolInfo(new Eraser(), 'Eraser', './images/eraser.ico'),
   ];
   const elements = toolsInfo.map((toolInfo) => {
     const element = document.createElement('div');
@@ -44,6 +44,7 @@ function createToolbar() {
       chosenTool = toolInfo.tool;
       chosenTool.link(canvas);
     };
+    element.style.backgroundImage = `url(${toolInfo.icon})`;
     return element;
   });
 

@@ -60,7 +60,9 @@ body {
 }
 
 .single-tool {
-  background-color: lightgreen;
   width: 50pt;
   height: 50pt;
+  background-repeat: no-repeat;
+  background-size: cover;
+  image-rendering: pixelated;
 }
