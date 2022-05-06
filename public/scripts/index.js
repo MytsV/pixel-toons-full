@@ -2,7 +2,7 @@ import { CanvasRenderer, setupColorPicker } from './core/canvas_renderer.js';
 import { Canvas } from './core/canvas.js';
 import { downloadByteArray } from './utilities/file_download.js';
 import { BmpEncoder } from './utilities/bmp_encoder.js';
-import { Eraser, Pencil } from './core/tools.js';
+import { BucketFill, Eraser, Pencil } from './core/tools.js';
 
 const canvasWidth = 50;
 const canvasHeight = 50;
@@ -35,6 +35,7 @@ function createToolbar() {
   const toolsInfo = [
     new ToolInfo(new Pencil(), 'Pencil', './images/favicon.ico'),
     new ToolInfo(new Eraser(), 'Eraser', './images/eraser.ico'),
+    new ToolInfo(new BucketFill(), 'BucketFill', './images/favicon.ico')
   ];
   const elements = toolsInfo.map((toolInfo) => {
     const element = document.createElement('div');

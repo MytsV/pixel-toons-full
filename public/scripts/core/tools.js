@@ -102,7 +102,7 @@ function plotLine(color, src, dest) {
 }
 
 function drawPoint(color, { x, y }) {
-  this.image.setPixelColor(y, x, color);
+  this.image.setPixelColor(x, y, color);
   this.update();
 }
 
@@ -149,6 +149,53 @@ function bresenhamLine(src, dest, plotPoint) {
   } while (true);
 }
 
+class BucketFill extends Tool {
+  setEvents() {
+    this.canvas.element.onclick = (event) => this.#onClick(event);
+  }
+
+  #onClick(event) {
+    const coordinates = getRealCoordinates(this.canvas.element, new Coordinates(event.clientX, event.clientY));
+    this.#floodFill(coordinates);
+    this.canvas.update();
+  }
+
+  #floodFill(start) {
+    const filledColor = this.canvas.image.getPixelColor(start.x, start.y);
+
+    const queue = [];
+    const visited = Array(this.canvas.image.width).fill(null).map(() => Array(this.canvas.image.height).fill(0));
+    queue.push(start);
+    while (queue.length !== 0) {
+      const pixel = queue.shift();
+      visited[pixel.x][pixel.y] = true;
+      const pixelColor = this.canvas.image.getPixelColor(pixel.x, pixel.y);
+      if (filledColor.toString() !== pixelColor.toString()) continue;
+      this.#fillPixel(pixel);
+      if (pixel.x > 0 && !visited[pixel.x - 1][pixel.y]) {
+        queue.push(new Coordinates(pixel.x - 1, pixel.y));
+      }
+      if (pixel.y > 0 && !visited[pixel.x][pixel.y - 1]) {
+        queue.push(new Coordinates(pixel.x, pixel.y - 1));
+      }
+      if (pixel.x < this.canvas.image.width - 1 && !visited[pixel.x + 1][pixel.y]) {
+        queue.push(new Coordinates(pixel.x + 1, pixel.y));
+      }
+      if (pixel.y < this.canvas.image.height - 1 && !visited[pixel.x][pixel.y + 1]) {
+        queue.push(new Coordinates(pixel.x, pixel.y + 1));
+      }
+    }
+  }
+
+  #fillPixel(pixel) {
+    this.canvas.image.setPixelColor(pixel.x, pixel.y, this.getColor());
+  }
+
+  getColor() {
+    return this.canvas.state.color;
+  }
+}
+
 function getRealCoordinates(element, absCoordinates) {
   const rect = element.getBoundingClientRect(); //Allows to retrieve offset
   const relative = new Coordinates(absCoordinates.x - rect.left, absCoordinates.y - rect.top);
@@ -165,4 +212,4 @@ function getRealCoordinates(element, absCoordinates) {
   return new Coordinates(Math.floor(curr.x), Math.floor(curr.y));
 }
 
-export { Pencil, Eraser };
+export { Pencil, Eraser, BucketFill };

@@ -30,7 +30,7 @@ function getPixelColor(i, j) {
 
 //Get array index of a pixel with (i, j) coordinates
 function getPixelPosition(i, j) {
-  return (i * this.width + j) * colorParameterCount;
+  return (j * this.width + i) * colorParameterCount;
 }
 
 const mixin = {
