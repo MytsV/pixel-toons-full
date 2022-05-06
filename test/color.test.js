@@ -11,8 +11,8 @@ describe('Color class', () => {
 });
 
 function cssToRgba() {
-  const caseNumber = 20;
-  const colorAnswers = [...Array(caseNumber).keys()].map(() => generateRandomRgba());
+  const caseCount = 20;
+  const colorAnswers = [...Array(caseCount).keys()].map(() => generateRandomRgba());
   const colors = colorAnswers.map((color) => getColorFromRgba(color));
 
   colors.forEach((color, index) => {

@@ -1,9 +1,8 @@
 import { CanvasRenderer, setupColorPicker } from './core/canvas_renderer.js';
-import { zoom } from './core/zoom.js';
 import { Canvas } from './core/canvas.js';
 import { download } from './utilities/file_download.js';
 import { BmpEncoder } from './utilities/bmp_encoder.js';
-import { Pencil } from './core/instruments.js';
+import { Eraser, Pencil } from './core/instruments.js';
 
 const canvasWidth = 50;
 const canvasHeight = 50;
@@ -41,6 +40,6 @@ const zoomCodes = {
 document.addEventListener('keypress', (event) => {
   const index = Object.keys(zoomCodes).indexOf(event.key);
   if (index !== -1) {
-    zoom(zoomCodes[event.key]);
+    renderer.zoom(zoomCodes[event.key]);
   }
 });

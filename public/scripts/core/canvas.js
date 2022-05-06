@@ -1,15 +1,15 @@
 import { applyImageMixin } from '../utilities/image.js';
 import { Color } from '../utilities/color.js';
 
-const black = '#000000';
+const BASE_COLOR = '#000000';
 
 class CanvasState {
   constructor() {
-    this.color = Color.fromHex(black);
+    this.color = Color.fromHex(BASE_COLOR);
   }
 }
 
-const imagePos = 0;
+const IMAGE_POS = 0;
 
 class Canvas {
   #element;
@@ -28,15 +28,15 @@ class Canvas {
     this.update();
   }
 
-  //GET ImageData
+  //Get ImageData
   refreshImageData() {
-    this.#image = this.#context.getImageData(imagePos, imagePos, this.#element.width, this.#element.height);
+    this.#image = this.#context.getImageData(IMAGE_POS, IMAGE_POS, this.#element.width, this.#element.height);
     applyImageMixin(this.#image);
   }
 
-  //PUT ImageData
+  //Put ImageData
   update() {
-    this.#context.putImageData(this.#image, imagePos, imagePos);
+    this.#context.putImageData(this.#image, IMAGE_POS, IMAGE_POS);
   }
 
   get context() {
@@ -64,8 +64,8 @@ function createCanvasElement(width, height) {
 }
 
 //Colors for creating a basic grey-white background
-const transparentColorFirst = '#ffffff';
-const transparentColorSecond = '#e3e3e3';
+const BACKGROUND_COLOR_WHITE = '#ffffff';
+const BACKGROUND_COLOR_GREY = '#e3e3e3';
 
 //Function to turn image into a basic grey-white background which indicates transparency
 function createBasicBackground(image) {
@@ -80,9 +80,9 @@ function createBasicBackground(image) {
 //Get color of transparent pixel based on its coordinates
 function getClearPixelColor(i, j) {
   if (i % 2 !== j % 2) { //The condition makes sure that neighbouring pixels are always of different color
-    return transparentColorFirst; //First pixel is always white
+    return BACKGROUND_COLOR_WHITE; //First pixel is always white
   } else {
-    return transparentColorSecond;
+    return BACKGROUND_COLOR_GREY;
   }
 }
 
