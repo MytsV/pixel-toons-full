@@ -58,3 +58,9 @@ body {
   height: 100%;
   image-rendering: pixelated;
 }
+
+.single-tool {
+  background-color: lightgreen;
+  width: 50pt;
+  height: 50pt;
+}

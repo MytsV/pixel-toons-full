@@ -10,14 +10,46 @@ const canvasHeight = 50;
 const canvas = new Canvas(canvasWidth, canvasHeight);
 const renderer = new CanvasRenderer();
 
+let chosenTool = undefined;
+
 window.onload = () => {
   renderer.appendCanvas(canvas);
   setUpExporter();
   setupColorPicker(canvas);
 
-  const tool = new Pencil();
-  tool.link(canvas);
+  chosenTool = new Pencil();
+  chosenTool.link(canvas);
+
+  createToolbar();
 };
+
+class ToolInfo {
+  constructor(tool, name, icon) {
+    this.tool = tool;
+    this.name = name;
+    this.icon = icon;
+  }
+}
+
+function createToolbar() {
+  const toolsInfo = [
+    new ToolInfo(new Pencil(), 'Pencil', '../images/favicon.ico'),
+    new ToolInfo(new Eraser(), 'Eraser', '../images/favicon.ico'),
+  ];
+  const elements = toolsInfo.map((toolInfo) => {
+    const element = document.createElement('div');
+    element.id = toolInfo.name.toLowerCase();
+    element.classList.add('single-tool');
+    element.onclick = () => {
+      chosenTool = toolInfo.tool;
+      chosenTool.link(canvas);
+    };
+    return element;
+  });
+
+  const wrapper = document.getElementById('tools');
+  elements.forEach((element) => wrapper.appendChild(element));
+}
 
 const downloadImage = () => {
   canvas.refreshImageData();
