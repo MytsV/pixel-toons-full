@@ -1,8 +1,9 @@
-import { CanvasRenderer, setUpColorPicker } from './core/canvas_renderer.js';
+import { CanvasRenderer, setupColorPicker } from './core/canvas_renderer.js';
 import { zoom } from './core/zoom.js';
 import { Canvas } from './core/canvas.js';
 import { download } from './utilities/file_download.js';
 import { BmpEncoder } from './utilities/bmp_encoder.js';
+import { Pencil } from './core/instruments.js';
 
 const canvasWidth = 50;
 const canvasHeight = 50;
@@ -13,7 +14,10 @@ const renderer = new CanvasRenderer();
 window.onload = () => {
   renderer.appendCanvas(canvas);
   setUpExporter();
-  setUpColorPicker(canvas);
+  setupColorPicker(canvas);
+
+  const instrument = new Pencil();
+  instrument.link(canvas);
 };
 
 const downloadImage = () => {
