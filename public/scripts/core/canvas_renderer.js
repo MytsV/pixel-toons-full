@@ -7,6 +7,31 @@ import { Coordinates } from '../utilities/coordinates.js';
 let drawing = false;
 let last = undefined;
 
+class CanvasRenderer {
+  constructor() {
+    this.canvasWrapper = document.getElementById('canvas-wrapper');
+  }
+
+  appendCanvas(canvas) {
+    canvas.element.oncontextmenu = () => false; //Disable right click context menu on canvas
+    this.#setUpElement(canvas.element);
+    setPixelEvents(canvas);
+  }
+
+  #setUpElement(canvasElement) {
+    canvasElement.oncontextmenu = () => false;
+    canvasElement.classList.add('canvas-element');
+    this.canvasWrapper.appendChild(canvasElement); //Canvas is wrapped to manage zooming
+  }
+
+  removeCanvases() {
+    const children = this.canvasWrapper.children;
+    for (const child of children) {
+      child.remove();
+    }
+  }
+}
+
 function setUpColorPicker(canvas) {
   const colorPicker = document.getElementById('color-picker');
   colorPicker.oninput = () => {
@@ -14,55 +39,8 @@ function setUpColorPicker(canvas) {
   };
 }
 
-const renderCanvas = (canvas) => {
-  canvas.element.oncontextmenu = () => false; //we disable right click context menu on canvas
-
-  createBasicBackground(canvas);
-
-  renderElement(canvas.element);
-  setPixelEvents(canvas);
-};
-
-function renderElement(canvasElement) {
-  const canvasParent = document.getElementById('canvas-parent'); //parent-wrapper is needed for effective zooming
-  canvasElement.classList.add('canvas-element');
-
-  const canvasWrapper = document.createElement('div');
-  canvasWrapper.id = 'canvas-wrapper';
-
-  canvasWrapper.appendChild(canvasElement);
-  canvasParent.appendChild(canvasWrapper);
-}
-
-//Colors for creating a basic grey-white background
-const transparentColorFirst = '#ffffff';
-const transparentColorSecond = '#e3e3e3';
-
-//Function to turn image into a basic grey-white background which indicates transparency
-function createBasicBackground(canvas) {
-  const image = canvas.image;
-
-  for (let i = 0; i < image.height; i++) {
-    for (let j = 0; j < image.width; j++) {
-      const pixelColor = getClearPixelColor(i, j);
-      image.setPixelColor(i, j, Color.fromHex(pixelColor));
-    }
-  }
-
-  canvas.update();
-}
-
-//Get color of transparent pixel based on its coordinates
-function getClearPixelColor(i, j) {
-  if (i % 2 !== j % 2) { //the condition makes sure that neighbouring pixels are always of different color
-    return transparentColorFirst; //first pixel is always white
-  } else {
-    return transparentColorSecond;
-  }
-}
-
 function setPixelEvents(canvas) {
-  canvas.element.onmousedown = (event) => { //if mouse button is held pressed, we draw
+  canvas.element.onmousedown = (event) => { //If mouse button is held pressed, we draw
     last = new Coordinates(event.clientX, event.clientY);
     drawing = true;
   };
@@ -72,7 +50,7 @@ function setPixelEvents(canvas) {
     drawPoint(canvas, coordinates);
   };
 
-  document.onmouseup = () => { //if mouse button is released anywhere, we stop drawing
+  document.onmouseup = () => { //If mouse button is released anywhere, we stop drawing
     drawing = false;
   };
 
@@ -164,4 +142,4 @@ function getRealCoordinates(canvasElement, clientX, clientY) {
   return new Coordinates(Math.floor(x), Math.floor(y));
 }
 
-export { renderCanvas, setUpColorPicker };
+export { CanvasRenderer, setUpColorPicker };

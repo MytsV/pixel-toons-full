@@ -13,24 +13,24 @@ class Buffer {
   }
 
   writeString(string, offset) {
-    this.data.set(stringToByteArray(string), offset);
+    this.writeArray(stringToByteArray(string), offset);
   }
 
   write16Integer(number, offset) {
-    const bits = 16;
-    const array = intToByteArray(number, bits / 8);
-    this.data.set(array, offset);
+    this.#writeInteger(16, number, offset);
   }
 
   write32Integer(number, offset) {
-    const bits = 32;
-    const array = intToByteArray(number, bits / 8);
-    this.data.set(array, offset);
+    this.#writeInteger(32, number, offset);
   }
 
-  //Color is stored in reversed BGR order
-  writeColor({ r, g, b, alpha }, offset) {
-    this.data.set([b, g, r, alpha], offset);
+  #writeInteger(bits, number, offset) {
+    const array = intToByteArray(number, bits / 8);
+    this.writeArray(array, offset);
+  }
+
+  writeArray(array, offset) {
+    this.data.set(array, offset);
   }
 }
 
@@ -130,19 +130,25 @@ class BmpEncoder {
     const image = this.image;
     const bytesPerPixel = BmpEncoder.#perPixel / 8;
     const colorParameters = 4;
-
     let position = 0x36;
 
     for (let i = image.height - 1; i >= 0; i--) {
       for (let j = 0; j < image.width; j++) {
         const dataPosition = (i * image.width + j) * colorParameters;
-        const color = { r: image.data[dataPosition], g: image.data[dataPosition + 1], b: image.data[dataPosition + 2] };
-        color.alpha = image.data[dataPosition + 3];
-        this.#buffer.writeColor(color, position);
+        const colors = image.data.slice(dataPosition, dataPosition + colorParameters);
+        swap(colors, 0, 2); //Color is stored in reversed BGR order. Swapping parameter R with B
+
+        this.#buffer.writeArray(colors, position);
         position += bytesPerPixel;
       }
     }
   }
+}
+
+function swap(array, i, j) {
+  const temp = array[i];
+  array[i] = array[j];
+  array[j] = temp;
 }
 
 export { BmpEncoder };

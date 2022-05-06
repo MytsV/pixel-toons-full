@@ -1,19 +1,23 @@
-import { renderCanvas, setUpColorPicker } from './core/canvas_renderer.js';
+import { CanvasRenderer, setUpColorPicker } from './core/canvas_renderer.js';
 import { zoom } from './core/zoom.js';
 import { Canvas } from './core/canvas.js';
 import { download } from './utilities/file_download.js';
 import { BmpEncoder } from './utilities/bmp_encoder.js';
 
-const canvas = new Canvas(50, 50);
+const canvasWidth = 50;
+const canvasHeight = 50;
+
+const canvas = new Canvas(canvasWidth, canvasHeight);
+const renderer = new CanvasRenderer();
 
 window.onload = () => {
-  renderCanvas(canvas);
+  renderer.appendCanvas(canvas);
   setUpExporter();
   setUpColorPicker(canvas);
 };
 
 const downloadImage = () => {
-  canvas.updateImageData();
+  canvas.refreshImageData();
   const encoder = new BmpEncoder(canvas.image);
   download(encoder.encode(), 'image.bmp', 'image/bmp');
 };
