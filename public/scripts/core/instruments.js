@@ -34,6 +34,15 @@ class Pencil extends Instrument {
     this.#drawing = false;
   }
 
+  link(canvas) {
+    super.link(canvas);
+    const mixin = {
+      drawPoint,
+      plotLine
+    };
+    Object.assign(canvas, mixin);
+  }
+
   setEvents() {
     this.canvas.element.onmousedown = (event) => this.#onMouseDown(event);
     this.canvas.element.onclick = (event) => this.#onClick(event);
@@ -52,8 +61,8 @@ class Pencil extends Instrument {
 
   //When mouse is pressed and release, we draw one pixel
   #onClick(event) {
-    const coordinates = getRealCoordinates(this.canvas.element, event.clientX, event.clientY);
-    drawPoint(this.canvas, this.getColor(), coordinates);
+    const coordinates = getRealCoordinates(this.canvas.element, new Coordinates(event.clientX, event.clientY));
+    this.canvas.drawPoint(this.getColor(), coordinates);
   }
 
   //When mouse is moved throughout canvas, we leave trail
@@ -62,7 +71,7 @@ class Pencil extends Instrument {
     if (!this.#isOffsetValid(event)) return; //We don't draw if between last drawn point there is not enough space
 
     const dest = new Coordinates(event.clientX, event.clientY);
-    drawCanvasLine(this.canvas, this.getColor(), this.#lastCoordinates, dest);
+    this.canvas.plotLine(this.getColor(), this.#lastCoordinates, dest);
     this.#lastCoordinates = dest;
   }
 
@@ -86,6 +95,17 @@ class Pencil extends Instrument {
   }
 }
 
+function plotLine(color, src, dest) {
+  const srcReal = getRealCoordinates(this.element, dest);
+  const destReal = getRealCoordinates(this.element, src);
+  bresenhamLine(destReal, srcReal, ({ x, y }) => this.drawPoint(color, { x, y }));
+}
+
+function drawPoint(color, { x, y }) {
+  this.image.setPixelColor(y, x, color);
+  this.update();
+}
+
 /*
 Instrument which turns canvas pixels fully transparent
  */
@@ -95,24 +115,13 @@ class Eraser extends Pencil {
   }
 }
 
-function drawCanvasLine(canvas, color, src, dest) {
-  const srcReal = getRealCoordinates(canvas.element, dest.x, dest.y);
-  const destReal = getRealCoordinates(canvas.element, src.x, src.y);
-  plotBresenhamLine(destReal, srcReal, ({ x, y }) => drawPoint(canvas, color, { x, y }));
-}
-
-function drawPoint(canvas, color, { x, y }) {
-  canvas.image.setPixelColor(y, x, color);
-  canvas.update();
-}
-
 /*
 Antialiasing is not suited for the application,
 hence instead of native lineTo() function we use Bresenham's algorithm to draw a line.
 
-Implementation is taken from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
+Refer to this link https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm for implementation details
  */
-function plotBresenhamLine(src, dest, plotPoint) {
+function bresenhamLine(src, dest, plotPoint) {
   const diff = Coordinates.getDifference(src, dest);
   const signX = Math.sign(diff.x);
   const signY = Math.sign(diff.y);
@@ -140,28 +149,20 @@ function plotBresenhamLine(src, dest, plotPoint) {
   } while (true);
 }
 
-function getRealCoordinates(canvasElement, clientX, clientY) { //у теорії можна запхати в клас Canvas?
-  const rect = canvasElement.getBoundingClientRect();
+function getRealCoordinates(element, absCoordinates) {
+  const rect = element.getBoundingClientRect(); //Allows to retrieve offset
+  const relative = new Coordinates(absCoordinates.x - rect.left, absCoordinates.y - rect.top);
 
-  const relX = clientX - rect.left;
-  const relY = clientY - rect.top;
+  const resolution = { width: element.width / element.offsetWidth, height: element.height / element.offsetHeight };
+  const curr = new Coordinates(relative.x * resolution.width, relative.y * resolution.height);
 
-  let x = relX * canvasElement.width / canvasElement.offsetWidth;
-  let y = relY * canvasElement.height / canvasElement.offsetHeight;
+  //Check for overflow
+  curr.x = Math.min(element.width - 1, curr.x);
+  curr.x = Math.max(0, curr.x);
+  curr.y = Math.min(element.height - 1, curr.y);
+  curr.y = Math.max(0, curr.y);
 
-  if (x > canvasElement.width - 1) {
-    x = canvasElement.width - 1;
-  } else if (x < 0) {
-    x = 0;
-  }
-
-  if (y > canvasElement.height - 1) {
-    y = canvasElement.height - 1;
-  } else if (y < 0) {
-    y = 0;
-  }
-
-  return new Coordinates(Math.floor(x), Math.floor(y));
+  return new Coordinates(Math.floor(curr.x), Math.floor(curr.y));
 }
 
 export { Pencil, Eraser };

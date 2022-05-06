@@ -2,6 +2,7 @@ import { applyImageMixin } from '../utilities/image.js';
 import { Color } from '../utilities/color.js';
 
 const BASE_COLOR = '#000000';
+const IMAGE_POS = 0;
 
 class CanvasState {
   constructor() {
@@ -9,50 +10,27 @@ class CanvasState {
   }
 }
 
-const IMAGE_POS = 0;
-
 class Canvas {
-  #element;
-  #context;
-  #image;
-  #state;
-
   constructor(width, height) {
     const canvasElement = createCanvasElement(width, height);
 
-    this.#element = canvasElement;
-    this.#context = canvasElement.getContext('2d');
-    this.#state = new CanvasState();
+    this.element = canvasElement;
+    this.context = canvasElement.getContext('2d');
+    this.state = new CanvasState();
     this.refreshImageData();
-    createBasicBackground(this.#image);
+    createBasicBackground(this.image);
     this.update();
   }
 
   //Get ImageData
   refreshImageData() {
-    this.#image = this.#context.getImageData(IMAGE_POS, IMAGE_POS, this.#element.width, this.#element.height);
-    applyImageMixin(this.#image);
+    this.image = this.context.getImageData(IMAGE_POS, IMAGE_POS, this.element.width, this.element.height);
+    applyImageMixin(this.image);
   }
 
   //Put ImageData
   update() {
-    this.#context.putImageData(this.#image, IMAGE_POS, IMAGE_POS);
-  }
-
-  get context() {
-    return this.#context;
-  }
-
-  get element() {
-    return this.#element;
-  }
-
-  get image() {
-    return this.#image;
-  }
-
-  get state() {
-    return this.#state;
+    this.context.putImageData(this.image, IMAGE_POS, IMAGE_POS);
   }
 }
 
