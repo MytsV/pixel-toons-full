@@ -135,7 +135,10 @@ function drawPoint(canvas, { x, y }) {
 }
 
 function isOffsetValid(canvasElement, event) {
-  const plausible = canvasElement.offsetWidth / canvasElement.width;
+  const error = 0.35;
+
+  let plausible = canvasElement.offsetWidth / canvasElement.width;
+  plausible -= plausible * error;
   return Math.abs(event.clientX - last.x) >= plausible || Math.abs(event.clientY - last.y) >= plausible;
 }
 
