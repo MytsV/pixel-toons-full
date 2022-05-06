@@ -9,7 +9,7 @@ const canvas = new Canvas(50, 50);
 window.onload = () => {
   renderCanvas(canvas);
   setUpExporter();
-  setUpColorPicker();
+  setUpColorPicker(canvas);
 };
 
 const downloadImage = () => {

@@ -7,12 +7,10 @@ import { Coordinates } from '../utilities/coordinates.js';
 let drawing = false;
 let last = undefined;
 
-let pencilColor = '#000000';
-
-function setUpColorPicker() {
+function setUpColorPicker(canvas) {
   const colorPicker = document.getElementById('color-picker');
   colorPicker.oninput = () => {
-    pencilColor = colorPicker.value;
+    canvas.state.color = Color.fromHex(colorPicker.value);
   };
 }
 
@@ -130,7 +128,7 @@ function plotBresenhamLine(src, dest, plotPoint) {
 }
 
 function drawPoint(canvas, { x, y }) {
-  canvas.context.fillStyle = pencilColor;
+  canvas.context.fillStyle = canvas.state.color.toString();
   canvas.context.fillRect(x, y, 1, 1);
 }
 
