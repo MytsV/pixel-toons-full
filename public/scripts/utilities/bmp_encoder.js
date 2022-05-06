@@ -29,8 +29,8 @@ class Buffer {
   }
 
   //Color is stored in reversed BGR order
-  writeColor({ r, g, b }, offset) {
-    this.data.set([b, g, r], offset);
+  writeColor({ r, g, b, alpha }, offset) {
+    this.data.set([b, g, r, alpha], offset);
   }
 }
 
@@ -58,21 +58,20 @@ function intToByteArray(number, size) {
 }
 
 /*
-Only supports BMP24 format for now.
+Only supports BMP32 format for now.
  */
 class BmpEncoder {
   static #headerSize = 0x0E;
   static #infoHeaderSize = 0x28;
-  static #perPixel = 3 * 8;
+  static #perPixel = 4 * 8;
 
-  #data;
+  #buffer;
 
   constructor(image) {
-    const padding = image.width % 4;
-    const pixelDataSize = (3 * image.width + padding) * image.height;
+    const pixelDataSize = 4 * image.height * image.width;
     this.fileSize = BmpEncoder.#headerSize + BmpEncoder.#infoHeaderSize + pixelDataSize;
 
-    this.#data = new Buffer(this.fileSize);
+    this.#buffer = new Buffer(this.fileSize);
     this.image = image;
   }
 
@@ -89,32 +88,32 @@ class BmpEncoder {
     this.#setInfoHeader();
     this.#setPixelData();
 
-    return this.#data;
+    return this.#buffer.data;
   }
 
   #setHeader() {
     //Signature | 2 bytes | 0x00 | 'BM'
-    this.#data.writeString('BM', 0x00);
+    this.#buffer.writeString('BM', 0x00);
     //FileSize | 4 bytes | 0x02 | File size in bytes
-    this.#data.write32Integer(this.fileSize, 0x02);
+    this.#buffer.write32Integer(this.fileSize, 0x02);
 
     //Reserved | 4 bytes | 0x06 | Left filled with 0 bytes
 
     //DataOffset | 4 bytes | 0x0A | Offset from beginning of file to the beginning of the bitmap data
-    this.#data.write32Integer(BmpEncoder.#headerSize + BmpEncoder.#infoHeaderSize, 0x0A);
+    this.#buffer.write32Integer(BmpEncoder.#headerSize + BmpEncoder.#infoHeaderSize, 0x0A);
   }
 
   #setInfoHeader() {
     //Size | 4 bytes | 0x0E | Size of InfoHeader
-    this.#data.write32Integer(BmpEncoder.#infoHeaderSize, 0x0E);
+    this.#buffer.write32Integer(BmpEncoder.#infoHeaderSize, 0x0E);
     //Width | 4 bytes | 0x12 | Horizontal width in pixels
-    this.#data.write32Integer(this.image.width, 0x12);
+    this.#buffer.write32Integer(this.image.width, 0x12);
     //Height | 4 bytes | 0x16 | Vertical height in pixels
-    this.#data.write32Integer(this.image.height, 0x16);
+    this.#buffer.write32Integer(this.image.height, 0x16);
     //Planes | 2 bytes | 0x1A | Number of planes = 1
-    this.#data.write16Integer(1, 0x1A);
-    //Bits Per Pixel | 2 bytes | 0x1C | We are using 24bit RGB, so = 24
-    this.#data.write16Integer(BmpEncoder.#perPixel, 0x1C);
+    this.#buffer.write16Integer(1, 0x1A);
+    //Bits Per Pixel | 2 bytes | 0x1C | We are using 32bit RGB, so = 32
+    this.#buffer.write16Integer(BmpEncoder.#perPixel, 0x1C);
 
     /*
     The following structures are always filled with 0 bytes:
@@ -128,16 +127,20 @@ class BmpEncoder {
   }
 
   #setPixelData() {
-    let position = 0x36;
-    const padding = this.image.width % 4;
+    const image = this.image;
     const bytesPerPixel = BmpEncoder.#perPixel / 8;
+    const colorParameters = 4;
 
-    for (let i = this.image.width - 1; i >= 0; i--) {
-      for (let j = 0; j < this.image.height; j++) {
-        this.#data.writeColor(this.image.getPixelColor(i, j), position);
+    let position = 0x36;
+
+    for (let i = image.height - 1; i >= 0; i--) {
+      for (let j = 0; j < image.width; j++) {
+        const dataPosition = (i * image.width + j) * colorParameters;
+        const color = { r: image.data[dataPosition], g: image.data[dataPosition + 1], b: image.data[dataPosition + 2] };
+        color.alpha = image.data[dataPosition + 3];
+        this.#buffer.writeColor(color, position);
         position += bytesPerPixel;
       }
-      position += padding;
     }
   }
 }

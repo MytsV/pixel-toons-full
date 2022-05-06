@@ -15,7 +15,7 @@ window.onload = () => {
 const downloadImage = () => {
   canvas.updateImageData();
   const encoder = new BmpEncoder(canvas.image);
-  download(encoder.encode().data, 'image.bmp', 'image/bmp');
+  download(encoder.encode(), 'image.bmp', 'image/bmp');
 };
 
 function setUpExporter() {
