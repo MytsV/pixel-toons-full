@@ -7,7 +7,14 @@ import { Coordinates } from '../utilities/coordinates.js';
 let drawing = false;
 let last = undefined;
 
-const pencilColor = '#ff00ddff';
+let pencilColor = '#000000';
+
+function setUpColorPicker() {
+  const colorPicker = document.getElementById('color-picker');
+  colorPicker.oninput = () => {
+    pencilColor = colorPicker.value;
+  };
+}
 
 const renderCanvas = (canvas) => {
   canvas.element.oncontextmenu = () => false; //we disable right click context menu on canvas
@@ -156,4 +163,4 @@ function getRealCoordinates(canvasElement, clientX, clientY) {
   return new Coordinates(Math.floor(x), Math.floor(y));
 }
 
-export { renderCanvas };
+export { renderCanvas, setUpColorPicker };
