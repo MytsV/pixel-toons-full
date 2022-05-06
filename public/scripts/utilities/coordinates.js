@@ -19,6 +19,11 @@ class Coordinates {
   static getDifference(src, dest) {
     return new Coordinates(dest.x - src.x, dest.y - src.y);
   }
+
+  static getDistance(a, b) {
+    const diff = this.getDifference(a, b);
+    return Math.sqrt(diff.x * diff.x + diff.y * diff.y);
+  }
 }
 
 export { Coordinates };

@@ -1,21 +1,28 @@
-import { renderCanvas, setUpColorPicker } from './core/canvas_renderer.js';
-import { zoom } from './core/zoom.js';
+import { CanvasRenderer, setupColorPicker } from './core/canvas_renderer.js';
 import { Canvas } from './core/canvas.js';
-import { download } from './utilities/file_download.js';
+import { downloadByteArray } from './utilities/file_download.js';
 import { BmpEncoder } from './utilities/bmp_encoder.js';
+import { Eraser, Pencil } from './core/tools.js';
 
-const canvas = new Canvas(50, 50);
+const canvasWidth = 50;
+const canvasHeight = 50;
+
+const canvas = new Canvas(canvasWidth, canvasHeight);
+const renderer = new CanvasRenderer();
 
 window.onload = () => {
-  renderCanvas(canvas);
+  renderer.appendCanvas(canvas);
   setUpExporter();
-  setUpColorPicker();
+  setupColorPicker(canvas);
+
+  const tool = new Pencil();
+  tool.link(canvas);
 };
 
 const downloadImage = () => {
-  canvas.updateImageData();
+  canvas.refreshImageData();
   const encoder = new BmpEncoder(canvas.image);
-  download(encoder.encode().data, 'image.bmp', 'image/bmp');
+  downloadByteArray(encoder.encode(), 'image.bmp');
 };
 
 function setUpExporter() {
@@ -33,6 +40,6 @@ const zoomCodes = {
 document.addEventListener('keypress', (event) => {
   const index = Object.keys(zoomCodes).indexOf(event.key);
   if (index !== -1) {
-    zoom(zoomCodes[event.key]);
+    renderer.zoom(zoomCodes[event.key]);
   }
 });
