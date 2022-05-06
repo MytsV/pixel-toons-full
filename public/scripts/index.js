@@ -1,6 +1,6 @@
 import { CanvasRenderer, setupColorPicker } from './core/canvas_renderer.js';
 import { Canvas } from './core/canvas.js';
-import { download } from './utilities/file_download.js';
+import { downloadByteArray } from './utilities/file_download.js';
 import { BmpEncoder } from './utilities/bmp_encoder.js';
 import { Eraser, Pencil } from './core/instruments.js';
 
@@ -22,7 +22,7 @@ window.onload = () => {
 const downloadImage = () => {
   canvas.refreshImageData();
   const encoder = new BmpEncoder(canvas.image);
-  download(encoder.encode(), 'image.bmp', 'image/bmp');
+  downloadByteArray(encoder.encode(), 'image.bmp');
 };
 
 function setUpExporter() {
