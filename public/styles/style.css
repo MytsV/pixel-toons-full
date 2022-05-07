@@ -58,3 +58,11 @@ body {
   height: 100%;
   image-rendering: pixelated;
 }
+
+.single-tool {
+  width: 50pt;
+  height: 50pt;
+  background-repeat: no-repeat;
+  background-size: cover;
+  image-rendering: pixelated;
+}
