@@ -1,17 +1,22 @@
 import { applyImageMixin } from '../utilities/image.js';
 import { Color } from '../utilities/color.js';
 
-const BASE_COLOR = '#000000';
-const IMAGE_POS = 0;
+const DEFAULT_PENCIL_COLOR = '#000000';
 
 /*
-A class with some canvas-specific variables
+A class which stores changeable canvas data.
+It uses Memento pattern to implement Undo/Redo actions
  */
 class CanvasState {
   constructor() {
-    this.color = Color.fromHex(BASE_COLOR);
+    this.color = Color.fromHex(DEFAULT_PENCIL_COLOR);
+    //Memento implementation with two stacks
+    this.previousImages = [];
+    this.nextImages = [];
   }
 }
+
+const IMAGE_POS = 0;
 
 /*
 A class which wraps HTML <canvas> element
@@ -23,9 +28,14 @@ class Canvas {
     this.element = canvasElement;
     this.context = canvasElement.getContext('2d');
     this.state = new CanvasState();
+    this.#setBackground();
+  }
+
+  #setBackground() {
     this.refreshImageData();
-    createBasicBackground(this.image);
+    toBasicBackground(this.image);
     this.update();
+    this.save();
   }
 
   //Get ImageData
@@ -37,6 +47,30 @@ class Canvas {
   //Put ImageData
   update() {
     this.context.putImageData(this.image, IMAGE_POS, IMAGE_POS);
+  }
+
+  //Saves the current image on the canvas
+  save() {
+    this.state.previousImages.push(this.image.clone());
+    this.state.nextImages = [];
+  }
+
+  undo() {
+    this.#retrieveImage(this.state.previousImages, this.state.nextImages);
+  }
+
+  redo() {
+    this.#retrieveImage(this.state.nextImages, this.state.previousImages);
+  }
+
+  #retrieveImage(stackRetrieved, stackSaved) {
+    if (stackRetrieved.length < 1) return; //If the stack is empty, we don't do anything
+
+    this.refreshImageData();
+    stackSaved.push(this.image.clone()); //Current image is appended to one of the stacks
+
+    this.image = stackRetrieved.pop();
+    this.update();
   }
 }
 
@@ -52,7 +86,7 @@ const BACKGROUND_COLOR_WHITE = '#ffffff';
 const BACKGROUND_COLOR_GREY = '#e3e3e3';
 
 //Function to turn image into a basic grey-white background which indicates transparency
-function createBasicBackground(image) {
+function toBasicBackground(image) {
   for (let i = 0; i < image.height; i++) {
     for (let j = 0; j < image.width; j++) {
       const pixelColor = getClearPixelColor(i, j);

@@ -21,6 +21,7 @@ window.onload = () => {
   chosenTool.link(canvas);
 
   createToolbar();
+  assignStateButtons();
 };
 
 class ToolInfo {
@@ -42,6 +43,7 @@ function createToolbar() {
     element.id = toolInfo.name.toLowerCase();
     element.classList.add('single-tool');
     element.onclick = () => {
+      chosenTool.disable();
       chosenTool = toolInfo.tool;
       chosenTool.link(canvas);
     };
@@ -77,3 +79,10 @@ document.addEventListener('keypress', (event) => {
     renderer.zoom(zoomCodes[event.key]);
   }
 });
+
+function assignStateButtons() {
+  const undoButton = document.getElementById('undo-button');
+  const redoButton = document.getElementById('redo-button');
+  undoButton.onclick = () => canvas.undo();
+  redoButton.onclick = () => canvas.redo();
+}

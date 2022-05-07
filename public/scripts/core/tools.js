@@ -8,6 +8,9 @@ class Tool {
   constructor() {
     if (new.target === Tool) {
       throw Error('Abstract class cannot be instantiated');
+    } else {
+      this.listenersCanvas = new Map();
+      this.listenersDocument = new Map();
     }
   }
 
@@ -16,8 +19,15 @@ class Tool {
     this.setEvents();
   }
 
+  disable() {
+    this.listenersCanvas.forEach((listener, key) => this.canvas.element.removeEventListener(key, listener));
+    this.listenersDocument.forEach((listener, key) => document.removeEventListener(key, listener));
+    this.canvas = null;
+  }
+
   setEvents() { //A method which will subscribe to events in web browser
-    throw Error('The method is not implemented');
+    this.listenersCanvas.forEach((listener, key) => this.canvas.element.addEventListener(key, listener));
+    this.listenersDocument.forEach((listener, key) => document.addEventListener(key, listener));
   }
 }
 
@@ -44,17 +54,19 @@ class Pencil extends Tool {
   }
 
   setEvents() {
-    this.canvas.element.onmousedown = (event) => this.#onMouseDown(event);
-    this.canvas.element.onclick = (event) => this.#onClick(event);
-    //If mouse button is released anywhere, we stop drawing
-    document.onmouseup = () => {
+    this.listenersCanvas.set('mousedown', (event) => this.#onMouseDown(event));
+    this.listenersCanvas.set('click', (event) => this.#onClick(event));
+    this.listenersDocument.set('mouseup', () => {
       this.#drawing = false;
-    };
-    document.onmousemove = (event) => this.#onMouseMove(event);
+    });
+    this.listenersDocument.set('mousemove', (event) => this.#onMouseMove(event));
+
+    super.setEvents();
   }
 
   //When mouse button is initially pressed, we start drawing
   #onMouseDown(event) {
+    this.canvas.save();
     this.#lastCoordinates = new Coordinates(event.clientX, event.clientY);
     this.#drawing = true;
   }
@@ -63,6 +75,7 @@ class Pencil extends Tool {
   #onClick(event) {
     const coordinates = getRealCoordinates(this.canvas.element, new Coordinates(event.clientX, event.clientY));
     this.canvas.drawPoint(this.getColor(), coordinates);
+    this.canvas.update();
   }
 
   //When mouse is moved throughout canvas, we leave trail
@@ -72,6 +85,8 @@ class Pencil extends Tool {
 
     const dest = new Coordinates(event.clientX, event.clientY);
     this.canvas.plotLine(this.getColor(), this.#lastCoordinates, dest);
+    this.canvas.update();
+
     this.#lastCoordinates = dest;
   }
 
@@ -103,7 +118,6 @@ function plotLine(color, src, dest) {
 
 function drawPoint(color, { x, y }) {
   this.image.setPixelColor(x, y, color);
-  this.update();
 }
 
 /*
@@ -161,10 +175,12 @@ class BucketFill extends Tool {
   }
 
   setEvents() {
-    this.canvas.element.onclick = (event) => this.#onClick(event);
+    this.listenersCanvas.set('click', (event) => this.#onClick(event));
+    super.setEvents();
   }
 
   #onClick(event) {
+    this.canvas.save();
     const coordinates = getRealCoordinates(this.canvas.element, new Coordinates(event.clientX, event.clientY));
     this.#floodFill(coordinates);
     this.canvas.update();

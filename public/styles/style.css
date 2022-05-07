@@ -66,3 +66,20 @@ body {
   background-size: cover;
   image-rendering: pixelated;
 }
+
+.state-button {
+  width: 40pt;
+  height: 40pt;
+  background-repeat: no-repeat;
+  background-size: cover;
+  image-rendering: pixelated;
+  display: inline-block;
+}
+
+#undo-button {
+  background-image: url('../images/undo.ico');
+}
+
+#redo-button {
+  background-image: url('../images/redo.ico');
+}
