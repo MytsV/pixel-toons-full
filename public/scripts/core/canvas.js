@@ -5,7 +5,8 @@ const BASE_COLOR = '#000000';
 const IMAGE_POS = 0;
 
 /*
-A class with some canvas-specific variables
+A class which stores changeable canvas data
+It realises Memento pattern to implement Undo/Redo actions
  */
 class CanvasState {
   constructor() {
@@ -27,7 +28,7 @@ class Canvas {
     this.refreshImageData();
     createBasicBackground(this.image);
     this.update();
-    this.pushStack();
+    this.save();
   }
 
   //Get ImageData
@@ -39,20 +40,20 @@ class Canvas {
   //Put ImageData
   update() {
     this.context.putImageData(this.image, IMAGE_POS, IMAGE_POS);
-
   }
 
-  pushStack() {
+  //Saves the current image on the canvas
+  save() {
     this.state.imageStack.push(this.image.clone());
   }
 
   undo() {
     const stack = this.state.imageStack;
-    if (stack.length < 2) return;
 
-    stack.pop();
-    this.image = stack[stack.length - 1];
-    this.context.putImageData(this.image, IMAGE_POS, IMAGE_POS);
+    if (stack.length < 1) return; //if stack is empty, we don't do anything
+
+    this.image = stack.pop();
+    this.update();
   }
 
   redo() {
