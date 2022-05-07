@@ -1,8 +1,7 @@
 import { applyImageMixin } from '../utilities/image.js';
 import { Color } from '../utilities/color.js';
 
-const BASE_COLOR = '#000000';
-const IMAGE_POS = 0;
+const DEFAULT_PENCIL_COLOR = '#000000';
 
 /*
 A class which stores changeable canvas data
@@ -10,10 +9,14 @@ It realises Memento pattern to implement Undo/Redo actions
  */
 class CanvasState {
   constructor() {
-    this.color = Color.fromHex(BASE_COLOR);
-    this.imageStack = [];
+    this.color = Color.fromHex(DEFAULT_PENCIL_COLOR);
+    //Memento implementation with two stacks
+    this.previousImages = [];
+    this.nextImages = [];
   }
 }
+
+const IMAGE_POS = 0;
 
 /*
 A class which wraps HTML <canvas> element
@@ -44,20 +47,32 @@ class Canvas {
 
   //Saves the current image on the canvas
   save() {
-    this.state.imageStack.push(this.image.clone());
+    this.state.previousImages.push(this.image.clone());
+    this.state.nextImages = [];
   }
 
   undo() {
-    const stack = this.state.imageStack;
+    const stack = this.state.previousImages;
 
-    if (stack.length < 1) return; //if stack is empty, we don't do anything
+    if (stack.length < 1) return; //If stack is empty, we don't do anything
+
+    this.refreshImageData();
+    this.state.nextImages.push(this.image.clone()); //Current image is appended to "redo-stack"
 
     this.image = stack.pop();
     this.update();
   }
 
   redo() {
+    const stack = this.state.nextImages;
 
+    if (stack.length < 1) return; //If queue is empty, we don't do anything
+
+    this.refreshImageData();
+    this.state.previousImages.push(this.image.clone()); //Current image is appended to "undo-stack"
+
+    this.image = stack.pop();
+    this.update();
   }
 }
 

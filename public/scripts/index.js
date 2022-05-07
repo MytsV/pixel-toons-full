@@ -82,5 +82,7 @@ document.addEventListener('keypress', (event) => {
 document.addEventListener('keypress', (event) => {
   if (event.key === 'u') {
     canvas.undo();
+  } else if (event.key === 'r') {
+    canvas.redo();
   }
 });
