@@ -5,7 +5,7 @@
   "description": "-",
   "main": "index.js",
   "scripts": {
-    "test": "none"
+    "test": "mocha --reporter spec"
   },
   "repository": {
     "type": "git",
@@ -22,10 +22,13 @@
     "@babel/eslint-parser": "^7.17.0",
     "@babel/eslint-plugin": "^7.17.7",
     "@babel/preset-env": "^7.16.11",
+    "chai": "^4.3.6",
     "eslint": "^8.11.0",
     "eslint-config-metarhia": "^7.0.1",
     "eslint-plugin-import": "^2.25.4",
     "mocha": "^9.1.3",
-    "nodemon": "^2.0.15"
+    "nodemon": "^2.0.15",
+    "stylelint": "^14.8.1",
+    "stylelint-config-standard": "^25.0.0"
   }
 }

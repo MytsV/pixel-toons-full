@@ -1,10 +1,28 @@
-<html>
-    <head>
-        <title>Example</title>
-        <link rel="stylesheet" href="./styles/style.css">
-        <script type="module" src="./scripts/index.js"></script>
-    </head>
-    <body>
-        This is a basic configuration for the subprojects associated with Pixel Toons.
-    </body>
+<html lang="en">
+
+  <head>
+    <title>Pixel-Toons</title>
+    <link rel="stylesheet" href="./styles/style.css">
+    <script type="module" src="./scripts/index.js"></script>
+    <link rel="icon" type="image/x-icon" href="./images/favicon.ico">
+  </head>
+
+  <body>
+    <div class="container">
+      <div id="menu">
+        <button id="export-button">Export to BMP</button>
+      </div>
+      <div id="main">
+        <div id="tools">
+          <input type="color" id="color-picker">
+        </div>
+        <div id="canvas-parent">
+          <div id="canvas-wrapper"></div>
+        </div>
+        <div id="sidebar"></div>
+      </div>
+      <div id="footer"></div>
+    </div>
+  </body>
+
 </html>

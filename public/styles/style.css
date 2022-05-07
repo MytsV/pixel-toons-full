@@ -1,3 +1,68 @@
 body {
-    background-color: aquamarine;
+  margin: 0;
+}
+
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+#main {
+  flex-grow: 1;
+  display: flex;
+}
+
+#menu {
+  height: 45pt;
+  background-color: green;
+}
+
+#tools {
+  width: 90pt;
+  background-color: greenyellow;
+}
+
+#footer {
+  background-color: darkgreen;
+  height: 35pt;
+}
+
+#canvas-parent {
+  width: 100%;
+  width: -moz-available;
+  width: -webkit-fill-available;
+  width: fill-available;
+  background-color: #676767;
+  display: block;
+  overflow: scroll;
+  position: relative;
+}
+
+#sidebar {
+  width: 200pt;
+  background-color: lightgreen;
+}
+
+#canvas-wrapper {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  height: 100%;
+}
+
+.canvas-element {
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.single-tool {
+  width: 50pt;
+  height: 50pt;
+  background-repeat: no-repeat;
+  background-size: cover;
+  image-rendering: pixelated;
 }
