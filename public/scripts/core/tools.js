@@ -58,6 +58,7 @@ class Pencil extends Tool {
     this.listenersCanvas.set('click', (event) => this.#onClick(event));
     this.listenersDocument.set('mouseup', () => {
       this.#drawing = false;
+      this.canvas.pushStack();
     });
     this.listenersDocument.set('mousemove', (event) => this.#onMouseMove(event));
 
@@ -74,6 +75,7 @@ class Pencil extends Tool {
   #onClick(event) {
     const coordinates = getRealCoordinates(this.canvas.element, new Coordinates(event.clientX, event.clientY));
     this.canvas.drawPoint(this.getColor(), coordinates);
+    this.canvas.update();
   }
 
   //When mouse is moved throughout canvas, we leave trail
@@ -83,6 +85,8 @@ class Pencil extends Tool {
 
     const dest = new Coordinates(event.clientX, event.clientY);
     this.canvas.plotLine(this.getColor(), this.#lastCoordinates, dest);
+    this.canvas.update();
+
     this.#lastCoordinates = dest;
   }
 
@@ -114,7 +118,6 @@ function plotLine(color, src, dest) {
 
 function drawPoint(color, { x, y }) {
   this.image.setPixelColor(x, y, color);
-  this.update();
 }
 
 /*
@@ -180,6 +183,7 @@ class BucketFill extends Tool {
     const coordinates = getRealCoordinates(this.canvas.element, new Coordinates(event.clientX, event.clientY));
     this.#floodFill(coordinates);
     this.canvas.update();
+    this.canvas.pushStack();
   }
 
   #floodFill(initial) {

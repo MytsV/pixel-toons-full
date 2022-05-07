@@ -78,3 +78,9 @@ document.addEventListener('keypress', (event) => {
     renderer.zoom(zoomCodes[event.key]);
   }
 });
+
+document.addEventListener('keypress', (event) => {
+  if (event.key === 'u') {
+    canvas.undo();
+  }
+});

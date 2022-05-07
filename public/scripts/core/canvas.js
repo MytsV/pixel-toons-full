@@ -10,6 +10,7 @@ A class with some canvas-specific variables
 class CanvasState {
   constructor() {
     this.color = Color.fromHex(BASE_COLOR);
+    this.imageStack = [];
   }
 }
 
@@ -26,6 +27,7 @@ class Canvas {
     this.refreshImageData();
     createBasicBackground(this.image);
     this.update();
+    this.pushStack();
   }
 
   //Get ImageData
@@ -37,6 +39,24 @@ class Canvas {
   //Put ImageData
   update() {
     this.context.putImageData(this.image, IMAGE_POS, IMAGE_POS);
+
+  }
+
+  pushStack() {
+    this.state.imageStack.push(this.image.clone());
+  }
+
+  undo() {
+    const stack = this.state.imageStack;
+    if (stack.length < 2) return;
+
+    stack.pop();
+    this.image = stack[stack.length - 1];
+    this.context.putImageData(this.image, IMAGE_POS, IMAGE_POS);
+  }
+
+  redo() {
+
   }
 }
 
