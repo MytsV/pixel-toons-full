@@ -4,8 +4,8 @@ import { Color } from '../utilities/color.js';
 const DEFAULT_PENCIL_COLOR = '#000000';
 
 /*
-A class which stores changeable canvas data
-It realises Memento pattern to implement Undo/Redo actions
+A class which stores changeable canvas data.
+It uses Memento pattern to implement Undo/Redo actions
  */
 class CanvasState {
   constructor() {
@@ -28,8 +28,12 @@ class Canvas {
     this.element = canvasElement;
     this.context = canvasElement.getContext('2d');
     this.state = new CanvasState();
+    this.#setBackground();
+  }
+
+  #setBackground() {
     this.refreshImageData();
-    createBasicBackground(this.image);
+    toBasicBackground(this.image);
     this.update();
     this.save();
   }
@@ -52,26 +56,20 @@ class Canvas {
   }
 
   undo() {
-    const stack = this.state.previousImages;
-
-    if (stack.length < 1) return; //If stack is empty, we don't do anything
-
-    this.refreshImageData();
-    this.state.nextImages.push(this.image.clone()); //Current image is appended to "redo-stack"
-
-    this.image = stack.pop();
-    this.update();
+    this.#retrieveImage(this.state.previousImages, this.state.nextImages);
   }
 
   redo() {
-    const stack = this.state.nextImages;
+    this.#retrieveImage(this.state.nextImages, this.state.previousImages);
+  }
 
-    if (stack.length < 1) return; //If queue is empty, we don't do anything
+  #retrieveImage(stackRetrieved, stackSaved) {
+    if (stackRetrieved.length < 1) return; //If the stack is empty, we don't do anything
 
     this.refreshImageData();
-    this.state.previousImages.push(this.image.clone()); //Current image is appended to "undo-stack"
+    stackSaved.push(this.image.clone()); //Current image is appended to one of the stacks
 
-    this.image = stack.pop();
+    this.image = stackRetrieved.pop();
     this.update();
   }
 }
@@ -88,7 +86,7 @@ const BACKGROUND_COLOR_WHITE = '#ffffff';
 const BACKGROUND_COLOR_GREY = '#e3e3e3';
 
 //Function to turn image into a basic grey-white background which indicates transparency
-function createBasicBackground(image) {
+function toBasicBackground(image) {
   for (let i = 0; i < image.height; i++) {
     for (let j = 0; j < image.width; j++) {
       const pixelColor = getClearPixelColor(i, j);
