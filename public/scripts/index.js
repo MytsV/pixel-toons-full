@@ -42,6 +42,7 @@ function createToolbar() {
     element.id = toolInfo.name.toLowerCase();
     element.classList.add('single-tool');
     element.onclick = () => {
+      chosenTool.disable();
       chosenTool = toolInfo.tool;
       chosenTool.link(canvas);
     };

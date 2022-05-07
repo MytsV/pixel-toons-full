@@ -8,6 +8,9 @@ class Tool {
   constructor() {
     if (new.target === Tool) {
       throw Error('Abstract class cannot be instantiated');
+    } else {
+      this.listenersCanvas = new Map();
+      this.listenersDocument = new Map();
     }
   }
 
@@ -16,8 +19,15 @@ class Tool {
     this.setEvents();
   }
 
+  disable() {
+    this.listenersCanvas.forEach((listener, key) => this.canvas.element.removeEventListener(key, listener));
+    this.listenersDocument.forEach((listener, key) => document.removeEventListener(key, listener));
+    this.canvas = null;
+  }
+
   setEvents() { //A method which will subscribe to events in web browser
-    throw Error('The method is not implemented');
+    this.listenersCanvas.forEach((listener, key) => this.canvas.element.addEventListener(key, listener));
+    this.listenersDocument.forEach((listener, key) => document.addEventListener(key, listener));
   }
 }
 
@@ -44,13 +54,14 @@ class Pencil extends Tool {
   }
 
   setEvents() {
-    this.canvas.element.onmousedown = (event) => this.#onMouseDown(event);
-    this.canvas.element.onclick = (event) => this.#onClick(event);
-    //If mouse button is released anywhere, we stop drawing
-    document.onmouseup = () => {
+    this.listenersCanvas.set('mousedown', (event) => this.#onMouseDown(event));
+    this.listenersCanvas.set('click', (event) => this.#onClick(event));
+    this.listenersDocument.set('mouseup', () => {
       this.#drawing = false;
-    };
-    document.onmousemove = (event) => this.#onMouseMove(event);
+    });
+    this.listenersDocument.set('mousemove', (event) => this.#onMouseMove(event));
+
+    super.setEvents();
   }
 
   //When mouse button is initially pressed, we start drawing
@@ -161,7 +172,8 @@ class BucketFill extends Tool {
   }
 
   setEvents() {
-    this.canvas.element.onclick = (event) => this.#onClick(event);
+    this.listenersCanvas.set('click', (event) => this.#onClick(event));
+    super.setEvents();
   }
 
   #onClick(event) {
