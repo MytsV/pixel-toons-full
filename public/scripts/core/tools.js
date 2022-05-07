@@ -149,9 +149,16 @@ function bresenhamLine(src, dest, plotPoint) {
   } while (true);
 }
 
+const DEFAULT_TOLERANCE = 0;
+
 class BucketFill extends Tool {
   #visited;
   #queue;
+
+  constructor() {
+    super();
+    this.tolerance = DEFAULT_TOLERANCE;
+  }
 
   setEvents() {
     this.canvas.element.onclick = (event) => this.#onClick(event);
@@ -164,23 +171,22 @@ class BucketFill extends Tool {
   }
 
   #floodFill(initial) {
-    const filledColor = this.canvas.image.getPixelColor(initial.x, initial.y);
+    const initialColor = this.canvas.image.getPixelColor(initial.x, initial.y);
 
     this.#queue = [];
     this.#visited = this.#initVisited();
-    this.#queue.push(initial); //Initiate queue with first element
+    this.#visit(initial); //Initiate queue with first element
 
     while (this.#queue.length !== 0) {
       const current = this.#queue.shift();
-      this.#visited[current.x][current.y] = true; //Mark pixel as already viewed
-      const pixelColor = this.canvas.image.getPixelColor(current.x, current.y);
-      if (filledColor.toString() !== pixelColor.toString()) continue;
+      const currentColor = this.canvas.image.getPixelColor(current.x, current.y);
+      if (!this.#isColorValid(initialColor, currentColor)) continue;
       this.#fillPixel(current);
 
-      this.#addToVisited(new Coordinates(current.x - 1, current.y));
-      this.#addToVisited(new Coordinates(current.x + 1, current.y));
-      this.#addToVisited(new Coordinates(current.x, current.y - 1));
-      this.#addToVisited(new Coordinates(current.x, current.y + 1));
+      this.#visit(new Coordinates(current.x - 1, current.y));
+      this.#visit(new Coordinates(current.x + 1, current.y));
+      this.#visit(new Coordinates(current.x, current.y - 1));
+      this.#visit(new Coordinates(current.x, current.y + 1));
     }
   }
 
@@ -190,11 +196,22 @@ class BucketFill extends Tool {
     return Array(width).fill(null).map(() => Array(height).fill(false)); //Create a matrix
   }
 
-  #addToVisited(coords) {
-    if (coords.x < 0 || coords.x >= this.canvas.image.width) return; //Check for overflow
-    if (coords.y < 0 || coords.y >= this.canvas.image.height) return;
-    if (this.#visited[coords.x][coords.y]) return; //If a pixel has already been viewed, skip it
-    this.#queue.push(coords);
+  #isColorValid(initial, current) {
+    const inRange = (parameterA, parameterB) => {
+      if (parameterB < (parameterA - this.tolerance)) return false;
+      return parameterB <= (parameterA + this.tolerance);
+    };
+
+    return inRange(initial.r, current.r) && inRange(initial.g, current.g) && inRange(initial.b, current.b) &&
+      inRange(initial.alpha, current.alpha);
+  }
+
+  #visit(pixel) {
+    if (pixel.x < 0 || pixel.x >= this.canvas.image.width) return; //Check for overflow
+    if (pixel.y < 0 || pixel.y >= this.canvas.image.height) return;
+    if (this.#visited[pixel.x][pixel.y]) return; //If a pixel has already been viewed, skip it
+    this.#visited[pixel.x][pixel.y] = true; //Mark pixel as already viewed
+    this.#queue.push(pixel);
   }
 
   #fillPixel(pixel) {
