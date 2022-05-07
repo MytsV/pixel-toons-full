@@ -21,6 +21,7 @@ window.onload = () => {
   chosenTool.link(canvas);
 
   createToolbar();
+  assignStateButtons();
 };
 
 class ToolInfo {
@@ -79,10 +80,9 @@ document.addEventListener('keypress', (event) => {
   }
 });
 
-document.addEventListener('keypress', (event) => {
-  if (event.key === 'u') {
-    canvas.undo();
-  } else if (event.key === 'r') {
-    canvas.redo();
-  }
-});
+function assignStateButtons() {
+  const undoButton = document.getElementById('undo-button');
+  const redoButton = document.getElementById('redo-button');
+  undoButton.onclick = () => canvas.undo();
+  redoButton.onclick = () => canvas.redo();
+}
