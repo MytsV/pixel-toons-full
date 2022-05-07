@@ -128,7 +128,7 @@ function bresenhamLine(src, dest, plotPoint) {
   diff.x = Math.abs(diff.x);
   diff.y = -Math.abs(diff.y);
 
-  //Error allows us to perform all octant drawing. The algorithm is still precise.
+  //Error allows us to perform all octant drawing. The algorithm is still precise
   let error = diff.x + diff.y;
   const curr = new Coordinates(src.x, src.y);
 
@@ -150,6 +150,9 @@ function bresenhamLine(src, dest, plotPoint) {
 }
 
 class BucketFill extends Tool {
+  #visited;
+  #queue;
+
   setEvents() {
     this.canvas.element.onclick = (event) => this.#onClick(event);
   }
@@ -160,31 +163,38 @@ class BucketFill extends Tool {
     this.canvas.update();
   }
 
-  #floodFill(start) {
-    const filledColor = this.canvas.image.getPixelColor(start.x, start.y);
+  #floodFill(initial) {
+    const filledColor = this.canvas.image.getPixelColor(initial.x, initial.y);
 
-    const queue = [];
-    const visited = Array(this.canvas.image.width).fill(null).map(() => Array(this.canvas.image.height).fill(0));
-    queue.push(start);
-    while (queue.length !== 0) {
-      const pixel = queue.shift();
-      visited[pixel.x][pixel.y] = true;
-      const pixelColor = this.canvas.image.getPixelColor(pixel.x, pixel.y);
+    this.#queue = [];
+    this.#visited = this.#initVisited();
+    this.#queue.push(initial); //Initiate queue with first element
+
+    while (this.#queue.length !== 0) {
+      const current = this.#queue.shift();
+      this.#visited[current.x][current.y] = true; //Mark pixel as already viewed
+      const pixelColor = this.canvas.image.getPixelColor(current.x, current.y);
       if (filledColor.toString() !== pixelColor.toString()) continue;
-      this.#fillPixel(pixel);
-      if (pixel.x > 0 && !visited[pixel.x - 1][pixel.y]) {
-        queue.push(new Coordinates(pixel.x - 1, pixel.y));
-      }
-      if (pixel.y > 0 && !visited[pixel.x][pixel.y - 1]) {
-        queue.push(new Coordinates(pixel.x, pixel.y - 1));
-      }
-      if (pixel.x < this.canvas.image.width - 1 && !visited[pixel.x + 1][pixel.y]) {
-        queue.push(new Coordinates(pixel.x + 1, pixel.y));
-      }
-      if (pixel.y < this.canvas.image.height - 1 && !visited[pixel.x][pixel.y + 1]) {
-        queue.push(new Coordinates(pixel.x, pixel.y + 1));
-      }
+      this.#fillPixel(current);
+
+      this.#addToVisited(new Coordinates(current.x - 1, current.y));
+      this.#addToVisited(new Coordinates(current.x + 1, current.y));
+      this.#addToVisited(new Coordinates(current.x, current.y - 1));
+      this.#addToVisited(new Coordinates(current.x, current.y + 1));
     }
+  }
+
+  #initVisited() {
+    const width = this.canvas.image.width;
+    const height = this.canvas.image.height;
+    return Array(width).fill(null).map(() => Array(height).fill(false)); //Create a matrix
+  }
+
+  #addToVisited(coords) {
+    if (coords.x < 0 || coords.x >= this.canvas.image.width) return; //Check for overflow
+    if (coords.y < 0 || coords.y >= this.canvas.image.height) return;
+    if (this.#visited[coords.x][coords.y]) return; //If a pixel has already been viewed, skip it
+    this.#queue.push(coords);
   }
 
   #fillPixel(pixel) {

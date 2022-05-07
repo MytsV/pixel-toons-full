@@ -35,7 +35,7 @@ function createToolbar() {
   const toolsInfo = [
     new ToolInfo(new Pencil(), 'Pencil', './images/favicon.ico'),
     new ToolInfo(new Eraser(), 'Eraser', './images/eraser.ico'),
-    new ToolInfo(new BucketFill(), 'BucketFill', './images/favicon.ico')
+    new ToolInfo(new BucketFill(), 'BucketFill', './images/bucket.png')
   ];
   const elements = toolsInfo.map((toolInfo) => {
     const element = document.createElement('div');
