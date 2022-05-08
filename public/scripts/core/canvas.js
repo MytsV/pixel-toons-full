@@ -22,16 +22,22 @@ const IMAGE_POS = 0;
 A class which wraps HTML <canvas> element
  */
 class Canvas {
+  #layers; //An array of "virtual" canvases
+
   constructor(width, height) {
     const canvasElement = createCanvasElement(width, height);
 
     this.element = canvasElement;
     this.context = canvasElement.getContext('2d');
     this.state = new CanvasState();
+    this.#layers = [];
+
     this.#setBackground();
+    this.appendLayer();
   }
 
   #setBackground() {
+    this.appendLayer();
     this.refreshImageData();
     toBasicBackground(this.image);
     this.update();
@@ -47,6 +53,19 @@ class Canvas {
   //Put ImageData
   update() {
     this.context.putImageData(this.image, IMAGE_POS, IMAGE_POS);
+    const emptyImage = new ImageData(this.element.width, this.element.height);
+    const mainContext = this.element.getContext('2d');
+
+    mainContext.putImageData(emptyImage, IMAGE_POS, IMAGE_POS);
+
+    this.#layers.forEach((layer) => mainContext.drawImage(layer, IMAGE_POS, IMAGE_POS));
+  }
+
+  appendLayer() {
+    const canvas = createCanvasElement(this.element.width, this.element.height);
+    this.context = canvas.getContext('2d');
+    this.refreshImageData();
+    this.#layers.push(canvas);
   }
 
   //Saves the current image on the canvas
