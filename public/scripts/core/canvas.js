@@ -78,24 +78,30 @@ class Canvas {
   }
 
   removeLayer(index) {
+    if (this.#layers.length <= 1) return;
+
     this.#layers = this.#layers.filter((layer) => layer.index !== index);
-    this.#setDrawingLayer(this.#layers[this.#layers.length - 1]);
+    const topLayer = this.#layers.slice(-1).pop();
+    this.#setDrawingLayer(topLayer);
     this.update();
   }
 
   switchLayer(index) {
     const layer = this.#layers.find((layer) => layer.index === index);
+    if (!layer) return;
     this.#setDrawingLayer(layer);
   }
 
   moveUp(index) {
-    const layerIndex = this.#layers.findIndex((layer) => layer.index === index);
-    this.#reorderLayer(this.#layers[layerIndex], layerIndex + 1);
+    const layerPosition = this.#layers.findIndex((layer) => layer.index === index);
+    if (layerPosition < 0 || layerPosition === this.#layers.length) return;
+    this.#reorderLayer(this.#layers[layerPosition], layerPosition + 1);
   }
 
   moveDown(index) {
-    const layerIndex = this.#layers.findIndex((layer) => layer.index === index);
-    this.#reorderLayer(this.#layers[layerIndex], layerIndex - 1);
+    const layerPosition = this.#layers.findIndex((layer) => layer.index === index);
+    if (layerPosition < 1) return;
+    this.#reorderLayer(this.#layers[layerPosition], layerPosition - 1);
   }
 
   //Saves the current image on the canvas
