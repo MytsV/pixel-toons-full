@@ -97,6 +97,8 @@ function assignLayerButtons() {
   const switchLayerButton = document.getElementById('switch-layer-button');
   const moveUpLayerButton = document.getElementById('move-up-layer-button');
   const moveDownLayerButton = document.getElementById('move-down-layer-button');
+  const setVisibleLayerButton = document.getElementById('set-visible-layer-button');
+  const setInvisibleLayerButton = document.getElementById('set-invisible-layer-button');
 
   addLayerButton.onclick = () => canvas.appendLayer();
   removeLayerButton.onclick = () => {
@@ -114,5 +116,17 @@ function assignLayerButtons() {
   moveDownLayerButton.onclick = () => {
     const index = parseInt(indexInput.value);
     canvas.moveDown(index);
+  };
+  setVisibleLayerButton.onclick = () => {
+    const index = parseInt(indexInput.value);
+    const layer = canvas.layers.find((layer) => layer.index === index);
+    layer.visible = true;
+    canvas.update();
+  };
+  setInvisibleLayerButton.onclick = () => {
+    const index = parseInt(indexInput.value);
+    const layer = canvas.layers.find((layer) => layer.index === index);
+    layer.visible = false;
+    canvas.update();
   };
 }

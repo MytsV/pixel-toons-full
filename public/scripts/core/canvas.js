@@ -28,8 +28,10 @@ class Layer {
   constructor(index, width, height) {
     this.virtualCanvas = createCanvasElement(width, height);
     this.index = index;
+    this.visible = true;
   }
 
+  //Prototype pattern implementation
   clone() {
     const width = this.virtualCanvas.width;
     const height = this.virtualCanvas.height;
@@ -80,7 +82,10 @@ class Canvas {
 
     mainContext.putImageData(emptyImage, IMAGE_POS, IMAGE_POS);
 
-    this.#layers.forEach((layer) => mainContext.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS));
+    this.#layers.forEach((layer) => {
+      if (!layer.visible) return;
+      mainContext.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS);
+    });
   }
 
   appendLayer() {
@@ -161,6 +166,10 @@ class Canvas {
   #setDrawingLayer(layer) {
     this.context = layer.virtualCanvas.getContext('2d');
     this.refreshImageData();
+  }
+
+  get layers() {
+    return this.#layers;
   }
 }
 
