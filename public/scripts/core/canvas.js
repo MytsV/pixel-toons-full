@@ -50,7 +50,7 @@ class Canvas {
     this.appendLayer();
   }
 
-  #setBackground() {
+  #setBackground() { //to renderer
     this.appendLayer();
     this.refreshImageData();
     toBasicBackground(this.image);
@@ -77,25 +77,29 @@ class Canvas {
 
   appendLayer() {
     const layer = new Layer(indexer(), this.element.width, this.element.height);
-    this.context = layer.virtualCanvas.getContext('2d');
-    this.refreshImageData();
+    this.#setDrawingLayer(layer);
     this.#layers.push(layer);
   }
 
   removeLayer(index) {
     this.#layers = this.#layers.filter((layer) => layer.index !== index);
-    this.#updateWithLayer(this.#layers[this.#layers.length - 1]);
+    this.#setDrawingLayer(this.#layers[this.#layers.length - 1]);
     this.update();
   }
 
   switchLayer(index) {
     const layer = this.#layers.find((layer) => layer.index === index);
-    this.#updateWithLayer(layer);
+    this.#setDrawingLayer(layer);
   }
 
-  #updateWithLayer(layer) {
-    this.context = layer.virtualCanvas.getContext('2d');
-    this.refreshImageData();
+  moveUp(index) {
+    const layerIndex = this.#layers.findIndex((layer) => layer.index === index);
+    this.#reorderLayer(this.#layers[layerIndex], layerIndex + 1);
+  }
+
+  moveDown(index) {
+    const layerIndex = this.#layers.findIndex((layer) => layer.index === index);
+    this.#reorderLayer(this.#layers[layerIndex], layerIndex - 1);
   }
 
   //Saves the current image on the canvas
@@ -120,6 +124,21 @@ class Canvas {
 
     this.image = stackRetrieved.pop();
     this.update();
+  }
+
+  #reorderLayer(layer, position) {
+    this.#layers = this.#layers.filter((element) => element !== layer); //i don't like it, optimize
+    if (position >= this.#layers.length) {
+      this.#layers.push(layer);
+    } else {
+      this.#layers.splice(position, 0, layer);
+    }
+    this.update();
+  }
+
+  #setDrawingLayer(layer) {
+    this.context = layer.virtualCanvas.getContext('2d');
+    this.refreshImageData();
   }
 }
 
