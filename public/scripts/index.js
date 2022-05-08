@@ -57,9 +57,9 @@ function createToolbar() {
 }
 
 const downloadImage = () => {
-  canvas.refreshImageData();
-  const encoder = new BmpEncoder(canvas.image);
-  downloadLocalUrl(bytesToUrl(encoder), 'image.bmp');
+  const image = canvas.getCombinedImage();
+  const encoder = new BmpEncoder(image);
+  downloadLocalUrl(bytesToUrl(encoder.encode()), 'image.bmp');
 };
 
 function setUpExporter() {

@@ -48,10 +48,16 @@ class Canvas {
     this.appendLayer();
   }
 
-  //Get ImageData
+  //Get ImageData from current layer
   refreshImageData() {
     this.image = this.context.getImageData(IMAGE_POS, IMAGE_POS, this.element.width, this.element.height);
     applyImageMixin(this.image);
+  }
+
+  //Get combined ImageData from all layers
+  getCombinedImage() {
+    const mainContext = this.element.getContext('2d');
+    return mainContext.getImageData(IMAGE_POS, IMAGE_POS, this.element.width, this.element.height);
   }
 
   //Put ImageData
