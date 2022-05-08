@@ -84,20 +84,21 @@ class Canvas {
   }
 
   appendLayer() {
+    this.save();
+
     const layer = new Layer(indexer(), this.element.width, this.element.height);
     this.#setDrawingLayer(layer);
     this.#layers.push(layer);
-    this.save();
   }
 
   removeLayer(index) {
     if (this.#layers.length <= 1) return;
+    this.save();
 
     this.#layers = this.#layers.filter((layer) => layer.index !== index);
     const topLayer = this.#layers.slice(-1).pop();
     this.#setDrawingLayer(topLayer);
     this.update();
-    this.save();
   }
 
   switchLayer(index) {
@@ -120,6 +121,8 @@ class Canvas {
 
   //Saves the current image on the canvas
   save() {
+    if (this.#layers.length < 1) return;
+
     const newLayers = this.#layers.map((layer) => layer.clone());
     this.state.previousImages.push(newLayers);
     this.state.nextImages = [];
@@ -139,10 +142,13 @@ class Canvas {
     stackSaved.push(this.#layers.map((layer) => layer.clone())); //Current image is appended to one of the stacks
 
     this.#layers = stackRetrieved.pop();
+    this.#setDrawingLayer(this.#layers.slice(-1).pop());
     this.update();
   }
 
   #reorderLayer(layer, position) {
+    this.save();
+
     this.#layers = this.#layers.filter((element) => element !== layer); //i don't like it, optimize
     if (position >= this.#layers.length) {
       this.#layers.push(layer);
@@ -150,7 +156,6 @@ class Canvas {
       this.#layers.splice(position, 0, layer);
     }
     this.update();
-    this.save();
   }
 
   #setDrawingLayer(layer) {
