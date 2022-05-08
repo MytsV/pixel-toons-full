@@ -44,6 +44,7 @@ function getPixelPosition(i, j) {
   return (j * this.width + i) * colorParameterCount;
 }
 
+//Prototype pattern implementation
 function clone() {
   const cloned = new ImageData(this.width, this.height);
   cloned.data.set(this.data);

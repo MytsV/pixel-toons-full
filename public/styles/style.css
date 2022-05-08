@@ -56,7 +56,9 @@ body {
 
 .canvas-element {
   height: 100%;
+  width: 100%;
   image-rendering: pixelated;
+  position: absolute;
 }
 
 .single-tool {
@@ -82,4 +84,10 @@ body {
 
 #redo-button {
   background-image: url('../images/redo.ico');
+}
+
+#canvas-background {
+  background-repeat: no-repeat;
+  background-size: contain;
+  image-rendering: pixelated;
 }

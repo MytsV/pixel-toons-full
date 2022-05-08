@@ -1,6 +1,6 @@
 import { CanvasRenderer, setupColorPicker } from './core/canvas_renderer.js';
 import { Canvas } from './core/canvas.js';
-import { downloadByteArray } from './utilities/file_download.js';
+import { bytesToUrl, downloadLocalUrl } from './utilities/file_download.js';
 import { BmpEncoder } from './utilities/bmp_encoder.js';
 import { BucketFill, Eraser, Pencil } from './core/tools.js';
 
@@ -22,6 +22,7 @@ window.onload = () => {
 
   createToolbar();
   assignStateButtons();
+  assignLayerButtons();
 };
 
 class ToolInfo {
@@ -56,9 +57,9 @@ function createToolbar() {
 }
 
 const downloadImage = () => {
-  canvas.refreshImageData();
-  const encoder = new BmpEncoder(canvas.image);
-  downloadByteArray(encoder.encode(), 'image.bmp');
+  const image = canvas.getCombinedImage();
+  const encoder = new BmpEncoder(image);
+  downloadLocalUrl(bytesToUrl(encoder.encode()), 'image.bmp');
 };
 
 function setUpExporter() {
@@ -85,4 +86,47 @@ function assignStateButtons() {
   const redoButton = document.getElementById('redo-button');
   undoButton.onclick = () => canvas.undo();
   redoButton.onclick = () => canvas.redo();
+}
+
+function assignLayerButtons() {
+  const addLayerButton = document.getElementById('add-layer-button');
+
+  const indexInput = document.getElementById('layer-index-choose');
+
+  const removeLayerButton = document.getElementById('remove-layer-button');
+  const switchLayerButton = document.getElementById('switch-layer-button');
+  const moveUpLayerButton = document.getElementById('move-up-layer-button');
+  const moveDownLayerButton = document.getElementById('move-down-layer-button');
+  const setVisibleLayerButton = document.getElementById('set-visible-layer-button');
+  const setInvisibleLayerButton = document.getElementById('set-invisible-layer-button');
+
+  addLayerButton.onclick = () => canvas.appendLayer();
+  removeLayerButton.onclick = () => {
+    const index = parseInt(indexInput.value);
+    canvas.removeLayer(index);
+  };
+  switchLayerButton.onclick = () => {
+    const index = parseInt(indexInput.value);
+    canvas.switchLayer(index);
+  };
+  moveUpLayerButton.onclick = () => {
+    const index = parseInt(indexInput.value);
+    canvas.moveUp(index);
+  };
+  moveDownLayerButton.onclick = () => {
+    const index = parseInt(indexInput.value);
+    canvas.moveDown(index);
+  };
+  setVisibleLayerButton.onclick = () => {
+    const index = parseInt(indexInput.value);
+    const layer = canvas.layers.find((layer) => layer.index === index);
+    layer.visible = true;
+    canvas.update();
+  };
+  setInvisibleLayerButton.onclick = () => {
+    const index = parseInt(indexInput.value);
+    const layer = canvas.layers.find((layer) => layer.index === index);
+    layer.visible = false;
+    canvas.update();
+  };
 }
