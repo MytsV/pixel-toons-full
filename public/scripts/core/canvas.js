@@ -16,6 +16,20 @@ class CanvasState {
   }
 }
 
+const layerIndexer = () => {
+  let index = 0;
+  return () => index++;
+};
+
+const indexer = layerIndexer();
+
+class Layer {
+  constructor(index, width, height) {
+    this.virtualCanvas = createCanvasElement(width, height);
+    this.index = index;
+  }
+}
+
 const IMAGE_POS = 0;
 
 /*
@@ -58,14 +72,30 @@ class Canvas {
 
     mainContext.putImageData(emptyImage, IMAGE_POS, IMAGE_POS);
 
-    this.#layers.forEach((layer) => mainContext.drawImage(layer, IMAGE_POS, IMAGE_POS));
+    this.#layers.forEach((layer) => mainContext.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS));
   }
 
   appendLayer() {
-    const canvas = createCanvasElement(this.element.width, this.element.height);
-    this.context = canvas.getContext('2d');
+    const layer = new Layer(indexer(), this.element.width, this.element.height);
+    this.context = layer.virtualCanvas.getContext('2d');
     this.refreshImageData();
-    this.#layers.push(canvas);
+    this.#layers.push(layer);
+  }
+
+  removeLayer(index) {
+    this.#layers = this.#layers.filter((layer) => layer.index !== index);
+    this.#updateWithLayer(this.#layers[this.#layers.length - 1]);
+    this.update();
+  }
+
+  switchLayer(index) {
+    const layer = this.#layers.find((layer) => layer.index === index);
+    this.#updateWithLayer(layer);
+  }
+
+  #updateWithLayer(layer) {
+    this.context = layer.virtualCanvas.getContext('2d');
+    this.refreshImageData();
   }
 
   //Saves the current image on the canvas

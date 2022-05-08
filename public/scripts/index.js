@@ -22,6 +22,7 @@ window.onload = () => {
 
   createToolbar();
   assignStateButtons();
+  assignLayerButtons();
 };
 
 class ToolInfo {
@@ -85,4 +86,22 @@ function assignStateButtons() {
   const redoButton = document.getElementById('redo-button');
   undoButton.onclick = () => canvas.undo();
   redoButton.onclick = () => canvas.redo();
+}
+
+function assignLayerButtons() {
+  const addLayerButton = document.getElementById('add-layer-button');
+
+  const indexInput = document.getElementById('layer-index-choose');
+
+  const removeLayerButton = document.getElementById('remove-layer-button');
+  const switchLayerButton = document.getElementById('switch-layer-button');
+  addLayerButton.onclick = () => canvas.appendLayer();
+  removeLayerButton.onclick = () => {
+    const index = parseInt(indexInput.value);
+    canvas.removeLayer(index);
+  };
+  switchLayerButton.onclick = () => {
+    const index = parseInt(indexInput.value);
+    canvas.switchLayer(index);
+  };
 }
