@@ -51,6 +51,7 @@ A class which wraps HTML <canvas> element
  */
 class Canvas {
   #layers; //An array of "virtual" canvases
+  #subscribers;
 
   constructor(width, height) {
     const canvasElement = createCanvasElement(width, height);
@@ -59,6 +60,8 @@ class Canvas {
     this.context = canvasElement.getContext('2d');
     this.state = new CanvasState();
     this.#layers = [];
+    this.#subscribers = [];
+
     this.appendLayer();
   }
 
@@ -88,12 +91,18 @@ class Canvas {
     });
   }
 
+  fixateState() {
+    this.#subscribers.forEach((listener) => listener());
+  }
+
   appendLayer() {
     this.save();
 
     const layer = new Layer(indexer(), this.element.width, this.element.height);
     this.#setDrawingLayer(layer);
     this.#layers.push(layer);
+
+    this.fixateState();
   }
 
   removeLayer(index) {
@@ -104,12 +113,15 @@ class Canvas {
     const topLayer = this.#layers.slice(-1).pop();
     this.#setDrawingLayer(topLayer);
     this.update();
+
+    this.fixateState();
   }
 
   switchLayer(index) {
     const layer = this.#layers.find((layer) => layer.index === index);
     if (!layer) return;
     this.#setDrawingLayer(layer);
+    this.fixateState();
   }
 
   moveUp(index) {
@@ -141,6 +153,10 @@ class Canvas {
     this.#retrieveImage(this.state.nextImages, this.state.previousImages);
   }
 
+  subscribeToUpdate(listener) {
+    this.#subscribers.push(listener);
+  }
+
   #retrieveImage(stackRetrieved, stackSaved) {
     if (stackRetrieved.length < 1) return; //If the stack is empty, we don't do anything
 
@@ -149,6 +165,8 @@ class Canvas {
     this.#layers = stackRetrieved.pop();
     this.#setDrawingLayer(this.#layers.slice(-1).pop());
     this.update();
+
+    this.fixateState();
   }
 
   #reorderLayer(layer, position) {
@@ -161,11 +179,13 @@ class Canvas {
       this.#layers.splice(position, 0, layer);
     }
     this.update();
+    this.fixateState();
   }
 
   #setDrawingLayer(layer) {
     this.context = layer.virtualCanvas.getContext('2d');
     this.refreshImageData();
+    this.drawingLayer = layer;
   }
 
   get layers() {

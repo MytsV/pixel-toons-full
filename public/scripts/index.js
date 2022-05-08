@@ -91,10 +91,7 @@ function assignStateButtons() {
 function assignLayerButtons() {
   const addLayerButton = document.getElementById('add-layer-button');
 
-  const indexInput = document.getElementById('layer-index-choose');
-
   const removeLayerButton = document.getElementById('remove-layer-button');
-  const switchLayerButton = document.getElementById('switch-layer-button');
   const moveUpLayerButton = document.getElementById('move-up-layer-button');
   const moveDownLayerButton = document.getElementById('move-down-layer-button');
   const setVisibleLayerButton = document.getElementById('set-visible-layer-button');
@@ -102,31 +99,67 @@ function assignLayerButtons() {
 
   addLayerButton.onclick = () => canvas.appendLayer();
   removeLayerButton.onclick = () => {
-    const index = parseInt(indexInput.value);
-    canvas.removeLayer(index);
-  };
-  switchLayerButton.onclick = () => {
-    const index = parseInt(indexInput.value);
-    canvas.switchLayer(index);
+    canvas.removeLayer(canvas.drawingLayer.index);
   };
   moveUpLayerButton.onclick = () => {
-    const index = parseInt(indexInput.value);
-    canvas.moveUp(index);
+    canvas.moveUp(canvas.drawingLayer.index);
   };
   moveDownLayerButton.onclick = () => {
-    const index = parseInt(indexInput.value);
-    canvas.moveDown(index);
+    canvas.moveDown(canvas.drawingLayer.index);
   };
   setVisibleLayerButton.onclick = () => {
-    const index = parseInt(indexInput.value);
-    const layer = canvas.layers.find((layer) => layer.index === index);
-    layer.visible = true;
+    canvas.drawingLayer.visible = true;
     canvas.update();
   };
   setInvisibleLayerButton.onclick = () => {
-    const index = parseInt(indexInput.value);
-    const layer = canvas.layers.find((layer) => layer.index === index);
-    layer.visible = false;
+    canvas.drawingLayer.visible = false;
     canvas.update();
   };
+  setLayerMenu();
+  canvas.subscribeToUpdate(setLayerMenu);
+}
+
+function setLayerMenu() {
+  const layers = canvas.layers;
+  const sidebar = document.getElementById('sidebar');
+
+  let container = document.getElementById('layer-container');
+  container.remove();
+  container = document.createElement('div');
+  container.id = 'layer-container';
+  sidebar.appendChild(container);
+
+  for (let i = layers.length - 1; i >= 0; i--) {
+    const layer = layers[i];
+    const layerElement = document.createElement('div');
+    layerElement.appendChild(getLayerImage(layer));
+
+    const name = document.createElement('p');
+    name.innerText = `Layer ${layer.index}`;
+    layerElement.appendChild(name);
+    container.appendChild(layerElement);
+
+    layerElement.classList.add('layer-element');
+    if (layer === canvas.drawingLayer) {
+      layerElement.classList.add('layer-element-selected');
+    }
+
+    layerElement.onclick = () => {
+      canvas.switchLayer(layer.index);
+    };
+  }
+}
+
+function getLayerImage(layer) { //optimize by caching
+  const imageElement = document.createElement('div');
+  imageElement.classList.add('layer-image');
+
+  const image = layer.virtualCanvas.getContext('2d')
+    .getImageData(0, 0, layer.virtualCanvas.width, layer.virtualCanvas.height);
+  const encoder = new BmpEncoder(image);
+  const data = encoder.encode();
+  const url = bytesToUrl(data);
+
+  imageElement.style.backgroundImage = `url(${url})`;
+  return imageElement;
 }
