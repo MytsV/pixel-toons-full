@@ -1,5 +1,6 @@
 body {
   margin: 0;
+  user-select: none;
 }
 
 .container {
@@ -44,6 +45,7 @@ body {
 #sidebar {
   width: 200pt;
   background-color: lightgreen;
+  overflow: scroll;
 }
 
 #canvas-wrapper {
