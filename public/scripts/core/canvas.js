@@ -45,17 +45,7 @@ class Canvas {
     this.context = canvasElement.getContext('2d');
     this.state = new CanvasState();
     this.#layers = [];
-
-    this.#setBackground();
     this.appendLayer();
-  }
-
-  #setBackground() { //to renderer
-    this.appendLayer();
-    this.refreshImageData();
-    toBasicBackground(this.image);
-    this.update();
-    this.save();
   }
 
   //Get ImageData
@@ -147,29 +137,6 @@ function createCanvasElement(width, height) {
   canvasElement.width = width;
   canvasElement.height = height;
   return canvasElement;
-}
-
-//Colors for creating a basic grey-white background
-const BACKGROUND_COLOR_WHITE = '#ffffff';
-const BACKGROUND_COLOR_GREY = '#e3e3e3';
-
-//Function to turn image into a basic grey-white background which indicates transparency
-function toBasicBackground(image) {
-  for (let i = 0; i < image.height; i++) {
-    for (let j = 0; j < image.width; j++) {
-      const pixelColor = getClearPixelColor(i, j);
-      image.setPixelColor(i, j, Color.fromHex(pixelColor));
-    }
-  }
-}
-
-//Get color of transparent pixel based on its coordinates
-function getClearPixelColor(i, j) {
-  if (i % 2 !== j % 2) { //The condition makes sure that neighbouring pixels are always of different color
-    return BACKGROUND_COLOR_WHITE; //First pixel is always white
-  } else {
-    return BACKGROUND_COLOR_GREY;
-  }
 }
 
 export { Canvas };

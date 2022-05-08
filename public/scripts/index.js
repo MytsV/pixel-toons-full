@@ -1,6 +1,6 @@
 import { CanvasRenderer, setupColorPicker } from './core/canvas_renderer.js';
 import { Canvas } from './core/canvas.js';
-import { downloadByteArray } from './utilities/file_download.js';
+import { bytesToUrl, downloadLocalUrl } from './utilities/file_download.js';
 import { BmpEncoder } from './utilities/bmp_encoder.js';
 import { BucketFill, Eraser, Pencil } from './core/tools.js';
 
@@ -59,7 +59,7 @@ function createToolbar() {
 const downloadImage = () => {
   canvas.refreshImageData();
   const encoder = new BmpEncoder(canvas.image);
-  downloadByteArray(encoder.encode(), 'image.bmp');
+  downloadLocalUrl(bytesToUrl(encoder), 'image.bmp');
 };
 
 function setUpExporter() {
