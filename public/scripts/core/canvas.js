@@ -2,6 +2,7 @@ import { applyImageMixin } from '../utilities/image.js';
 import { Color } from '../utilities/color.js';
 
 const DEFAULT_PENCIL_COLOR = '#000000';
+const IMAGE_POS = 0;
 
 /*
 A class which stores changeable canvas data.
@@ -12,7 +13,7 @@ class CanvasState {
     this.color = Color.fromHex(DEFAULT_PENCIL_COLOR);
     //Memento implementation with two stacks
     this.previousImages = [];
-    this.nextImages = [];
+    this.nextImages = []; //To refactor and optimize using state class and deleted/added layers?
   }
 }
 
@@ -28,9 +29,20 @@ class Layer {
     this.virtualCanvas = createCanvasElement(width, height);
     this.index = index;
   }
-}
 
-const IMAGE_POS = 0;
+  clone() {
+    const width = this.virtualCanvas.width;
+    const height = this.virtualCanvas.height;
+
+    const cloned = new Layer(this.index, width, height);
+    const imageData = this.virtualCanvas.getContext('2d').getImageData(IMAGE_POS, IMAGE_POS, width, height);
+    applyImageMixin(imageData);
+
+    cloned.virtualCanvas.getContext('2d').putImageData(imageData.clone(), IMAGE_POS, IMAGE_POS);
+
+    return cloned;
+  }
+}
 
 /*
 A class which wraps HTML <canvas> element
@@ -75,6 +87,7 @@ class Canvas {
     const layer = new Layer(indexer(), this.element.width, this.element.height);
     this.#setDrawingLayer(layer);
     this.#layers.push(layer);
+    this.save();
   }
 
   removeLayer(index) {
@@ -84,6 +97,7 @@ class Canvas {
     const topLayer = this.#layers.slice(-1).pop();
     this.#setDrawingLayer(topLayer);
     this.update();
+    this.save();
   }
 
   switchLayer(index) {
@@ -106,7 +120,8 @@ class Canvas {
 
   //Saves the current image on the canvas
   save() {
-    this.state.previousImages.push(this.image.clone());
+    const newLayers = this.#layers.map((layer) => layer.clone());
+    this.state.previousImages.push(newLayers);
     this.state.nextImages = [];
   }
 
@@ -121,10 +136,9 @@ class Canvas {
   #retrieveImage(stackRetrieved, stackSaved) {
     if (stackRetrieved.length < 1) return; //If the stack is empty, we don't do anything
 
-    this.refreshImageData();
-    stackSaved.push(this.image.clone()); //Current image is appended to one of the stacks
+    stackSaved.push(this.#layers.map((layer) => layer.clone())); //Current image is appended to one of the stacks
 
-    this.image = stackRetrieved.pop();
+    this.#layers = stackRetrieved.pop();
     this.update();
   }
 
@@ -136,6 +150,7 @@ class Canvas {
       this.#layers.splice(position, 0, layer);
     }
     this.update();
+    this.save();
   }
 
   #setDrawingLayer(layer) {
