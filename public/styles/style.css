@@ -1,5 +1,6 @@
 body {
   margin: 0;
+  user-select: none;
 }
 
 .container {
@@ -44,6 +45,7 @@ body {
 #sidebar {
   width: 200pt;
   background-color: lightgreen;
+  overflow: scroll;
 }
 
 #canvas-wrapper {
@@ -90,4 +92,30 @@ body {
   background-repeat: no-repeat;
   background-size: contain;
   image-rendering: pixelated;
+}
+
+.layer-element {
+
+}
+
+.layer-element-selected {
+  background-color: darkgreen;
+}
+
+.layer-image {
+  width: 30pt;
+  height: 30pt;
+  background-repeat: no-repeat;
+  background-size: cover;
+  image-rendering: pixelated;
+}
+
+.visibility-button {
+  background-color: blue;
+  width: 10pt;
+  height: 10pt;
+}
+
+.visibility-button-inactive {
+  background-color: grey;
 }
