@@ -20,13 +20,13 @@ class Tool {
   }
 
   disable() {
-    this.listenersCanvas.forEach((listener, key) => this.canvas.element.removeEventListener(key, listener));
+    this.listenersCanvas.forEach((listener, key) => this.canvas.mainElement.removeEventListener(key, listener));
     this.listenersDocument.forEach((listener, key) => document.removeEventListener(key, listener));
     this.canvas = null;
   }
 
   setEvents() { //A method which will subscribe to events in web browser
-    this.listenersCanvas.forEach((listener, key) => this.canvas.element.addEventListener(key, listener));
+    this.listenersCanvas.forEach((listener, key) => this.canvas.mainElement.addEventListener(key, listener));
     this.listenersDocument.forEach((listener, key) => document.addEventListener(key, listener));
   }
 }
@@ -75,7 +75,7 @@ class Pencil extends Tool {
 
   //When mouse is pressed and release, we draw one pixel
   #onClick(event) {
-    const coordinates = getRealCoordinates(this.canvas.element, new Coordinates(event.clientX, event.clientY));
+    const coordinates = getRealCoordinates(this.canvas.mainElement, new Coordinates(event.clientX, event.clientY));
     this.canvas.drawPoint(this.getColor(), coordinates);
     this.canvas.update();
   }
@@ -94,7 +94,7 @@ class Pencil extends Tool {
 
   //Determines if there is enough distance between last and current point of drawing
   #isOffsetValid(event) {
-    const canvasElement = this.canvas.element;
+    const canvasElement = this.canvas.mainElement;
     let minOffset = canvasElement.offsetWidth / canvasElement.width;
 
     //We decrease minimal offset to make drawing more smooth
@@ -113,8 +113,8 @@ class Pencil extends Tool {
 }
 
 function plotLine(color, src, dest) {
-  const srcReal = getRealCoordinates(this.element, dest);
-  const destReal = getRealCoordinates(this.element, src);
+  const srcReal = getRealCoordinates(this.mainElement, dest);
+  const destReal = getRealCoordinates(this.mainElement, src);
   bresenhamLine(destReal, srcReal, ({ x, y }) => this.drawPoint(color, { x, y }));
 }
 
@@ -182,7 +182,7 @@ class BucketFill extends Tool {
   }
 
   #onClick(event) {
-    const coordinates = getRealCoordinates(this.canvas.element, new Coordinates(event.clientX, event.clientY));
+    const coordinates = getRealCoordinates(this.canvas.mainElement, new Coordinates(event.clientX, event.clientY));
     this.#floodFill(coordinates);
     this.canvas.update();
     this.canvas.save();

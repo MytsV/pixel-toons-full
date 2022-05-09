@@ -26,13 +26,13 @@ class CanvasRenderer {
   }
 
   appendCanvas(canvas) {
-    canvas.element.oncontextmenu = () => false; //Disable right click context menu on canvas
+    canvas.mainElement.oncontextmenu = () => false; //Disable right click context menu on canvas
 
-    const width = canvas.element.width;
-    const height = canvas.element.height;
+    const width = canvas.mainElement.width;
+    const height = canvas.mainElement.height;
 
     this.canvasWrapper.style.aspectRatio = width / height;
-    this.#setUpElement(canvas.element);
+    this.#setUpElement(canvas.mainElement);
     CanvasRenderer.#setUpBackground(width, height);
   }
 

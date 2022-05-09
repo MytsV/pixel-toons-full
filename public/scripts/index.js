@@ -106,7 +106,7 @@ function assignLayerButtons() {
     canvas.moveLayerDown(canvas.drawingLayer.id);
   };
   setLayerMenu();
-  canvas.subscribeToUpdate(setLayerMenu);
+  canvas.listenToUpdates(setLayerMenu);
 }
 
 function setLayerMenu() {
