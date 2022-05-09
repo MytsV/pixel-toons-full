@@ -9,19 +9,19 @@ describe('BmpEncode class', () => {
 
 async function testBlack() {
   const imageSize = 10;
-  const colorDimensions = 4;
+  const parameterCount = 4;
 
   const imageData = {
     width: imageSize,
     height: imageSize,
-    data:  new Uint8Array(imageSize * imageSize * colorDimensions)
+    data:  new Uint8Array(imageSize * imageSize * parameterCount)
   };
-  for (let i = colorDimensions - 1; i < imageData.data.length; i += colorDimensions) {
+  for (let i = parameterCount - 1; i < imageData.data.length; i += parameterCount) {
     imageData.data[i] = 255;
   }
   const encoder = new BmpEncoder(imageData);
   const data = encoder.encode();
 
-  const result = await readFile('./test/files/black.bmp');
+  const result = await readFile('./test/images/black.bmp');
   expect(data).to.deep.equal(new Uint8Array(result));
 }

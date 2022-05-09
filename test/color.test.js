@@ -23,8 +23,9 @@ function cssToRgba() {
 
 function hexToColor() {
   const radix = 16;
+  const caseCount = 10;
 
-  const testCases = [['ff', '00', '00'], ['65', '33', 'a4', '54'], ['ad', 'cc', '33']];
+  const testCases = [...Array(caseCount).keys()].map(() => generateRandomHex());
   const hexStrings = testCases.map((test) => '#' + test.reduce((prev, curr) => prev + curr));
 
   const colors = hexStrings.map((string) => Color.fromHex(string));
@@ -33,21 +34,36 @@ function hexToColor() {
     expect(color.r).to.equal(parseInt(test[0], radix));
     expect(color.g).to.equal(parseInt(test[1], radix));
     expect(color.b).to.equal(parseInt(test[2], radix));
-    if (test.length > 3) {
+    if (test[3]) {
       expect(color.alpha).to.equal(parseInt(test[3], radix));
     }
   });
 }
 
 function generateRandomRgba() {
-  const alpha = Math.round(Math.random() * 100) / 100;
+  const alphaPrecision = 100;
+  const alpha = Math.round(Math.random() * alphaPrecision) / alphaPrecision;
   return `rgba(${getRandInt(colorRange)},${getRandInt(colorRange)},${getRandInt(colorRange)},${alpha})`;
 }
 
 function getColorFromRgba(string) {
-  const values = RegExp('rgba\\((\\d+),(\\d+),(\\d+),(.+)\\)').exec(string);
-  values[4] *= colorRange;
-  return new Color(...values.slice(1, 5)); //take only second to fifth group
+  const values = RegExp(/rgba\((\d+),(\d+),(\d+),(.+)\)/).exec(string);
+  const alphaIndex = 4;
+  values[alphaIndex] *= colorRange;
+  return new Color(...values.slice(1, 5)); //Take only second to fifth group
+}
+
+function generateRandomHex() {
+  const parameterCount = 3;
+  const getRandomParameter = () => Math.floor(Math.random() * colorRange);
+
+  const color = [...Array(parameterCount).keys()].map(() => getRandomParameter());
+  if (color[0] % 2 === 0) { //Only some part of colors will have alpha parameter specified
+    color.push(getRandomParameter());
+  }
+
+  //Make sure every number is padded with 0s
+  return color.map((parameter) => parameter.toString(16).padStart(2, '0'));
 }
 
 function getRandInt(max) {

@@ -4,6 +4,17 @@ Useful mixin functions for working with ImageData class. Created to avoid compli
 
 import { Color } from './color.js';
 
+const mixin = {
+  setPixelColor,
+  getPixelPosition,
+  getPixelColor,
+  clone
+};
+
+const applyImageMixin = (imageData) => {
+  Object.assign(imageData, mixin);
+};
+
 //The number is four, because we use RGBA as our main format
 const colorParameterCount = 4;
 
@@ -33,14 +44,12 @@ function getPixelPosition(i, j) {
   return (j * this.width + i) * colorParameterCount;
 }
 
-const mixin = {
-  setPixelColor,
-  getPixelPosition,
-  getPixelColor
-};
-
-const applyImageMixin = (imageData) => {
-  Object.assign(imageData, mixin);
-};
+//Prototype pattern implementation
+function clone() {
+  const cloned = new ImageData(this.width, this.height);
+  cloned.data.set(this.data);
+  applyImageMixin(cloned);
+  return cloned;
+}
 
 export { applyImageMixin };

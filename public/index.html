@@ -11,15 +11,29 @@
     <div class="container">
       <div id="menu">
         <button id="export-button">Export to BMP</button>
+        <div>
+          <div id="undo-button" class="state-button"></div>
+          <div id="redo-button" class="state-button"></div>
+        </div>
       </div>
       <div id="main">
         <div id="tools">
           <input type="color" id="color-picker">
         </div>
         <div id="canvas-parent">
-          <div id="canvas-wrapper"></div>
+          <div id="canvas-wrapper">
+            <div class="canvas-element" id="canvas-background"></div>
+          </div>
         </div>
-        <div id="sidebar"></div>
+        <div id="sidebar">
+          <button id="add-layer-button">Add layer</button>
+          <button id="remove-layer-button">Remove layer</button>
+          <button id="move-up-layer-button">Move layer up</button>
+          <button id="move-down-layer-button">Move layer down</button>
+          <div id="layer-container">
+
+          </div>
+        </div>
       </div>
       <div id="footer"></div>
     </div>
