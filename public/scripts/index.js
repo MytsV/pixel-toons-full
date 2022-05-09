@@ -94,8 +94,6 @@ function assignLayerButtons() {
   const removeLayerButton = document.getElementById('remove-layer-button');
   const moveUpLayerButton = document.getElementById('move-up-layer-button');
   const moveDownLayerButton = document.getElementById('move-down-layer-button');
-  const setVisibleLayerButton = document.getElementById('set-visible-layer-button');
-  const setInvisibleLayerButton = document.getElementById('set-invisible-layer-button');
 
   addLayerButton.onclick = () => canvas.appendLayer();
   removeLayerButton.onclick = () => {
@@ -106,14 +104,6 @@ function assignLayerButtons() {
   };
   moveDownLayerButton.onclick = () => {
     canvas.moveDown(canvas.drawingLayer.index);
-  };
-  setVisibleLayerButton.onclick = () => {
-    canvas.drawingLayer.visible = true;
-    canvas.update();
-  };
-  setInvisibleLayerButton.onclick = () => {
-    canvas.drawingLayer.visible = false;
-    canvas.update();
   };
   setLayerMenu();
   canvas.subscribeToUpdate(setLayerMenu);
@@ -147,6 +137,17 @@ function setLayerMenu() {
     layerElement.onclick = () => {
       canvas.switchLayer(layer.index);
     };
+
+    const visibilityButton = document.createElement('div');
+    visibilityButton.classList.add('visibility-button');
+    if (!layer.visible) {
+      visibilityButton.classList.add('visibility-button-inactive');
+    }
+    visibilityButton.onclick = () => {
+      layer.visible = !layer.visible;
+      canvas.update();
+    };
+    layerElement.appendChild(visibilityButton);
   }
 }
 

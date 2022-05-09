@@ -109,3 +109,13 @@ body {
   background-size: cover;
   image-rendering: pixelated;
 }
+
+.visibility-button {
+  background-color: blue;
+  width: 10pt;
+  height: 10pt;
+}
+
+.visibility-button-inactive {
+  background-color: grey;
+}
