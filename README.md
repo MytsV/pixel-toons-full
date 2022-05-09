@@ -76,25 +76,45 @@ User interface is currently extremely raw. It will be improved in the future.
         <td>
             🟨 BMP Encoder (lacking 32bit option)
         </td>
+        <td>
+        </td>
+        <td>
+        </td>
     </tr>
     <tr>
         <td>
             🟨 Key shortcuts
+        </td>
+        <td>
+        </td>
+        <td>
         </td>
     </tr>
     <tr>
         <td>
             🟥 Canvas "file" system
         </td>
+        <td>
+        </td>
+        <td>
+        </td>
     </tr>
     <tr>
         <td>
             🟥 GIF encoder
         </td>
+        <td>
+        </td>
+        <td>
+        </td>
     </tr>
     <tr>
         <td>
             🟥 Own file format with specifications
+        </td>
+        <td>
+        </td>
+        <td>
         </td>
     </tr>
 </table>
