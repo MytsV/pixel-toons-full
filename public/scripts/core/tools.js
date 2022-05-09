@@ -2,13 +2,20 @@ import { Coordinates } from '../utilities/coordinates.js';
 import { Color } from '../utilities/color.js';
 
 /*
-An abstract class which defines drawing operations
+An abstract class which defines drawing operations.
+It is linked with canvas when chosen and must be disabled after the stop of use
  */
 class Tool {
   constructor() {
     if (new.target === Tool) {
       throw Error('Abstract class cannot be instantiated');
     } else {
+      /*
+      For code reuse we create collections of listeners.
+      The key is the event name corresponding to Web API event.
+      listenersCanvas are assigned to <canvas> element
+      listenersDocument are assigned to whole document
+       */
       this.listenersCanvas = new Map();
       this.listenersDocument = new Map();
     }
@@ -46,7 +53,7 @@ class Pencil extends Tool {
 
   link(canvas) {
     super.link(canvas);
-    const mixin = {
+    const mixin = { //To achieve less arguments for functions we assign mixins to canvas
       drawPoint,
       plotLine
     };
@@ -56,12 +63,7 @@ class Pencil extends Tool {
   setEvents() {
     this.listenersCanvas.set('mousedown', (event) => this.#onMouseDown(event));
     this.listenersCanvas.set('click', (event) => this.#onClick(event));
-    this.listenersDocument.set('mouseup', () => {
-      if (this.#drawing) {
-        this.canvas.save();
-      }
-      this.#drawing = false;
-    });
+    this.listenersDocument.set('mouseup', () => this.#onMouseUp());
     this.listenersDocument.set('mousemove', (event) => this.#onMouseMove(event));
 
     super.setEvents();
@@ -92,6 +94,13 @@ class Pencil extends Tool {
     this.#lastCoordinates = dest;
   }
 
+  #onMouseUp() {
+    if (this.#drawing) {
+      this.canvas.save();
+    }
+    this.#drawing = false;
+  }
+
   //Determines if there is enough distance between last and current point of drawing
   #isOffsetValid(event) {
     const canvasElement = this.canvas.mainElement;
@@ -116,10 +125,6 @@ function plotLine(color, src, dest) {
   const srcReal = getRealCoordinates(this.mainElement, dest);
   const destReal = getRealCoordinates(this.mainElement, src);
   bresenhamLine(destReal, srcReal, ({ x, y }) => this.drawPoint(color, { x, y }));
-}
-
-function drawPoint(color, { x, y }) {
-  this.image.setPixelColor(x, y, color);
 }
 
 /*
@@ -176,6 +181,14 @@ class BucketFill extends Tool {
     this.tolerance = DEFAULT_TOLERANCE;
   }
 
+  link(canvas) {
+    super.link(canvas);
+    const mixin = {
+      drawPoint,
+    };
+    Object.assign(canvas, mixin);
+  }
+
   setEvents() {
     this.listenersCanvas.set('click', (event) => this.#onClick(event));
     super.setEvents();
@@ -199,7 +212,7 @@ class BucketFill extends Tool {
       const current = this.#queue.shift();
       const currentColor = this.canvas.image.getPixelColor(current.x, current.y);
       if (!this.#isColorValid(initialColor, currentColor)) continue;
-      this.#fillPixel(current);
+      this.canvas.drawPoint(this.getColor(), current);
 
       this.#visit(new Coordinates(current.x - 1, current.y));
       this.#visit(new Coordinates(current.x + 1, current.y));
@@ -232,13 +245,13 @@ class BucketFill extends Tool {
     this.#queue.push(pixel);
   }
 
-  #fillPixel(pixel) {
-    this.canvas.image.setPixelColor(pixel.x, pixel.y, this.getColor());
-  }
-
   getColor() {
     return this.canvas.state.color;
   }
+}
+
+function drawPoint(color, { x, y }) {
+  this.image.setPixelColor(x, y, color);
 }
 
 function getRealCoordinates(element, absCoordinates) {
