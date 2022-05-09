@@ -97,13 +97,13 @@ function assignLayerButtons() {
 
   addLayerButton.onclick = () => canvas.appendLayer();
   removeLayerButton.onclick = () => {
-    canvas.removeLayer(canvas.drawingLayer.index);
+    canvas.removeLayer(canvas.drawingLayer.id);
   };
   moveUpLayerButton.onclick = () => {
-    canvas.moveUp(canvas.drawingLayer.index);
+    canvas.moveUp(canvas.drawingLayer.id);
   };
   moveDownLayerButton.onclick = () => {
-    canvas.moveDown(canvas.drawingLayer.index);
+    canvas.moveDown(canvas.drawingLayer.id);
   };
   setLayerMenu();
   canvas.subscribeToUpdate(setLayerMenu);
@@ -125,7 +125,7 @@ function setLayerMenu() {
     layerElement.appendChild(getLayerImage(layer));
 
     const name = document.createElement('p');
-    name.innerText = `Layer ${layer.index}`;
+    name.innerText = `Layer ${layer.id}`;
     layerElement.appendChild(name);
     container.appendChild(layerElement);
 
@@ -135,7 +135,7 @@ function setLayerMenu() {
     }
 
     layerElement.onclick = () => {
-      canvas.switchLayer(layer.index);
+      canvas.switchLayer(layer.id);
     };
 
     const visibilityButton = document.createElement('div');

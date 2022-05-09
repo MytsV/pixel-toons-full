@@ -58,7 +58,7 @@ class Pencil extends Tool {
     this.listenersCanvas.set('click', (event) => this.#onClick(event));
     this.listenersDocument.set('mouseup', () => {
       if (this.#drawing) {
-        this.canvas.fixateState();
+        this.canvas.fixateChanges();
       }
       this.#drawing = false;
     });
@@ -187,7 +187,7 @@ class BucketFill extends Tool {
     const coordinates = getRealCoordinates(this.canvas.element, new Coordinates(event.clientX, event.clientY));
     this.#floodFill(coordinates);
     this.canvas.update();
-    this.canvas.fixateState();
+    this.canvas.fixateChanges();
   }
 
   #floodFill(initial) {

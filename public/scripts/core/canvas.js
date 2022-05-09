@@ -17,17 +17,17 @@ class CanvasState {
   }
 }
 
-const layerIndexer = () => {
+const layerIdGiver = () => {
   let index = 0;
   return () => index++;
 };
 
-const indexer = layerIndexer();
+const idGiver = layerIdGiver();
 
 class Layer {
-  constructor(index, width, height) {
+  constructor(id, width, height) {
     this.virtualCanvas = createCanvasElement(width, height);
-    this.index = index;
+    this.id = id;
     this.visible = true;
   }
 
@@ -36,7 +36,7 @@ class Layer {
     const width = this.virtualCanvas.width;
     const height = this.virtualCanvas.height;
 
-    const cloned = new Layer(this.index, width, height);
+    const cloned = new Layer(this.id, width, height);
     const imageData = this.virtualCanvas.getContext('2d').getImageData(IMAGE_POS, IMAGE_POS, width, height);
     applyImageMixin(imageData);
 
@@ -57,7 +57,8 @@ class Canvas {
     const canvasElement = createCanvasElement(width, height);
 
     this.element = canvasElement;
-    this.context = canvasElement.getContext('2d');
+    this.mainContext = canvasElement.getContext('2d');
+
     this.state = new CanvasState();
     this.#layers = [];
     this.#subscribers = [];
@@ -65,73 +66,65 @@ class Canvas {
     this.appendLayer();
   }
 
-  //Get ImageData from current layer
-  refreshImageData() {
-    this.image = this.context.getImageData(IMAGE_POS, IMAGE_POS, this.element.width, this.element.height);
-    applyImageMixin(this.image);
-  }
-
   //Get combined ImageData from all layers
   getCombinedImage() {
-    const mainContext = this.element.getContext('2d');
-    return mainContext.getImageData(IMAGE_POS, IMAGE_POS, this.element.width, this.element.height);
+    return this.mainContext.getImageData(IMAGE_POS, IMAGE_POS, this.element.width, this.element.height);
   }
 
   //Put ImageData
   update() {
     this.context.putImageData(this.image, IMAGE_POS, IMAGE_POS);
     const emptyImage = new ImageData(this.element.width, this.element.height);
-    const mainContext = this.element.getContext('2d');
 
-    mainContext.putImageData(emptyImage, IMAGE_POS, IMAGE_POS);
+    this.mainContext.putImageData(emptyImage, IMAGE_POS, IMAGE_POS);
 
     this.#layers.forEach((layer) => {
       if (!layer.visible) return;
-      mainContext.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS);
+      this.mainContext.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS);
     });
   }
 
-  fixateState() {
+  fixateChanges() { //Move to save
     this.#subscribers.forEach((listener) => listener());
   }
 
   appendLayer() {
     this.save();
 
-    const layer = new Layer(indexer(), this.element.width, this.element.height);
+    const layer = new Layer(idGiver(), this.element.width, this.element.height);
     this.#setDrawingLayer(layer);
     this.#layers.push(layer);
 
-    this.fixateState();
+    this.fixateChanges();
   }
 
-  removeLayer(index) {
+  removeLayer(id) {
     if (this.#layers.length <= 1) return;
     this.save();
 
-    this.#layers = this.#layers.filter((layer) => layer.index !== index);
+    this.#layers = this.#layers.filter((layer) => layer.id !== id);
     const topLayer = this.#layers.slice(-1).pop();
     this.#setDrawingLayer(topLayer);
     this.update();
 
-    this.fixateState();
+    this.fixateChanges();
   }
 
-  switchLayer(index) {
-    const layer = this.#layers.find((layer) => layer.index === index);
+  switchLayer(id) {
+    const layer = this.#layers.find((layer) => layer.id === id);
     if (!layer) return;
     this.#setDrawingLayer(layer);
-    this.fixateState();
+    this.fixateChanges();
   }
 
-  moveUp(index) {
-    const layerPosition = this.#layers.findIndex((layer) => layer.index === index);
+  moveUp(id) {
+    const layerPosition = this.#layers.findIndex((layer) => layer.id === id);
     if (layerPosition < 0 || layerPosition === this.#layers.length) return;
     this.#reorderLayer(this.#layers[layerPosition], layerPosition + 1);
   }
 
-  moveDown(index) {
-    const layerPosition = this.#layers.findIndex((layer) => layer.index === index);
+  moveDown(id) {
+    const layerPosition = this.#layers.findIndex((layer) => layer.id === id);
     if (layerPosition < 1) return;
     this.#reorderLayer(this.#layers[layerPosition], layerPosition - 1);
   }
@@ -140,7 +133,7 @@ class Canvas {
   save() {
     if (this.#layers.length < 1) return;
 
-    const newLayers = this.#layers.map((layer) => layer.clone());
+    const newLayers = this.#cloneLayers();
     this.state.previousImages.push(newLayers);
     this.state.nextImages = [];
   }
@@ -160,13 +153,13 @@ class Canvas {
   #retrieveImage(stackRetrieved, stackSaved) {
     if (stackRetrieved.length < 1) return; //If the stack is empty, we don't do anything
 
-    stackSaved.push(this.#layers.map((layer) => layer.clone())); //Current image is appended to one of the stacks
+    stackSaved.push(this.#cloneLayers()); //Current image is appended to one of the stacks
 
     this.#layers = stackRetrieved.pop();
     this.#setDrawingLayer(this.#layers.slice(-1).pop());
-    this.update();
 
-    this.fixateState();
+    this.update();
+    this.fixateChanges();
   }
 
   #reorderLayer(layer, position) {
@@ -178,14 +171,25 @@ class Canvas {
     } else {
       this.#layers.splice(position, 0, layer);
     }
+
     this.update();
-    this.fixateState();
+    this.fixateChanges();
   }
 
   #setDrawingLayer(layer) {
     this.context = layer.virtualCanvas.getContext('2d');
-    this.refreshImageData();
+    this.#refreshImageData();
     this.drawingLayer = layer;
+  }
+
+  //Get ImageData from current layer
+  #refreshImageData() {
+    this.image = this.context.getImageData(IMAGE_POS, IMAGE_POS, this.element.width, this.element.height);
+    applyImageMixin(this.image);
+  }
+
+  #cloneLayers() {
+    return this.#layers.map((layer) => layer.clone());
   }
 
   get layers() {
