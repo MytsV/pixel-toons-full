@@ -58,7 +58,7 @@ class Pencil extends Tool {
     this.listenersCanvas.set('click', (event) => this.#onClick(event));
     this.listenersDocument.set('mouseup', () => {
       if (this.#drawing) {
-        this.canvas.fixateChanges();
+        this.canvas.save();
       }
       this.#drawing = false;
     });
@@ -69,7 +69,6 @@ class Pencil extends Tool {
 
   //When mouse button is initially pressed, we start drawing
   #onMouseDown(event) {
-    this.canvas.save();
     this.#lastCoordinates = new Coordinates(event.clientX, event.clientY);
     this.#drawing = true;
   }
@@ -183,11 +182,10 @@ class BucketFill extends Tool {
   }
 
   #onClick(event) {
-    this.canvas.save();
     const coordinates = getRealCoordinates(this.canvas.element, new Coordinates(event.clientX, event.clientY));
     this.#floodFill(coordinates);
     this.canvas.update();
-    this.canvas.fixateChanges();
+    this.canvas.save();
   }
 
   #floodFill(initial) {

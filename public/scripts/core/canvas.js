@@ -17,16 +17,19 @@ class CanvasState {
   }
 }
 
-const layerIdGiver = () => {
+const layerIdGetter = () => {
   let index = 0;
-  return () => index++;
+  return {
+    get: () => index++
+  };
 };
 
-const idGiver = layerIdGiver();
+const idGetter = layerIdGetter();
 
 class Layer {
   constructor(id, width, height) {
     this.virtualCanvas = createCanvasElement(width, height);
+    this.context = this.virtualCanvas.getContext('2d');
     this.id = id;
     this.visible = true;
   }
@@ -37,12 +40,15 @@ class Layer {
     const height = this.virtualCanvas.height;
 
     const cloned = new Layer(this.id, width, height);
-    const imageData = this.virtualCanvas.getContext('2d').getImageData(IMAGE_POS, IMAGE_POS, width, height);
-    applyImageMixin(imageData);
-
-    cloned.virtualCanvas.getContext('2d').putImageData(imageData.clone(), IMAGE_POS, IMAGE_POS);
-
+    const imageData = this.#getImageData(width, height);
+    cloned.context.putImageData(imageData.clone(), IMAGE_POS, IMAGE_POS);
     return cloned;
+  }
+
+  #getImageData(width, height) {
+    const imageData = this.context.getImageData(IMAGE_POS, IMAGE_POS, width, height);
+    applyImageMixin(imageData);
+    return imageData;
   }
 }
 
@@ -66,11 +72,6 @@ class Canvas {
     this.appendLayer();
   }
 
-  //Get combined ImageData from all layers
-  getCombinedImage() {
-    return this.mainContext.getImageData(IMAGE_POS, IMAGE_POS, this.element.width, this.element.height);
-  }
-
   //Put ImageData
   update() {
     this.context.putImageData(this.image, IMAGE_POS, IMAGE_POS);
@@ -84,46 +85,44 @@ class Canvas {
     });
   }
 
-  fixateChanges() { //Move to save
-    this.#subscribers.forEach((listener) => listener());
+  //Get combined ImageData from all layers
+  getCombinedImage() {
+    return this.mainContext.getImageData(IMAGE_POS, IMAGE_POS, this.element.width, this.element.height);
   }
 
   appendLayer() {
-    this.save();
-
-    const layer = new Layer(idGiver(), this.element.width, this.element.height);
+    const layer = new Layer(idGetter.get(), this.element.width, this.element.height);
     this.#setDrawingLayer(layer);
     this.#layers.push(layer);
 
-    this.fixateChanges();
+    this.save();
   }
 
   removeLayer(id) {
     if (this.#layers.length <= 1) return;
-    this.save();
 
     this.#layers = this.#layers.filter((layer) => layer.id !== id);
     const topLayer = this.#layers.slice(-1).pop();
     this.#setDrawingLayer(topLayer);
-    this.update();
 
-    this.fixateChanges();
+    this.update();
+    this.save();
   }
 
   switchLayer(id) {
     const layer = this.#layers.find((layer) => layer.id === id);
     if (!layer) return;
     this.#setDrawingLayer(layer);
-    this.fixateChanges();
+    this.#fixateChanges();
   }
 
-  moveUp(id) {
+  moveLayerUp(id) {
     const layerPosition = this.#layers.findIndex((layer) => layer.id === id);
     if (layerPosition < 0 || layerPosition === this.#layers.length) return;
     this.#reorderLayer(this.#layers[layerPosition], layerPosition + 1);
   }
 
-  moveDown(id) {
+  moveLayerDown(id) {
     const layerPosition = this.#layers.findIndex((layer) => layer.id === id);
     if (layerPosition < 1) return;
     this.#reorderLayer(this.#layers[layerPosition], layerPosition - 1);
@@ -136,35 +135,44 @@ class Canvas {
     const newLayers = this.#cloneLayers();
     this.state.previousImages.push(newLayers);
     this.state.nextImages = [];
+
+    this.#fixateChanges();
   }
 
   undo() {
-    this.#retrieveImage(this.state.previousImages, this.state.nextImages);
+    const stackRetrieved = this.state.previousImages;
+    const stackSaved = this.state.nextImages;
+
+    if (stackRetrieved.length <= 1) return; //If the stack is empty, we don't do anything
+    stackSaved.push(stackRetrieved.pop());
+
+    this.#layers = stackRetrieved[stackRetrieved.length - 1];
+    this.#setDrawingLayer(this.#layers[this.#layers.length - 1]);
+
+    this.update();
+    this.#fixateChanges();
   }
 
   redo() {
-    this.#retrieveImage(this.state.nextImages, this.state.previousImages);
+    const stackRetrieved = this.state.nextImages;
+    const stackSaved = this.state.previousImages;
+
+    if (stackRetrieved.length < 1) return; //If the stack is empty, we don't do anything
+    const currentLayers = stackRetrieved.pop();
+    stackSaved.push(currentLayers);
+
+    this.#layers = currentLayers;
+    this.#setDrawingLayer(currentLayers[currentLayers.length - 1]);
+
+    this.update();
+    this.#fixateChanges();
   }
 
   subscribeToUpdate(listener) {
     this.#subscribers.push(listener);
   }
 
-  #retrieveImage(stackRetrieved, stackSaved) {
-    if (stackRetrieved.length < 1) return; //If the stack is empty, we don't do anything
-
-    stackSaved.push(this.#cloneLayers()); //Current image is appended to one of the stacks
-
-    this.#layers = stackRetrieved.pop();
-    this.#setDrawingLayer(this.#layers.slice(-1).pop());
-
-    this.update();
-    this.fixateChanges();
-  }
-
   #reorderLayer(layer, position) {
-    this.save();
-
     this.#layers = this.#layers.filter((element) => element !== layer); //i don't like it, optimize
     if (position >= this.#layers.length) {
       this.#layers.push(layer);
@@ -173,7 +181,7 @@ class Canvas {
     }
 
     this.update();
-    this.fixateChanges();
+    this.save();
   }
 
   #setDrawingLayer(layer) {
@@ -190,6 +198,10 @@ class Canvas {
 
   #cloneLayers() {
     return this.#layers.map((layer) => layer.clone());
+  }
+
+  #fixateChanges() {
+    this.#subscribers.forEach((listener) => listener());
   }
 
   get layers() {

@@ -100,10 +100,10 @@ function assignLayerButtons() {
     canvas.removeLayer(canvas.drawingLayer.id);
   };
   moveUpLayerButton.onclick = () => {
-    canvas.moveUp(canvas.drawingLayer.id);
+    canvas.moveLayerUp(canvas.drawingLayer.id);
   };
   moveDownLayerButton.onclick = () => {
-    canvas.moveDown(canvas.drawingLayer.id);
+    canvas.moveLayerDown(canvas.drawingLayer.id);
   };
   setLayerMenu();
   canvas.subscribeToUpdate(setLayerMenu);
