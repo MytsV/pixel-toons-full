@@ -4,7 +4,7 @@ Set of functions which define how canvas is rendered into HTML.
 import { Color } from '../utilities/color.js';
 import { BmpEncoder } from '../utilities/bmp_encoder.js';
 import { applyImageMixin } from '../utilities/image.js';
-import { bytesToUrl } from '../utilities/file_download.js';
+import { bytesToUrl } from '../utilities/bytes_conversion.js';
 
 /*
 Constants associated with zoom system

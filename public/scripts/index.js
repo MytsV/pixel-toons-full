@@ -1,6 +1,6 @@
 import { CanvasRenderer, setupColorPicker } from './core/canvas_renderer.js';
 import { Canvas } from './core/canvas.js';
-import { bytesToUrl, downloadLocalUrl } from './utilities/file_download.js';
+import { bytesToUrl, downloadLocalUrl } from './utilities/bytes_conversion.js';
 import { BmpEncoder } from './utilities/bmp_encoder.js';
 import { BucketFill, Eraser, Pencil } from './core/tools.js';
 
