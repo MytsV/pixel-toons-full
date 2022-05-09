@@ -26,8 +26,6 @@ class CanvasRenderer {
   }
 
   appendCanvas(canvas) {
-    canvas.mainElement.oncontextmenu = () => false; //Disable right click context menu on canvas
-
     const width = canvas.mainElement.width;
     const height = canvas.mainElement.height;
 
@@ -36,6 +34,10 @@ class CanvasRenderer {
     CanvasRenderer.#setUpBackground(width, height);
   }
 
+  /*
+  Layers are redrawn each time the canvas changes.
+  For optimization we convert background image to BMP format and render it with <div> tag, which doesn't update
+   */
   static #setUpBackground(width, height) {
     const image = new ImageData(width, height);
     applyImageMixin(image);
@@ -43,14 +45,13 @@ class CanvasRenderer {
     toBasicBackground(image);
 
     const encoder = new BmpEncoder(image);
-
     const url = bytesToUrl(encoder.encode());
     const imageElement = document.getElementById('canvas-background');
     imageElement.style.backgroundImage = `url(${url})`;
   }
 
   #setUpElement(canvasElement) {
-    canvasElement.oncontextmenu = () => false;
+    canvasElement.oncontextmenu = () => false; //Disable right click context menu on canvas
     canvasElement.classList.add('canvas-element');
     this.canvasWrapper.appendChild(canvasElement); //Canvas is wrapped to manage zooming
   }
