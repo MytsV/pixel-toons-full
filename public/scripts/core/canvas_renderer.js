@@ -4,7 +4,7 @@ Set of functions which define how canvas is rendered into HTML.
 import { Color } from '../utilities/color.js';
 import { BmpEncoder } from '../utilities/bmp_encoder.js';
 import { applyImageMixin } from '../utilities/image.js';
-import { bytesToUrl } from '../utilities/file_download.js';
+import { bytesToUrl } from '../utilities/bytes_conversion.js';
 
 /*
 Constants associated with zoom system
@@ -26,16 +26,18 @@ class CanvasRenderer {
   }
 
   appendCanvas(canvas) {
-    canvas.element.oncontextmenu = () => false; //Disable right click context menu on canvas
-
-    const width = canvas.element.width;
-    const height = canvas.element.height;
+    const width = canvas.mainElement.width;
+    const height = canvas.mainElement.height;
 
     this.canvasWrapper.style.aspectRatio = width / height;
-    this.#setUpElement(canvas.element);
+    this.#setUpElement(canvas.mainElement);
     CanvasRenderer.#setUpBackground(width, height);
   }
 
+  /*
+  Layers are redrawn each time the canvas changes.
+  For optimization we convert background image to BMP format and render it with <div> tag, which doesn't update
+   */
   static #setUpBackground(width, height) {
     const image = new ImageData(width, height);
     applyImageMixin(image);
@@ -43,14 +45,13 @@ class CanvasRenderer {
     toBasicBackground(image);
 
     const encoder = new BmpEncoder(image);
-
     const url = bytesToUrl(encoder.encode());
     const imageElement = document.getElementById('canvas-background');
     imageElement.style.backgroundImage = `url(${url})`;
   }
 
   #setUpElement(canvasElement) {
-    canvasElement.oncontextmenu = () => false;
+    canvasElement.oncontextmenu = () => false; //Disable right click context menu on canvas
     canvasElement.classList.add('canvas-element');
     this.canvasWrapper.appendChild(canvasElement); //Canvas is wrapped to manage zooming
   }

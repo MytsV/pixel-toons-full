@@ -47,7 +47,7 @@ function generateRandomRgba() {
 }
 
 function getColorFromRgba(string) {
-  const values = RegExp('rgba\\((\\d+),(\\d+),(\\d+),(.+)\\)').exec(string);
+  const values = RegExp(/rgba\((\d+),(\d+),(\d+),(.+)\)/).exec(string);
   const alphaIndex = 4;
   values[alphaIndex] *= colorRange;
   return new Color(...values.slice(1, 5)); //Take only second to fifth group
@@ -58,7 +58,7 @@ function generateRandomHex() {
   const getRandomParameter = () => Math.floor(Math.random() * colorRange);
 
   const color = [...Array(parameterCount).keys()].map(() => getRandomParameter());
-  if (color[0] % 2 === 0) { //only some part of colors will have alpha parameter specified
+  if (color[0] % 2 === 0) { //Only some part of colors will have alpha parameter specified
     color.push(getRandomParameter());
   }
 

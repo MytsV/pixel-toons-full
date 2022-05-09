@@ -1,8 +1,14 @@
 import { CanvasRenderer, setupColorPicker } from './core/canvas_renderer.js';
 import { Canvas } from './core/canvas.js';
-import { bytesToUrl, downloadLocalUrl } from './utilities/file_download.js';
+import { bytesToUrl, downloadLocalUrl } from './utilities/bytes_conversion.js';
 import { BmpEncoder } from './utilities/bmp_encoder.js';
 import { BucketFill, Eraser, Pencil } from './core/tools.js';
+
+/*
+This file is far from being finished.
+It will be refactored structurally.
+Mostly it consists of UI boilerplate. Other files have more interesting content
+ */
 
 const canvasWidth = 50;
 const canvasHeight = 50;
@@ -20,11 +26,32 @@ window.onload = () => {
   chosenTool = new Pencil();
   chosenTool.link(canvas);
 
+  setUpUserInterface();
+};
+
+function setUpExporter() {
+  const button = document.getElementById('export-button');
+  button.onclick = downloadImage;
+}
+
+function downloadImage() {
+  const image = canvas.getCombinedImage();
+  const encoder = new BmpEncoder(image);
+  downloadLocalUrl(bytesToUrl(encoder.encode()), 'image.bmp');
+}
+
+function setUpUserInterface() {
   createToolbar();
   assignStateButtons();
   assignLayerButtons();
-};
+  setUpUpdateListener();
+}
 
+/*
+Handling of toolbar creation
+ */
+
+//A wrapper class for tool which defines its display name and icon
 class ToolInfo {
   constructor(tool, name, icon) {
     this.tool = tool;
@@ -39,33 +66,29 @@ function createToolbar() {
     new ToolInfo(new Eraser(), 'Eraser', './images/eraser.ico'),
     new ToolInfo(new BucketFill(), 'BucketFill', './images/bucket.png')
   ];
-  const elements = toolsInfo.map((toolInfo) => {
-    const element = document.createElement('div');
-    element.id = toolInfo.name.toLowerCase();
-    element.classList.add('single-tool');
-    element.onclick = () => {
-      chosenTool.disable();
-      chosenTool = toolInfo.tool;
-      chosenTool.link(canvas);
-    };
-    element.style.backgroundImage = `url(${toolInfo.icon})`;
-    return element;
-  });
-
-  const wrapper = document.getElementById('tools');
-  elements.forEach((element) => wrapper.appendChild(element));
+  const elements = toolsInfo.map((toolInfo) => createToolElement(toolInfo));
+  const container = document.getElementById('tools');
+  elements.forEach((element) => container.appendChild(element));
 }
 
-const downloadImage = () => {
-  const image = canvas.getCombinedImage();
-  const encoder = new BmpEncoder(image);
-  downloadLocalUrl(bytesToUrl(encoder.encode()), 'image.bmp');
-};
+function createToolElement(toolInfo) {
+  const element = document.createElement('div');
+  element.id = toolInfo.name.toLowerCase();
 
-function setUpExporter() {
-  const button = document.getElementById('export-button');
-  button.onclick = downloadImage;
+  element.classList.add('single-tool');
+  element.onclick = () => {
+    chosenTool.disable();
+    chosenTool = toolInfo.tool;
+    chosenTool.link(canvas);
+  };
+  element.style.backgroundImage = `url(${toolInfo.icon})`;
+
+  return element;
 }
+
+/*
+Handling of zoom
+ */
 
 const zoomCodes = {
   '+': true,
@@ -88,78 +111,95 @@ function assignStateButtons() {
   redoButton.onclick = () => canvas.redo();
 }
 
+/*
+Handling of layer-specific functions
+ */
+
 function assignLayerButtons() {
   const addLayerButton = document.getElementById('add-layer-button');
-
   const removeLayerButton = document.getElementById('remove-layer-button');
   const moveUpLayerButton = document.getElementById('move-up-layer-button');
   const moveDownLayerButton = document.getElementById('move-down-layer-button');
 
   addLayerButton.onclick = () => canvas.appendLayer();
-  removeLayerButton.onclick = () => {
-    canvas.removeLayer(canvas.drawingLayer.index);
-  };
-  moveUpLayerButton.onclick = () => {
-    canvas.moveUp(canvas.drawingLayer.index);
-  };
-  moveDownLayerButton.onclick = () => {
-    canvas.moveDown(canvas.drawingLayer.index);
-  };
+  removeLayerButton.onclick = () => canvas.removeLayer(canvas.drawingLayer.id);
+  moveUpLayerButton.onclick = () => canvas.moveLayerUp(canvas.drawingLayer.id);
+  moveDownLayerButton.onclick = () => canvas.moveLayerDown(canvas.drawingLayer.id);
+}
+
+function setUpUpdateListener() {
   setLayerMenu();
-  canvas.subscribeToUpdate(setLayerMenu);
+  canvas.listenToUpdates(setLayerMenu);
 }
 
 function setLayerMenu() {
   const layers = canvas.layers;
-  const sidebar = document.getElementById('sidebar');
-
   let container = document.getElementById('layer-container');
-  container.remove();
-  container = document.createElement('div');
-  container.id = 'layer-container';
-  sidebar.appendChild(container);
+  container = clearLayerContainer(container);
 
-  for (let i = layers.length - 1; i >= 0; i--) {
+  for (let i = layers.length - 1; i >= 0; i--) { //Iterate the list in reversed order
     const layer = layers[i];
     const layerElement = document.createElement('div');
     layerElement.appendChild(getLayerImage(layer));
 
-    const name = document.createElement('p');
-    name.innerText = `Layer ${layer.index}`;
-    layerElement.appendChild(name);
-    container.appendChild(layerElement);
-
-    layerElement.classList.add('layer-element');
-    if (layer === canvas.drawingLayer) {
-      layerElement.classList.add('layer-element-selected');
-    }
-
+    appendLayerName(layer, layerElement);
+    handleLayerClasses(layer, layerElement);
     layerElement.onclick = () => {
-      canvas.switchLayer(layer.index);
+      canvas.switchLayer(layer.id);
     };
+    layerElement.appendChild(getVisibilityButton(layer));
 
-    const visibilityButton = document.createElement('div');
-    visibilityButton.classList.add('visibility-button');
-    if (!layer.visible) {
-      visibilityButton.classList.add('visibility-button-inactive');
-    }
-    visibilityButton.onclick = () => {
-      layer.visible = !layer.visible;
-      canvas.update();
-    };
-    layerElement.appendChild(visibilityButton);
+    container.appendChild(layerElement);
   }
 }
 
-function getLayerImage(layer) { //optimize by caching
+function clearLayerContainer(container) {
+  const sidebar = document.getElementById('sidebar');
+  container.remove();
+
+  const newContainer = document.createElement('div');
+  newContainer.id = 'layer-container';
+  sidebar.appendChild(newContainer);
+
+  return newContainer;
+}
+
+function appendLayerName(layer, layerElement) {
+  const name = document.createElement('p');
+  name.innerText = `Layer ${layer.id}`;
+  layerElement.appendChild(name);
+}
+
+function handleLayerClasses(layer, layerElement) {
+  layerElement.classList.add('layer-element');
+  if (layer === canvas.drawingLayer) {
+    layerElement.classList.add('layer-element-selected');
+  }
+}
+
+function getVisibilityButton(layer) {
+  const visibilityButton = document.createElement('div');
+  visibilityButton.classList.add('visibility-button');
+  if (!layer.visible) {
+    visibilityButton.classList.add('visibility-button-inactive');
+  }
+  visibilityButton.onclick = () => {
+    layer.visible = !layer.visible;
+    canvas.update();
+  };
+  return visibilityButton;
+}
+
+const IMAGE_POS = 0;
+
+function getLayerImage(layer) { //To be optimized by caching
   const imageElement = document.createElement('div');
   imageElement.classList.add('layer-image');
 
-  const image = layer.virtualCanvas.getContext('2d')
-    .getImageData(0, 0, layer.virtualCanvas.width, layer.virtualCanvas.height);
+  const image = layer.context.getImageData(IMAGE_POS, IMAGE_POS, layer.virtualCanvas.width, layer.virtualCanvas.height);
   const encoder = new BmpEncoder(image);
   const data = encoder.encode();
-  const url = bytesToUrl(data);
+  const url = bytesToUrl(data); //Possibly replace with base64 encoded data
 
   imageElement.style.backgroundImage = `url(${url})`;
   return imageElement;

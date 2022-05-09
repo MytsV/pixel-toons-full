@@ -3,9 +3,12 @@ There is a native implementation of canvas BMP conversion, but it is not support
 And, after all, why not have fun?
  */
 
+const bitsInByte = 8;
+
 /*
 A class that represents a writable array of bytes.
 Created for easier work with byte size and different types of written values.
+Has similar interface to the Node.js Buffer class.
  */
 class Buffer {
   constructor(size) {
@@ -25,7 +28,7 @@ class Buffer {
   }
 
   #writeInteger(bits, number, offset) {
-    const array = intToByteArray(number, bits / 8);
+    const array = intToByteArray(number, bits / bitsInByte);
     this.writeArray(array, offset);
   }
 
@@ -58,17 +61,18 @@ function intToByteArray(number, size) {
 }
 
 /*
-Only supports BMP32 format for now.
+Only supports BMP24 format for now.
  */
 class BmpEncoder {
   static #headerSize = 0x0E;
   static #infoHeaderSize = 0x28;
-  static #perPixel = 4 * 8;
+  static #perPixel = 3;
 
   #buffer;
 
   constructor(image) {
-    const pixelDataSize = 4 * image.height * image.width;
+    const padding = image.width % 4;
+    const pixelDataSize = (BmpEncoder.#perPixel * image.width + padding) * image.height;
     this.fileSize = BmpEncoder.#headerSize + BmpEncoder.#infoHeaderSize + pixelDataSize;
 
     this.#buffer = new Buffer(this.fileSize);
@@ -112,8 +116,8 @@ class BmpEncoder {
     this.#buffer.write32Integer(this.image.height, 0x16);
     //Planes | 2 bytes | 0x1A | Number of planes = 1
     this.#buffer.write16Integer(1, 0x1A);
-    //Bits Per Pixel | 2 bytes | 0x1C | We are using 32bit RGB, so = 32
-    this.#buffer.write16Integer(BmpEncoder.#perPixel, 0x1C);
+    //Bits Per Pixel | 2 bytes | 0x1C | We are using 24bit RGB, so = 24
+    this.#buffer.write16Integer(BmpEncoder.#perPixel * bitsInByte, 0x1C);
 
     /*
     The following structures are always filled with 0 bytes:
@@ -128,9 +132,9 @@ class BmpEncoder {
 
   #setPixelData() {
     const image = this.image;
-    const bytesPerPixel = BmpEncoder.#perPixel / 8;
     const colorParameters = 4;
     let position = 0x36;
+    const padding = this.image.width % 4;
 
     for (let i = image.height - 1; i >= 0; i--) {
       for (let j = 0; j < image.width; j++) {
@@ -139,8 +143,9 @@ class BmpEncoder {
         swap(colors, 0, 2); //Color is stored in reversed BGR order. Swapping parameter R with B
 
         this.#buffer.writeArray(colors, position);
-        position += bytesPerPixel;
+        position += BmpEncoder.#perPixel;
       }
+      position += padding;
     }
   }
 }
