@@ -20,7 +20,7 @@ class Color {
   static fromHex(hexColor) {
     const radix = 16;
 
-    const expression = new RegExp('#(.{2})(.{2})(.{2})(.{0,2})');
+    const expression = new RegExp(/#(.{2})(.{2})(.{2})(.{0,2})/);
     const result = expression.exec(hexColor).slice(1, 5); //Getting second to fifth group
     const values = result.map((value) => {
       if (value !== '') return parseInt(value, radix);

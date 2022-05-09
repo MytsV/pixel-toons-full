@@ -6,6 +6,7 @@ And, after all, why not have fun?
 /*
 A class that represents a writable array of bytes.
 Created for easier work with byte size and different types of written values.
+Has similar interface to the Node.js Buffer class.
  */
 class Buffer {
   constructor(size) {
