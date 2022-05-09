@@ -23,7 +23,7 @@ User interface is currently extremely raw. It will be improved in the future.
     </th>
     <tr>
         <td>
-            🟩 [Canvas rendering](https://github.com/MytsV/pixel-toons-editor/blob/dev/public/scripts/core/canvas.js)
+            🟩 <a href="https://github.com/MytsV/pixel-toons-editor/blob/dev/public/scripts/core/canvas_renderer.js">Canvas rendering</a>
         </td>
         <td>
             🟥 Account creation/login
@@ -34,7 +34,7 @@ User interface is currently extremely raw. It will be improved in the future.
     </tr>
     <tr>
         <td>
-            🟩 Basic tools (pencil, eraser, bucket fill)
+            🟩 <a href="https://github.com/MytsV/pixel-toons-editor/blob/dev/public/scripts/core/tools.js">Basic tools (pencil, eraser, bucket fill)</a>
         </td>
         <td>
             🟥 Saving your animation to account
