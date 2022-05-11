@@ -4,6 +4,7 @@ And, after all, why not have fun?
  */
 
 const bitsInByte = 8;
+const maxColorParameters = 4; //in RGBA
 
 /*
 A class that represents a writable array of bytes.
@@ -71,7 +72,7 @@ class BmpEncoder {
   #buffer;
 
   constructor(image) {
-    const padding = image.width % 4;
+    const padding = BmpEncoder.#perPixel % maxColorParameters;
     const pixelDataSize = (BmpEncoder.#perPixel * image.width + padding) * image.height;
     this.fileSize = BmpEncoder.#headerSize + BmpEncoder.#infoHeaderSize + pixelDataSize;
 
@@ -132,14 +133,13 @@ class BmpEncoder {
 
   #setPixelData() {
     const image = this.image;
-    const colorParameters = 4;
     let position = 0x36;
-    const padding = this.image.width % 4;
+    const padding = image.width % maxColorParameters;
 
     for (let i = image.height - 1; i >= 0; i--) {
       for (let j = 0; j < image.width; j++) {
-        const dataPosition = (i * image.width + j) * colorParameters;
-        const colors = image.data.slice(dataPosition, dataPosition + colorParameters);
+        const dataPosition = (i * image.width + j) * maxColorParameters;
+        const colors = image.data.slice(dataPosition, dataPosition + maxColorParameters);
         swap(colors, 0, 2); //Color is stored in reversed BGR order. Swapping parameter R with B
 
         this.#buffer.writeArray(colors, position);

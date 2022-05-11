@@ -88,8 +88,8 @@ const BACKGROUND_COLOR_GREY = '#e3e3e3';
 
 //Function to turn image into a basic grey-white background which indicates transparency
 function toBasicBackground(image) {
-  for (let i = 0; i < image.height; i++) {
-    for (let j = 0; j < image.width; j++) {
+  for (let i = 0; i < image.width; i++) {
+    for (let j = 0; j < image.height; j++) {
       const pixelColor = getClearPixelColor(i, j);
       image.setPixelColor(i, j, Color.fromHex(pixelColor));
     }
