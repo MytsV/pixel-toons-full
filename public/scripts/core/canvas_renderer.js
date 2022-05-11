@@ -32,6 +32,7 @@ class CanvasRenderer {
     this.canvasWrapper.style.aspectRatio = width / height;
     this.#setUpElement(canvas.mainElement);
     CanvasRenderer.#setUpBackground(width, height);
+    this.handleCentering();
   }
 
   /*
@@ -70,7 +71,17 @@ class CanvasRenderer {
     this.canvasWrapper.style.height = `${this.zoomValue * 100}%`;
 
     //If canvas is zoomed, than we don't center the canvas
-    handleCentering(this.canvasWrapper, this.zoomValue <= 1);
+    this.handleCentering();
+  }
+
+  handleCentering() {
+    const element = this.canvasWrapper;
+    setWrapperSize(element);
+
+    const centered = this.zoomValue <= 1;
+    element.style.transform = centered ? `translate(-${TRANSLATION}%, -${TRANSLATION}%)` : 'none';
+    element.style.left = centered ? `${TRANSLATION}%` : '0pt';
+    element.style.top = centered ? `${TRANSLATION}%` : '0pt';
   }
 
   #canScale(positive) {
@@ -105,10 +116,19 @@ function getClearPixelColor(i, j) {
   }
 }
 
-function handleCentering(element, centered) {
-  element.style.transform = centered ? `translate(-${TRANSLATION}%, -${TRANSLATION}%)` : 'none';
-  element.style.left = centered ? `${TRANSLATION}%` : '0pt';
-  element.style.top = centered ? `${TRANSLATION}%` : '0pt';
+function setWrapperSize(wrapper) {
+  const parent = wrapper.parentElement;
+  const parentRatio = parent.offsetWidth / parent.offsetHeight;
+  const wrapperRatio = wrapper.offsetWidth / wrapper.offsetHeight;
+  const maxPercent = '100%';
+
+  if (wrapperRatio >= parentRatio) {
+    wrapper.style.width = maxPercent;
+    wrapper.style.height = '';
+  } else {
+    wrapper.style.height = maxPercent;
+    wrapper.style.width = '';
+  }
 }
 
 function setupColorPicker(canvas) {

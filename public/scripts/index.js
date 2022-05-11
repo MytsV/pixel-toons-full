@@ -204,3 +204,5 @@ function getLayerImage(layer) { //To be optimized by caching
   imageElement.style.backgroundImage = `url(${url})`;
   return imageElement;
 }
+
+window.addEventListener('resize', () => renderer.handleCentering());
