@@ -94,6 +94,11 @@ body {
   image-rendering: pixelated;
 }
 
+#layer-container {
+  height: 225pt;
+  overflow: scroll;
+}
+
 .layer-element {
 
 }
