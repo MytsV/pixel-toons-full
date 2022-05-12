@@ -198,7 +198,7 @@ function getLayerImage(layer) { //To be optimized by caching
   imageElement.style.aspectRatio = renderer.canvasWrapper.style.aspectRatio;
 
   const image = layer.context.getImageData(IMAGE_POS, IMAGE_POS, layer.virtualCanvas.width, layer.virtualCanvas.height);
-  const encoder = new BmpEncoder(image);
+  const encoder = new BmpEncoder(image, bmpVersions.bmp32); //Render image with transparency
   const data = encoder.encode();
   const url = bytesToUrl(data); //Possibly replace with base64 encoded data
 
