@@ -50,6 +50,7 @@ body {
 
 #canvas-wrapper {
   position: absolute;
+  height: 100%;
 }
 
 .canvas-element {
@@ -105,7 +106,7 @@ body {
 
 .layer-image {
   width: 30pt;
-  height: 30pt;
+  height: auto;
   background-repeat: no-repeat;
   background-size: cover;
   image-rendering: pixelated;

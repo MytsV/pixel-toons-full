@@ -195,6 +195,7 @@ const IMAGE_POS = 0;
 function getLayerImage(layer) { //To be optimized by caching
   const imageElement = document.createElement('div');
   imageElement.classList.add('layer-image');
+  imageElement.style.aspectRatio = renderer.canvasWrapper.style.aspectRatio;
 
   const image = layer.context.getImageData(IMAGE_POS, IMAGE_POS, layer.virtualCanvas.width, layer.virtualCanvas.height);
   const encoder = new BmpEncoder(image);
@@ -205,4 +206,4 @@ function getLayerImage(layer) { //To be optimized by caching
   return imageElement;
 }
 
-window.addEventListener('resize', () => renderer.handleCentering());
+window.addEventListener('resize', () => renderer.adjustSize());

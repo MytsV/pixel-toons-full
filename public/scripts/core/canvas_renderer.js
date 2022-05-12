@@ -32,7 +32,7 @@ class CanvasRenderer {
     this.canvasWrapper.style.aspectRatio = width / height;
     this.#setUpElement(canvas.mainElement);
     CanvasRenderer.#setUpBackground(width, height);
-    this.handleCentering();
+    this.adjustSize();
   }
 
   /*
@@ -66,22 +66,14 @@ class CanvasRenderer {
 
   zoom(positive) {
     if (!this.#canScale(positive)) return;
-
     this.zoomValue = positive ? this.zoomValue + ZOOM_STEP : this.zoomValue - ZOOM_STEP;
-    this.canvasWrapper.style.height = `${this.zoomValue * 100}%`;
-
-    //If canvas is zoomed, than we don't center the canvas
-    this.handleCentering();
+    this.adjustSize();
   }
 
-  handleCentering() {
-    const element = this.canvasWrapper;
-    setWrapperSize(element);
-
-    const centered = this.zoomValue <= 1;
-    element.style.transform = centered ? `translate(-${TRANSLATION}%, -${TRANSLATION}%)` : 'none';
-    element.style.left = centered ? `${TRANSLATION}%` : '0pt';
-    element.style.top = centered ? `${TRANSLATION}%` : '0pt';
+  adjustSize() {
+    //If canvas is zoomed, than we don't center the canvas
+    handleCentering(this.canvasWrapper, this.zoomValue <= 1);
+    setWrapperSize(this.canvasWrapper, this.zoomValue);
   }
 
   #canScale(positive) {
@@ -116,19 +108,21 @@ function getClearPixelColor(i, j) {
   }
 }
 
-function setWrapperSize(wrapper) {
-  const parent = wrapper.parentElement;
-  const parentRatio = parent.offsetWidth / parent.offsetHeight;
-  const wrapperRatio = wrapper.offsetWidth / wrapper.offsetHeight;
-  const maxPercent = '100%';
+function handleCentering(element, centered) {
+  element.style.transform = centered ? `translate(-${TRANSLATION}%, -${TRANSLATION}%)` : 'none';
+  element.style.left = centered ? `${TRANSLATION}%` : '0pt';
+  element.style.top = centered ? `${TRANSLATION}%` : '0pt';
+}
 
-  if (wrapperRatio >= parentRatio) {
-    wrapper.style.width = maxPercent;
-    wrapper.style.height = '';
-  } else {
-    wrapper.style.height = maxPercent;
-    wrapper.style.width = '';
-  }
+function setWrapperSize(wrapper, zoomValue) {
+  const parent = wrapper.parentElement;
+
+  const maxPercent = `${zoomValue * 100}%`;
+  const unset = 'auto';
+
+  const toWidth = wrapper.offsetWidth * parent.offsetHeight >= parent.offsetWidth * wrapper.offsetHeight;
+  wrapper.style.width = toWidth ? maxPercent : unset;
+  wrapper.style.height = toWidth ? unset : maxPercent;
 }
 
 function setupColorPicker(canvas) {
