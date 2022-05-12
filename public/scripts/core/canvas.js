@@ -9,6 +9,8 @@ A class which stores canvas parameters that are changed outside of drawing.
 It uses Memento pattern to implement Undo/Redo actions.
  */
 class CanvasState {
+  static stackLimit = 50; //Setting limit for the number of states saved at the moment
+
   constructor() {
     this.color = Color.fromHex(DEFAULT_PENCIL_COLOR);
     /*
@@ -209,7 +211,7 @@ class Canvas {
   save() {
     const currentState = this.state.currentState;
     if (currentState !== null) {
-      this.state.shownLayers.push(currentState);
+      pushLayers(this.state.shownLayers, currentState);
       this.state.nextLayers = [];
     }
 
@@ -230,7 +232,7 @@ class Canvas {
   #retrieveImage(stackRetrieved, stackSaved) {
     if (stackRetrieved.length < 1) return; //If the stack is empty, we don't do anything
 
-    stackSaved.push(this.#layers.map((layer) => layer.clone())); //Current image is appended to one of the stacks
+    pushLayers(stackSaved, this.#layers.map((layer) => layer.clone())); //Current image is appended to one of the stacks
 
     this.#layers = stackRetrieved.pop();
     const lastLayer = this.#layers[this.#layers.length - 1];
@@ -247,6 +249,13 @@ function createCanvasElement(width, height) {
   canvasElement.width = width;
   canvasElement.height = height;
   return canvasElement;
+}
+
+function pushLayers(stack, layers) {
+  stack.push(layers);
+  if (stack.length >= CanvasState.stackLimit) {
+    stack.shift();
+  }
 }
 
 export { Canvas };
