@@ -1,7 +1,7 @@
 import { CanvasRenderer, setupColorPicker } from './core/canvas_renderer.js';
 import { Canvas } from './core/canvas.js';
 import { bytesToUrl, downloadLocalUrl } from './utilities/bytes_conversion.js';
-import { BmpEncoder } from './utilities/bmp_encoder.js';
+import { BmpEncoder, bmpVersions } from './utilities/bmp_encoder.js';
 import { BucketFill, Eraser, Pencil } from './core/tools.js';
 
 /*
@@ -36,7 +36,7 @@ function setUpExporter() {
 
 function downloadImage() {
   const image = canvas.getCombinedImage();
-  const encoder = new BmpEncoder(image);
+  const encoder = new BmpEncoder(image, bmpVersions.bmp32);
   downloadLocalUrl(bytesToUrl(encoder.encode()), 'image.bmp');
 }
 
