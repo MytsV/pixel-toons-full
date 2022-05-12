@@ -21,6 +21,7 @@ class CanvasState {
      */
     this.shownLayers = [];
     this.nextLayers = [];
+    this.currentState = null;
   }
 }
 
@@ -206,39 +207,35 @@ class Canvas {
 
   //Saves the current layers of the canvas to be able to retrieve them later
   save() {
-    const newLayers = this.#cloneLayers();
-    this.state.shownLayers.push(newLayers);
-    this.state.nextLayers = [];
+    const currentState = this.state.currentState;
+    if (currentState !== null) {
+      this.state.shownLayers.push(currentState);
+      this.state.nextLayers = [];
+    }
 
+    this.state.currentState = this.#cloneLayers();
     this.#fixateChanges();
   }
 
   //Reverts the state to the previous layers
   undo() {
-    const stackRetrieved = this.state.shownLayers;
-    const stackSaved = this.state.nextLayers;
-
-    if (stackRetrieved.length <= 1) return; //If the stack is empty, we don't do anything
-    stackSaved.push(stackRetrieved.pop()); //Current layer is on top
-
-    this.#layers = stackRetrieved[stackRetrieved.length - 1]; //Underneath is the previous layer which we retrieve
-    this.#setDrawingLayer(this.#layers[this.#layers.length - 1]);
-
-    this.update();
-    this.#fixateChanges();
+    this.#retrieveImage(this.state.shownLayers, this.state.nextLayers);
   }
 
   //Reverts the state to the next layers
   redo() {
-    const stackRetrieved = this.state.nextLayers;
-    const stackSaved = this.state.shownLayers;
+    this.#retrieveImage(this.state.nextLayers, this.state.shownLayers);
+  }
 
+  #retrieveImage(stackRetrieved, stackSaved) {
     if (stackRetrieved.length < 1) return; //If the stack is empty, we don't do anything
-    const currentLayers = stackRetrieved.pop();
-    stackSaved.push(currentLayers);
 
-    this.#layers = currentLayers;
-    this.#setDrawingLayer(currentLayers[currentLayers.length - 1]);
+    stackSaved.push(this.#layers.map((layer) => layer.clone())); //Current image is appended to one of the stacks
+
+    this.#layers = stackRetrieved.pop();
+    const lastLayer = this.#layers[this.#layers.length - 1];
+    this.state.currentState = this.#cloneLayers();
+    this.#setDrawingLayer(lastLayer);
 
     this.update();
     this.#fixateChanges();
