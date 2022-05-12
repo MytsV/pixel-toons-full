@@ -8,7 +8,8 @@ const mixin = {
   setPixelColor,
   getPixelPosition,
   getPixelColor,
-  clone
+  clone,
+  append
 };
 
 const applyImageMixin = (imageData) => {
@@ -50,6 +51,21 @@ function clone() {
   cloned.data.set(this.data);
   applyImageMixin(cloned);
   return cloned;
+}
+
+//Blend multiple images together
+function append(...images) {
+  const appendedData = this.clone();
+  for (let i = 0; i < this.width; i++) {
+    for (let j = 0; j < this.height; j++) {
+      const color = images.reduce((accumulator, curr) => {
+        const currColor = curr.getPixelColor(i, j);
+        return accumulator.blend(currColor);
+      }, appendedData.getPixelColor(i, j));
+      appendedData.setPixelColor(i, j, color);
+    }
+  }
+  return appendedData;
 }
 
 export { applyImageMixin };

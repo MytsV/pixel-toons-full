@@ -41,7 +41,7 @@ class Color {
       return Math.floor(numerator / newAlpha);
     };
 
-    return new Color(getParam(color.r, this.r), getParam(color.g, this.g), getParam(color.b, this.b), newAlpha);
+    return new Color(getParam(color.r, this.r), getParam(color.g, this.g), getParam(color.b, this.b), newAlpha * colorRange);
   }
 
   //Converts color to RGBA CSS format. Use when passing color to CSS style parameter
