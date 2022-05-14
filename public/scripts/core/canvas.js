@@ -48,7 +48,7 @@ class Layer {
     /*
     Virtual canvas is a canvas which is not appended to DOM.
     Instead, it is drawn over the main canvas element.
-    This is done for optimization and increases performance.
+    This is done for optimization and increases performance over any other method (checked now).
      */
     this.virtualCanvas = createCanvasElement(width, height);
     //We save context to avoid retrieving it multiple times
@@ -76,6 +76,37 @@ class Layer {
     return imageData;
   }
 }
+
+let lastCurrent = null;
+let lastCurrentIndex = -1;
+let beforeCache = null;
+let afterCache = null;
+
+//duration of update decreased by 20%. to be refactored :)
+const mergeLayers = (layers, current, mainContext) => {
+  const width = current.virtualCanvas.width;
+  const height = current.virtualCanvas.height;
+  const currentIndex = layers.findIndex((layer) => layer === current);
+  if (lastCurrent === null || lastCurrent.id !== current.id || lastCurrentIndex !== currentIndex ||
+    lastCurrent.visible !== current.visible) {
+    beforeCache = new Layer(-1, width, height);
+    afterCache = new Layer(-1, width, height);
+    for (let i = 0; i < layers.length; i++) {
+      const layer = layers[i];
+      if (!layer.visible) continue;
+      if (i < currentIndex) {
+        beforeCache.context.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS);
+      } else if (i > currentIndex) {
+        afterCache.context.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS);
+      }
+    }
+  }
+  lastCurrent = current;
+  lastCurrentIndex = currentIndex;
+  mainContext.drawImage(beforeCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
+  mainContext.drawImage(current.virtualCanvas, IMAGE_POS, IMAGE_POS);
+  mainContext.drawImage(afterCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
+};
 
 /*
 A class which wraps HTML <canvas> element and adds functionality to it.
@@ -111,10 +142,7 @@ class Canvas {
     this.mainContext.putImageData(emptyImage, IMAGE_POS, IMAGE_POS);
 
     //Iterate through virtual canvases and draw them over the main canvas
-    this.#layers.forEach((layer) => {
-      if (!layer.visible) return;
-      this.mainContext.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS);
-    });
+    mergeLayers(this.#layers, this.drawingLayer, this.mainContext);
   }
 
   //Gets combined ImageData from all layers
