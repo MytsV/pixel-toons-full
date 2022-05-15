@@ -173,6 +173,7 @@ class Canvas {
       this.cache.drawFromCache(this.mainContext);
     } else {
       this.#layers.forEach((layer) => {
+        if (!layer.visible) return;
         this.mainContext.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS);
       });
     }
