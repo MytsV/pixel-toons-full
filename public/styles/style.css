@@ -42,6 +42,7 @@ body {
   height: available;
   flex-grow: 1;
   padding: 2pt 6pt;
+  margin-top: var(--inter-element-spacing);
 }
 
 #footer {
@@ -50,12 +51,9 @@ body {
 
 #canvas-parent {
   width: 100%;
-  /*width: available;*/
-  /*width: fill-available;*/
-  /*width: fill-available;*/
   background-color: var(--border-color);
   display: block;
-  overflow: scroll;
+  overflow: auto;
   position: relative;
   margin-left: var(--inter-element-spacing);
   margin-right: var(--inter-element-spacing);
@@ -63,13 +61,12 @@ body {
 
 #sidebar {
   width: 200pt;
-  overflow: scroll;
+  overflow: auto;
 }
 
 #canvas-wrapper {
   position: absolute;
   height: 100%;
-  margin: var(--inter-element-spacing);
 }
 
 .canvas-element {
@@ -118,35 +115,57 @@ body {
 }
 
 #layer-container {
+  flex-grow: 1;
   height: 225pt;
-  overflow: scroll;
+  overflow: auto;
+  margin-top: var(--inter-element-spacing);
 }
 
 .layer-element {
-
+  box-sizing: border-box;
+  background-color: white;
+  border-top: var(--border-size) solid white;
+  border-bottom: var(--border-size) solid lightgray;
+  border-right: var(--border-size) solid lightgray;
+  outline: var(--border-size) solid var(--border-color);
+  position: relative;
+  margin: 6pt 5pt;
+  display: flex;
+  align-items: center;
 }
 
 .layer-element-selected {
-  background-color: darkgreen;
+  background-color: var(--main-panel-color);
+  border-bottom: var(--border-size) solid var(--main-panel-color-shadow);
+  border-right: var(--border-size) solid var(--main-panel-color-shadow);
+  border-top: var(--border-size) solid var(--main-panel-color-highlight);
 }
 
 .layer-image {
-  width: 30pt;
-  height: auto;
+  width: 40pt;
+  height: 40pt;
   background-repeat: no-repeat;
   background-size: cover;
   image-rendering: pixelated;
   background-color: white;
+  margin-right: 5pt;
 }
 
 .visibility-button {
-  background-color: blue;
-  width: 10pt;
-  height: 10pt;
+  position: absolute;
+  background: url("../images/eye-open.png");
+  background-size: cover;
+  image-rendering: pixelated;
+  width: 20pt;
+  height: 20pt;
+  top: 0;
+  right: 0;
 }
 
 .visibility-button-inactive {
-  background-color: grey;
+  background: url("../images/eye-closed.png");
+  background-size: cover;
+  image-rendering: pixelated;
 }
 
 /* The Modal (background) */
@@ -271,3 +290,25 @@ input[type=color]::-moz-color-swatch {
   border: none;
   padding: 0;
 }
+
+#canvas-parent::-webkit-scrollbar {
+  width: 20px;
+  height: 20px;
+}
+
+/* Track */
+#canvas-parent::-webkit-scrollbar-track {
+  background: lightgray;
+}
+
+/* Handle */
+#canvas-parent::-webkit-scrollbar-thumb {
+  background: #C2D7FF;
+  border: var(--border-size) solid var(--border-color);
+}
+
+/* Handle on hover */
+#canvas-parent::-webkit-scrollbar-thumb:hover {
+  background: var(--main-panel-color);
+}
+

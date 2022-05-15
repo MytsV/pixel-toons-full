@@ -65,7 +65,7 @@ User interface is currently extremely raw. It will be improved in the future.
     </tr>
     <tr>
         <td>
-            🟨 Zoom system
+            🟩 Zoom system
         </td>
         <td></td>
         <td>
@@ -92,7 +92,7 @@ User interface is currently extremely raw. It will be improved in the future.
     </tr>
     <tr>
         <td>
-            🟥 Canvas "file" system
+            🟨 Canvas "file" system
         </td>
         <td>
         </td>
