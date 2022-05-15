@@ -9,21 +9,20 @@ A class which stores canvas parameters that are changed outside of drawing.
 It uses Memento pattern to implement Undo/Redo actions.
  */
 class CanvasState {
-  static stackLimit = 50; //Setting limit for the number of states saved at the moment
+  static stackLimit = 50; //Setting limit for the number of states which can be saved at the same time
 
   constructor() {
     this.color = Color.fromHex(DEFAULT_PENCIL_COLOR);
     /*
     Memento pattern is implemented with two stacks.
-    shownLayers contains current state on top and past states underneath, so the ones that have been "shown".
+    Canvases state is a set of its layers.
+    pastLayers contains all the states that have been "shown".
     nextLayers contains all the states that haven't been "shown".
     Being "shown" means to historically precede or equal the current state.
-
-    The class is about to be optimized with usage of more variables.
      */
-    this.shownLayers = [];
+    this.pastLayers = [];
     this.nextLayers = [];
-    this.currentLayer = null;
+    this.currentLayers = null;
   }
 }
 
@@ -77,13 +76,14 @@ class Layer {
   }
 }
 
+//Duration of update decreased by 20%
 class LayerCache {
-  #lastCurrent;
-  #lastCurrentIndex;
+  #lastChanged;
+  #lastChangedIndex;
 
   constructor(width, height) {
-    this.#lastCurrent = null;
-    this.#lastCurrentIndex = null;
+    this.#lastChanged = null;
+    this.#lastChangedIndex = null;
     this.width = width;
     this.height = height;
 
@@ -92,11 +92,10 @@ class LayerCache {
 
   updateCache(layers, current) {
     const currentIndex = layers.findIndex((layer) => layer === current);
+    this.#lastChanged = current;
+    this.#lastChangedIndex = currentIndex;
 
-    this.#lastCurrent = current;
-    this.#lastCurrentIndex = currentIndex;
-
-    if (this.#lastCurrent.id !== current.id || this.#lastCurrentIndex !== currentIndex) return;
+    if (this.#lastChanged.id !== current.id || this.#lastChangedIndex !== currentIndex) return;
     this.#resetCache();
     layers.forEach((layer, index) => {
       if (!layer.visible || index === currentIndex) return;
@@ -112,8 +111,8 @@ class LayerCache {
 
   drawFromCache(context) {
     context.drawImage(this.beforeCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
-    if (this.#lastCurrent.visible) {
-      context.drawImage(this.#lastCurrent.virtualCanvas, IMAGE_POS, IMAGE_POS);
+    if (this.#lastChanged.visible) {
+      context.drawImage(this.#lastChanged.virtualCanvas, IMAGE_POS, IMAGE_POS);
     }
     context.drawImage(this.afterCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
   }
@@ -133,6 +132,7 @@ class Canvas {
     //The element is the only HTMLCanvasElement that is appended to the DOM. We save its context for reuse
     this.mainElement = canvasElement;
     this.mainContext = canvasElement.getContext('2d');
+
     //Context associated with the current drawing layer
     this.context = null;
     //Image associated with the current drawing layer
@@ -148,34 +148,34 @@ class Canvas {
     this.appendLayer();
   }
 
-  //Redrawing the canvas with virtual canvases
-  update() {
-    this.context.putImageData(this.image, IMAGE_POS, IMAGE_POS); //Apply changes to current layer
-    const emptyImage = new ImageData(this.mainElement.width, this.mainElement.height);
-    this.mainContext.putImageData(emptyImage, IMAGE_POS, IMAGE_POS);
+  //Refresh the visual representation of the canvas with layers
+  redraw() {
+    //Apply changes to current layer
+    this.context.putImageData(this.image, IMAGE_POS, IMAGE_POS);
+
+    //Reset the image on real canvas to fully transparent
+    const transparentImage = new ImageData(this.mainElement.width, this.mainElement.height);
+    this.mainContext.putImageData(transparentImage, IMAGE_POS, IMAGE_POS);
 
     //Iterate through virtual canvases and draw them over the main canvas
     this.#mergeLayers();
   }
 
-  //Gets combined ImageData from all layers
-  getCombinedImage() {
+  getMergedImage() {
     return this.mainContext.getImageData(IMAGE_POS, IMAGE_POS, this.mainElement.width, this.mainElement.height);
   }
 
-  //Duration of update decreased by 20%
   #mergeLayers() {
-    this.cache.updateCache(this.#layers, this.state.currentLayer);
-    this.cache.drawFromCache(this.mainContext);
-  }
+    const uncachedLimit = 3; //The maximum number of layers for which we won't perform caching
 
-  //The implementation of EventEmitter pattern. Allows other entities to know when the canvas is getting a fixated state
-  listenToUpdates(listener) {
-    this.#listeners.push(listener);
-  }
-
-  #fixateChanges() {
-    this.#listeners.forEach((listener) => listener());
+    if (this.#layers.length > uncachedLimit) {
+      this.cache.updateCache(this.#layers, this.drawingLayer);
+      this.cache.drawFromCache(this.mainContext);
+    } else {
+      this.#layers.forEach((layer) => {
+        this.mainContext.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS);
+      });
+    }
   }
 
   //Creates a new layer and stacks in on top of other layers
@@ -194,7 +194,7 @@ class Canvas {
     const topLayer = this.#layers[this.#layers.length - 1];
     this.#setDrawingLayer(topLayer);
 
-    this.update(); //We should redraw the image without the removed layer
+    this.redraw();
     this.save();
   }
 
@@ -214,8 +214,7 @@ class Canvas {
 
   moveLayerDown(id) {
     const layerPosition = this.#layers.findIndex((layer) => layer.id === id);
-    //There exists such layer and it is not the bottom one
-    if (layerPosition < 1) return;
+    if (layerPosition < 1) return; //There exists such layer and it is not the bottom one
     this.#reorderLayer(this.#layers[layerPosition], layerPosition - 1);
   }
 
@@ -224,27 +223,11 @@ class Canvas {
     if (position >= this.#layers.length) {
       this.#layers.push(layer);
     } else {
-      this.#layers.splice(position, 0, layer);
+      this.#layers.splice(position, 0, layer); //We insert the layer at certain index, deleting 0 items
     }
 
-    this.update();
+    this.redraw();
     this.save();
-  }
-
-  #setDrawingLayer(layer) {
-    this.context = layer.virtualCanvas.getContext('2d');
-    this.#refreshImageData();
-    this.drawingLayer = layer;
-  }
-
-  //Get ImageData from current layer
-  #refreshImageData() {
-    this.image = this.context.getImageData(IMAGE_POS, IMAGE_POS, this.mainElement.width, this.mainElement.height);
-    applyImageMixin(this.image);
-  }
-
-  #cloneLayers() {
-    return this.#layers.map((layer) => layer.clone());
   }
 
   /*
@@ -255,40 +238,64 @@ class Canvas {
     return this.#layers;
   }
 
-  //Saves the current layers of the canvas to be able to retrieve them later
+  //Saves the current layers on the canvas for retrieving them later
   save() {
-    const currentState = this.state.currentLayer;
-    if (currentState !== null) {
-      pushLayers(this.state.shownLayers, currentState);
+    const currentLayers = this.state.currentLayers;
+    if (currentLayers !== null) {
+      pushLayers(this.state.pastLayers, currentLayers);
       this.state.nextLayers = [];
     }
 
-    this.state.currentLayer = this.#cloneLayers();
+    this.state.currentLayers = this.#cloneLayers();
     this.#fixateChanges();
   }
 
-  //Reverts the state to the previous layers
+  //Reverts the layers to the previously saved ones
   undo() {
-    this.#retrieveImage(this.state.shownLayers, this.state.nextLayers);
+    this.#retrieveImage(this.state.pastLayers, this.state.nextLayers);
   }
 
-  //Reverts the state to the next layers
+  //Reverts the layers to the set of historically following ones
   redo() {
-    this.#retrieveImage(this.state.nextLayers, this.state.shownLayers);
+    this.#retrieveImage(this.state.nextLayers, this.state.pastLayers);
   }
 
+  //Generalized method for working with undo/redo
   #retrieveImage(stackRetrieved, stackSaved) {
     if (stackRetrieved.length < 1) return; //If the stack is empty, we don't do anything
 
-    pushLayers(stackSaved, this.#layers.map((layer) => layer.clone())); //Current image is appended to one of the stacks
+    pushLayers(stackSaved, this.#layers.map((layer) => layer.clone())); //Updating the other stack
 
     this.#layers = stackRetrieved.pop();
     const lastLayer = this.#layers[this.#layers.length - 1];
-    this.state.currentLayer = this.#cloneLayers();
+    this.state.currentLayers = this.#cloneLayers();
     this.#setDrawingLayer(lastLayer);
 
-    this.update();
+    this.redraw();
     this.#fixateChanges();
+  }
+
+  //Update instance variables with current layer data
+  #setDrawingLayer(layer) {
+    this.drawingLayer = layer;
+
+    this.context = layer.virtualCanvas.getContext('2d');
+    this.image = this.context.getImageData(IMAGE_POS, IMAGE_POS, this.mainElement.width, this.mainElement.height);
+    applyImageMixin(this.image);
+  }
+
+  //Receive an array of new Layer instances
+  #cloneLayers() {
+    return this.#layers.map((layer) => layer.clone());
+  }
+
+  //The implementation of EventEmitter pattern. Allows other entities to know when the canvas is getting a fixated state
+  listenToUpdates(listener) {
+    this.#listeners.push(listener);
+  }
+
+  #fixateChanges() {
+    this.#listeners.forEach((listener) => listener());
   }
 }
 

@@ -79,7 +79,7 @@ class Pencil extends Tool {
   #onClick(event) {
     const coordinates = getRealCoordinates(this.canvas.mainElement, new Coordinates(event.clientX, event.clientY));
     this.canvas.drawPoint(this.getColor(), coordinates);
-    this.canvas.update();
+    this.canvas.redraw();
   }
 
   //When mouse is moved throughout canvas, we leave trail
@@ -89,7 +89,7 @@ class Pencil extends Tool {
 
     const dest = new Coordinates(event.clientX, event.clientY);
     this.canvas.plotLine(this.getColor(), this.#lastCoordinates, dest);
-    this.canvas.update();
+    this.canvas.redraw();
 
     this.#lastCoordinates = dest;
   }
@@ -197,7 +197,7 @@ class BucketFill extends Tool {
   #onClick(event) {
     const coordinates = getRealCoordinates(this.canvas.mainElement, new Coordinates(event.clientX, event.clientY));
     this.#floodFill(coordinates);
-    this.canvas.update();
+    this.canvas.redraw();
     this.canvas.save();
   }
 

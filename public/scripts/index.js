@@ -35,7 +35,7 @@ function setUpExporter() {
 }
 
 function downloadImage() {
-  const image = canvas.getCombinedImage();
+  const image = canvas.getMergedImage();
   const encoder = new BmpEncoder(image, bmpVersions.bmp32);
   downloadLocalUrl(bytesToUrl(encoder.encode()), 'image.bmp');
 }
@@ -185,7 +185,7 @@ function getVisibilityButton(layer) {
   }
   visibilityButton.onclick = () => {
     layer.visible = !layer.visible;
-    canvas.update();
+    canvas.redraw();
   };
   return visibilityButton;
 }
