@@ -19,20 +19,25 @@
         <div class="menu-item" id="export-button">
           <span class="text">Export</span>
         </div>
-        <div>
-          <div id="undo-button" class="state-button"></div>
-          <div id="redo-button" class="state-button"></div>
-        </div>
       </div>
       <div id="main">
-        <div id="tools" class="white-panel">
+        <div id="toolbar" class="white-panel thing-container">
+          <div class="main-panel label-panel"><span class="text">Undo/Redo</span></div>
+          <div class="other-panel" id="state-button-container">
+            <div id="undo-button" class="state-button"></div>
+            <div id="redo-button" class="state-button"></div>
+          </div>
+          <div class="main-panel label-panel"><span class="text">Tools</span></div>
+          <div id="tools" class="other-panel">
+
+          </div>
         </div>
         <div id="canvas-parent">
           <div id="canvas-wrapper">
             <div class="canvas-element" id="canvas-background"></div>
           </div>
         </div>
-        <div id="sidebar" class="white-panel">
+        <div id="sidebar" class="white-panel thing-container">
           <button id="add-layer-button">Add layer</button>
           <button id="remove-layer-button">Remove layer</button>
           <button id="move-up-layer-button">Move layer up</button>

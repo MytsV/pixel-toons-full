@@ -32,11 +32,16 @@ body {
   margin-bottom: var(--inter-element-spacing);
 }
 
-#menu {
+#toolbar {
+  width: 150pt;
+  display: flex;
+  flex-direction: column;
 }
 
 #tools {
-  width: 150pt;
+  height: available;
+  flex-grow: 1;
+  margin-top: var(--inter-element-spacing);
 }
 
 #footer {
@@ -170,16 +175,21 @@ body {
   border-top: var(--border-size) solid var(--main-panel-color-highlight);
   outline: var(--border-size) solid var(--border-color);
   position: relative;
-  height: 30pt;
+  height: 25pt;
 }
 
 .white-panel {
   box-sizing: border-box;
-  box-sizing: border-box;
-  box-sizing: border-box;
   background-color: white;
   border-bottom: var(--border-size) solid lightgray;
   border-right: var(--border-size) solid lightgray;
+  outline: var(--border-size) solid var(--border-color);
+  position: relative;
+}
+
+.other-panel {
+  box-sizing: border-box;
+  background-color: #C2D7FF;
   outline: var(--border-size) solid var(--border-color);
   position: relative;
 }
@@ -200,9 +210,23 @@ body {
 }
 
 .menu-item {
-  padding: 7pt 20pt 7pt 20pt;
+  padding: 5pt 20pt 4pt 20pt;
   margin-top: -2pt;
   width: max-content;
   border-right: var(--border-size) solid #42568b;
   display: inline-block;
+}
+
+.label-panel {
+  padding-top: 3pt;
+  padding-left: 8pt;
+}
+
+.thing-container {
+  padding: 6pt 4pt 6pt 6pt;
+}
+
+#state-button-container {
+  margin-top: var(--inter-element-spacing);
+  margin-bottom: var(--inter-element-spacing);
 }
