@@ -23,7 +23,7 @@ class CanvasState {
      */
     this.shownLayers = [];
     this.nextLayers = [];
-    this.currentState = null;
+    this.currentLayer = null;
   }
 }
 
@@ -77,37 +77,47 @@ class Layer {
   }
 }
 
-let lastCurrent = null;
-let lastCurrentIndex = -1;
-let beforeCache = null;
-let afterCache = null;
+class LayerCache {
+  #lastCurrent;
+  #lastCurrentIndex;
 
-//duration of update decreased by 20%. to be refactored :)
-const mergeLayers = (layers, current, mainContext) => {
-  const width = current.virtualCanvas.width;
-  const height = current.virtualCanvas.height;
-  const currentIndex = layers.findIndex((layer) => layer === current);
-  if (lastCurrent === null || lastCurrent.id !== current.id || lastCurrentIndex !== currentIndex) {
-    beforeCache = new Layer(-1, width, height);
-    afterCache = new Layer(-1, width, height);
-    for (let i = 0; i < layers.length; i++) {
-      const layer = layers[i];
-      if (!layer.visible) continue;
-      if (i < currentIndex) {
-        beforeCache.context.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS);
-      } else if (i > currentIndex) {
-        afterCache.context.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS);
-      }
+  constructor(width, height) {
+    this.#lastCurrent = null;
+    this.#lastCurrentIndex = null;
+    this.width = width;
+    this.height = height;
+
+    this.#resetCache();
+  }
+
+  updateCache(layers, current) {
+    const currentIndex = layers.findIndex((layer) => layer === current);
+
+    this.#lastCurrent = current;
+    this.#lastCurrentIndex = currentIndex;
+
+    if (this.#lastCurrent.id !== current.id || this.#lastCurrentIndex !== currentIndex) return;
+    this.#resetCache();
+    layers.forEach((layer, index) => {
+      if (!layer.visible || index === currentIndex) return;
+      const appendedCache = index < currentIndex ? this.beforeCache : this.afterCache;
+      appendedCache.context.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS);
+    });
+  }
+
+  #resetCache() {
+    this.beforeCache = new Layer(-1, this.width, this.height);
+    this.afterCache = new Layer(-1, this.width, this.height);
+  }
+
+  drawFromCache(context) {
+    context.drawImage(this.beforeCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
+    if (this.#lastCurrent.visible) {
+      context.drawImage(this.#lastCurrent.virtualCanvas, IMAGE_POS, IMAGE_POS);
     }
+    context.drawImage(this.afterCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
   }
-  lastCurrent = current;
-  lastCurrentIndex = currentIndex;
-  mainContext.drawImage(beforeCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
-  if (current.visible) {
-    mainContext.drawImage(current.virtualCanvas, IMAGE_POS, IMAGE_POS);
-  }
-  mainContext.drawImage(afterCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
-};
+}
 
 /*
 A class which wraps HTML <canvas> element and adds functionality to it.
@@ -132,6 +142,8 @@ class Canvas {
     this.#layers = [];
     this.#listeners = [];
 
+    this.cache = new LayerCache(width, height);
+
     //Create the first empty layer
     this.appendLayer();
   }
@@ -143,12 +155,18 @@ class Canvas {
     this.mainContext.putImageData(emptyImage, IMAGE_POS, IMAGE_POS);
 
     //Iterate through virtual canvases and draw them over the main canvas
-    mergeLayers(this.#layers, this.drawingLayer, this.mainContext);
+    this.#mergeLayers();
   }
 
   //Gets combined ImageData from all layers
   getCombinedImage() {
     return this.mainContext.getImageData(IMAGE_POS, IMAGE_POS, this.mainElement.width, this.mainElement.height);
+  }
+
+  //Duration of update decreased by 20%
+  #mergeLayers() {
+    this.cache.updateCache(this.#layers, this.state.currentLayer);
+    this.cache.drawFromCache(this.mainContext);
   }
 
   //The implementation of EventEmitter pattern. Allows other entities to know when the canvas is getting a fixated state
@@ -196,7 +214,8 @@ class Canvas {
 
   moveLayerDown(id) {
     const layerPosition = this.#layers.findIndex((layer) => layer.id === id);
-    if (layerPosition < 1) return; //There exists such layer and it is not the bottom one
+    //There exists such layer and it is not the bottom one
+    if (layerPosition < 1) return;
     this.#reorderLayer(this.#layers[layerPosition], layerPosition - 1);
   }
 
@@ -238,13 +257,13 @@ class Canvas {
 
   //Saves the current layers of the canvas to be able to retrieve them later
   save() {
-    const currentState = this.state.currentState;
+    const currentState = this.state.currentLayer;
     if (currentState !== null) {
       pushLayers(this.state.shownLayers, currentState);
       this.state.nextLayers = [];
     }
 
-    this.state.currentState = this.#cloneLayers();
+    this.state.currentLayer = this.#cloneLayers();
     this.#fixateChanges();
   }
 
@@ -265,7 +284,7 @@ class Canvas {
 
     this.#layers = stackRetrieved.pop();
     const lastLayer = this.#layers[this.#layers.length - 1];
-    this.state.currentState = this.#cloneLayers();
+    this.state.currentLayer = this.#cloneLayers();
     this.#setDrawingLayer(lastLayer);
 
     this.update();
