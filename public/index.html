@@ -9,25 +9,30 @@
 
   <body>
     <div class="container">
-      <div id="menu">
-        <button id="file-create" onclick="onFileCreate()">Create file</button>
-        <button id="file-clear" onclick="onFileClear()">Clear file</button>
-        <button id="export-button">Export to BMP</button>
+      <div id="menu" class="main-panel">
+        <div class="menu-item" id="file-create">
+          <span class="text">Create</span>
+        </div>
+        <div class="menu-item" id="file-clear">
+          <span class="text">Clear</span>
+        </div>
+        <div class="menu-item" id="export-button">
+          <span class="text">Export</span>
+        </div>
         <div>
           <div id="undo-button" class="state-button"></div>
           <div id="redo-button" class="state-button"></div>
         </div>
       </div>
       <div id="main">
-        <div id="tools">
-          <input type="color" id="color-picker">
+        <div id="tools" class="white-panel">
         </div>
         <div id="canvas-parent">
           <div id="canvas-wrapper">
             <div class="canvas-element" id="canvas-background"></div>
           </div>
         </div>
-        <div id="sidebar">
+        <div id="sidebar" class="white-panel">
           <button id="add-layer-button">Add layer</button>
           <button id="remove-layer-button">Remove layer</button>
           <button id="move-up-layer-button">Move layer up</button>
@@ -38,7 +43,7 @@
           </div>
         </div>
       </div>
-      <div id="footer"></div>
+      <div id="footer" class="white-panel"></div>
     </div>
 
     <div id="file-create-modal" class="modal">
