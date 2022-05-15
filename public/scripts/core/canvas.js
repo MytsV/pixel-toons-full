@@ -87,8 +87,7 @@ const mergeLayers = (layers, current, mainContext) => {
   const width = current.virtualCanvas.width;
   const height = current.virtualCanvas.height;
   const currentIndex = layers.findIndex((layer) => layer === current);
-  if (lastCurrent === null || lastCurrent.id !== current.id || lastCurrentIndex !== currentIndex ||
-    lastCurrent.visible !== current.visible) {
+  if (lastCurrent === null || lastCurrent.id !== current.id || lastCurrentIndex !== currentIndex) {
     beforeCache = new Layer(-1, width, height);
     afterCache = new Layer(-1, width, height);
     for (let i = 0; i < layers.length; i++) {
@@ -104,7 +103,9 @@ const mergeLayers = (layers, current, mainContext) => {
   lastCurrent = current;
   lastCurrentIndex = currentIndex;
   mainContext.drawImage(beforeCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
-  mainContext.drawImage(current.virtualCanvas, IMAGE_POS, IMAGE_POS);
+  if (current.visible) {
+    mainContext.drawImage(current.virtualCanvas, IMAGE_POS, IMAGE_POS);
+  }
   mainContext.drawImage(afterCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
 };
 
