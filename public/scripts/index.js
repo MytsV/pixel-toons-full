@@ -28,6 +28,8 @@ window.onload = () => {
 
   fileCreateButton.onclick = () => onFileCreate();
   fileClearButton.onclick = () => onFileClear();
+
+  newFile(50, 50);
 };
 
 function onFileCreate() {
@@ -92,18 +94,17 @@ Handling of toolbar creation
 
 //A wrapper class for tool which defines its display name and icon
 class ToolInfo {
-  constructor(tool, name, icon) {
+  constructor(tool, name) {
     this.tool = tool;
     this.name = name;
-    this.icon = icon;
   }
 }
 
 function createToolbar() {
   const toolsInfo = [
-    new ToolInfo(new Pencil(), 'Pencil', './images/favicon.ico'),
-    new ToolInfo(new Eraser(), 'Eraser', './images/eraser.ico'),
-    new ToolInfo(new BucketFill(), 'BucketFill', './images/bucket.png')
+    new ToolInfo(new Pencil(), 'Pencil'),
+    new ToolInfo(new Eraser(), 'Eraser'),
+    new ToolInfo(new BucketFill(), 'Bucket Fill')
   ];
   const elements = toolsInfo.map((toolInfo) => createToolElement(toolInfo));
   const container = document.getElementById('tools');
@@ -118,12 +119,19 @@ function createToolElement(toolInfo) {
   element.id = toolInfo.name.toLowerCase();
 
   element.classList.add('single-tool');
+  element.classList.add('label-panel');
+  element.classList.add('main-panel');
+
+  const text = document.createElement('span');
+  text.innerText = toolInfo.name;
+  text.classList.add('text');
+
+  element.appendChild(text);
   element.onclick = () => {
     chosenTool.disable();
     chosenTool = toolInfo.tool;
     chosenTool.link(file.canvas);
   };
-  element.style.backgroundImage = `url(${toolInfo.icon})`;
 
   return element;
 }
