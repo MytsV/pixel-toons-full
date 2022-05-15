@@ -191,17 +191,25 @@ function getVisibilityButton(layer) {
 }
 
 const IMAGE_POS = 0;
+const layerCache = new Map(); //Keys are layer IDs, values - URLs of layer images
 
-function getLayerImage(layer) { //To be optimized by caching
+function getLayerImage(layer) {
   const imageElement = document.createElement('div');
   imageElement.classList.add('layer-image');
   imageElement.style.aspectRatio = renderer.canvasWrapper.style.aspectRatio;
 
-  const image = layer.context.getImageData(IMAGE_POS, IMAGE_POS, layer.virtualCanvas.width, layer.virtualCanvas.height);
-  const encoder = new BmpEncoder(image, bmpVersions.bmp32); //Render image with transparency
-  const data = encoder.encode();
-  const url = bytesToUrl(data); //Possibly replace with base64 encoded data
+  let url;
 
+  if (canvas.drawingLayer.id !== layer.id && layerCache.has(layer.id)) {
+    url = layerCache.get(layer.id);
+  } else {
+    const image = layer.context.getImageData(IMAGE_POS, IMAGE_POS, layer.virtualCanvas.width, layer.virtualCanvas.height);
+    const encoder = new BmpEncoder(image, bmpVersions.bmp32); //Render image with transparency
+    const data = encoder.encode();
+    url = bytesToUrl(data);
+  }
+
+  layerCache.set(layer.id, url);
   imageElement.style.backgroundImage = `url(${url})`;
   return imageElement;
 }
