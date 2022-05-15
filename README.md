@@ -45,7 +45,7 @@ User interface is currently extremely raw. It will be improved in the future.
     </tr>
     <tr>
         <td>
-            🟦 Undo/Redo system
+            🟩 Undo/Redo system
         </td>
         <td>
             🟥 Retrieving other's animations
@@ -56,7 +56,7 @@ User interface is currently extremely raw. It will be improved in the future.
     </tr>
     <tr>
         <td>
-            🟦 Layer system
+            🟩 Layer system
         </td>
         <td></td>
         <td>
@@ -74,7 +74,7 @@ User interface is currently extremely raw. It will be improved in the future.
     </tr>
     <tr>
         <td>
-            🟨 BMP Encoder (lacking 32bit option)
+            🟩 BMP Encoder (lacking 32bit option)
         </td>
         <td>
         </td>
