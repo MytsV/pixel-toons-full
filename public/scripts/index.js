@@ -120,11 +120,16 @@ function assignLayerButtons() {
   const removeLayerButton = document.getElementById('remove-layer-button');
   const moveUpLayerButton = document.getElementById('move-up-layer-button');
   const moveDownLayerButton = document.getElementById('move-down-layer-button');
+  const uniteLayerButton = document.getElementById('unite-layer-button');
 
   addLayerButton.onclick = () => canvas.appendLayer();
   removeLayerButton.onclick = () => canvas.removeLayer(canvas.drawingLayer.id);
   moveUpLayerButton.onclick = () => canvas.moveLayerUp(canvas.drawingLayer.id);
   moveDownLayerButton.onclick = () => canvas.moveLayerDown(canvas.drawingLayer.id);
+  uniteLayerButton.onclick = () => {
+    const currentIndex = canvas.layers.findIndex((layer) => layer === canvas.drawingLayer);
+    canvas.unite(canvas.drawingLayer.id, canvas.layers[currentIndex - 1].id);
+  };
 }
 
 function setUpUpdateListener() {

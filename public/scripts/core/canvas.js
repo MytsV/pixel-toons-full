@@ -230,6 +230,27 @@ class Canvas {
     this.save();
   }
 
+  unite(idA, idB) { //To refactor
+    const positionA = this.#layers.findIndex((layer) => layer.id === idA);
+    const positionB = this.#layers.findIndex((layer) => layer.id === idB);
+
+    const layerA = this.#layers[positionA];
+    const layerB = this.#layers[positionB];
+
+    if (positionA < positionB) {
+      layerA.context.drawImage(layerB.virtualCanvas, IMAGE_POS, IMAGE_POS);
+      this.#setDrawingLayer(layerA);
+      this.#layers.splice(positionB, 1);
+    } else {
+      layerB.context.drawImage(layerA.virtualCanvas, IMAGE_POS, IMAGE_POS);
+      this.#setDrawingLayer(layerB);
+      this.#layers.splice(positionA, 1);
+    }
+
+    this.redraw();
+    this.save();
+  }
+
   /*
   We make the variable private and create a getter to ensure encapsulation.
   Layers variable should never get assigned outside the class.
