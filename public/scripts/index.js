@@ -189,8 +189,8 @@ function setUpUpdateListener() {
 
 function setLayerMenu() {
   const layers = file.canvas.layers;
-  let container = document.getElementById('layer-container');
-  container = clearLayerContainer(container);
+  const container = document.getElementById('layer-container');
+  container.innerHTML = '';
 
   for (let i = layers.length - 1; i >= 0; i--) { //Iterate the list in reversed order
     const layer = layers[i];
@@ -209,19 +209,10 @@ function setLayerMenu() {
   }
 }
 
-function clearLayerContainer(container) {
-  const sidebar = document.getElementById('sidebar');
-  container.remove();
-
-  const newContainer = document.createElement('div');
-  newContainer.id = 'layer-container';
-  sidebar.appendChild(newContainer);
-
-  return newContainer;
-}
-
 function appendLayerName(layer, layerElement) {
-  const name = document.createElement('p');
+  const name = document.createElement('span');
+  name.classList.add('text');
+  name.classList.add('layer-name');
   name.innerText = `Layer ${layer.id}`;
   layerElement.appendChild(name);
 }
