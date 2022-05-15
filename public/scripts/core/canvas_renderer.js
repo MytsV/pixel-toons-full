@@ -60,7 +60,9 @@ class CanvasRenderer {
   removeCanvases() {
     const children = this.canvasWrapper.children;
     for (const child of children) {
-      child.remove();
+      if (child.id !== 'canvas-background') {
+        child.remove();
+      }
     }
   }
 
@@ -126,10 +128,13 @@ function setWrapperSize(wrapper, zoomValue) {
 }
 
 function setupColorPicker(canvas) {
-  const colorPicker = document.getElementById('color-picker'); //Input element with type "color"
+  const colorPicker = document.createElement('input'); //Input element with type "color"
+  colorPicker.type = 'color';
+  colorPicker.id = 'color-picker';
   colorPicker.oninput = () => {
     canvas.state.color = Color.fromHex(colorPicker.value);
   };
+  return colorPicker;
 }
 
 export { CanvasRenderer, setupColorPicker };

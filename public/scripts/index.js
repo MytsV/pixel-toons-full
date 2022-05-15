@@ -9,25 +9,64 @@ This file is far from being finished.
 It will be refactored structurally.
 Mostly it consists of UI boilerplate. Other files have more interesting content
  */
+let file = null;
 
-const canvasWidth = 50;
-const canvasHeight = 50;
+class AnimationFile {
+  constructor(width, height) {
+    this.canvas = new Canvas(width, height);
+    this.width = width;
+    this.height = height;
+  }
+}
 
-const canvas = new Canvas(canvasWidth, canvasHeight);
 const renderer = new CanvasRenderer();
-
 let chosenTool = undefined;
 
 window.onload = () => {
-  renderer.appendCanvas(canvas);
+  const fileCreateButton = document.getElementById('file-create');
+  const fileClearButton = document.getElementById('file-clear');
+
+  fileCreateButton.onclick = () => onFileCreate();
+  fileClearButton.onclick = () => onFileClear();
+};
+
+function onFileCreate() {
+  const modal = document.getElementById('file-create-modal');
+  modal.style.display = 'block';
+
+  const createFinishButton = document.getElementById('file-create-finish');
+  createFinishButton.onclick = () => {
+    const inputWidth = document.getElementById('width-input');
+    const inputHeight = document.getElementById('height-input');
+    newFile(inputWidth.value, inputHeight.value);
+    modal.style.display = 'none';
+  };
+}
+
+window.onclick = function(event) {
+  const modal = document.getElementById('file-create-modal');
+  if (event.target === modal) {
+    modal.style.display = 'none';
+  }
+};
+
+function onFileClear() {
+  newFile(file.width, file.height);
+}
+
+function newFile(width, height) {
+  file = new AnimationFile(width, height);
+
+  renderer.removeCanvases();
+  renderer.appendCanvas(file.canvas);
+
   setUpExporter();
-  setupColorPicker(canvas);
 
   chosenTool = new Pencil();
-  chosenTool.link(canvas);
+  chosenTool.link(file.canvas);
 
   setUpUserInterface();
-};
+}
 
 function setUpExporter() {
   const button = document.getElementById('export-button');
@@ -35,7 +74,7 @@ function setUpExporter() {
 }
 
 function downloadImage() {
-  const image = canvas.getMergedImage();
+  const image = file.canvas.getMergedImage();
   const encoder = new BmpEncoder(image, bmpVersions.bmp32);
   downloadLocalUrl(bytesToUrl(encoder.encode()), 'image.bmp');
 }
@@ -68,7 +107,10 @@ function createToolbar() {
   ];
   const elements = toolsInfo.map((toolInfo) => createToolElement(toolInfo));
   const container = document.getElementById('tools');
+  container.innerHTML = '';
+
   elements.forEach((element) => container.appendChild(element));
+  container.appendChild(setupColorPicker(file.canvas));
 }
 
 function createToolElement(toolInfo) {
@@ -79,7 +121,7 @@ function createToolElement(toolInfo) {
   element.onclick = () => {
     chosenTool.disable();
     chosenTool = toolInfo.tool;
-    chosenTool.link(canvas);
+    chosenTool.link(file.canvas);
   };
   element.style.backgroundImage = `url(${toolInfo.icon})`;
 
@@ -107,8 +149,8 @@ document.addEventListener('keypress', (event) => {
 function assignStateButtons() {
   const undoButton = document.getElementById('undo-button');
   const redoButton = document.getElementById('redo-button');
-  undoButton.onclick = () => canvas.undo();
-  redoButton.onclick = () => canvas.redo();
+  undoButton.onclick = () => file.canvas.undo();
+  redoButton.onclick = () => file.canvas.redo();
 }
 
 /*
@@ -122,23 +164,23 @@ function assignLayerButtons() {
   const moveDownLayerButton = document.getElementById('move-down-layer-button');
   const uniteLayerButton = document.getElementById('unite-layer-button');
 
-  addLayerButton.onclick = () => canvas.appendLayer();
-  removeLayerButton.onclick = () => canvas.removeLayer(canvas.drawingLayer.id);
-  moveUpLayerButton.onclick = () => canvas.moveLayerUp(canvas.drawingLayer.id);
-  moveDownLayerButton.onclick = () => canvas.moveLayerDown(canvas.drawingLayer.id);
+  addLayerButton.onclick = () => file.canvas.appendLayer();
+  removeLayerButton.onclick = () => file.canvas.removeLayer(file.canvas.drawingLayer.id);
+  moveUpLayerButton.onclick = () => file.canvas.moveLayerUp(file.canvas.drawingLayer.id);
+  moveDownLayerButton.onclick = () => file.canvas.moveLayerDown(file.canvas.drawingLayer.id);
   uniteLayerButton.onclick = () => {
-    const currentIndex = canvas.layers.findIndex((layer) => layer === canvas.drawingLayer);
-    canvas.unite(canvas.drawingLayer.id, canvas.layers[currentIndex - 1].id);
+    const currentIndex = file.canvas.layers.findIndex((layer) => layer === file.canvas.drawingLayer);
+    file.canvas.unite(file.canvas.drawingLayer.id, file.canvas.layers[currentIndex - 1].id);
   };
 }
 
 function setUpUpdateListener() {
   setLayerMenu();
-  canvas.listenToUpdates(setLayerMenu);
+  file.canvas.listenToUpdates(setLayerMenu);
 }
 
 function setLayerMenu() {
-  const layers = canvas.layers;
+  const layers = file.canvas.layers;
   let container = document.getElementById('layer-container');
   container = clearLayerContainer(container);
 
@@ -149,8 +191,9 @@ function setLayerMenu() {
 
     appendLayerName(layer, layerElement);
     handleLayerClasses(layer, layerElement);
+    // eslint-disable-next-line no-loop-func
     layerElement.onclick = () => {
-      canvas.switchLayer(layer.id);
+      file.canvas.switchLayer(layer.id);
     };
     layerElement.appendChild(getVisibilityButton(layer));
 
@@ -177,7 +220,7 @@ function appendLayerName(layer, layerElement) {
 
 function handleLayerClasses(layer, layerElement) {
   layerElement.classList.add('layer-element');
-  if (layer === canvas.drawingLayer) {
+  if (layer === file.canvas.drawingLayer) {
     layerElement.classList.add('layer-element-selected');
   }
 }
@@ -190,7 +233,7 @@ function getVisibilityButton(layer) {
   }
   visibilityButton.onclick = () => {
     layer.visible = !layer.visible;
-    canvas.redraw();
+    file.canvas.redraw();
   };
   return visibilityButton;
 }
@@ -205,7 +248,7 @@ function getLayerImage(layer) {
 
   let url;
 
-  if (canvas.drawingLayer.id !== layer.id && layerCache.has(layer.id)) {
+  if (file.canvas.drawingLayer.id !== layer.id && layerCache.has(layer.id)) {
     url = layerCache.get(layer.id);
   } else {
     const image = layer.context.getImageData(IMAGE_POS, IMAGE_POS, layer.virtualCanvas.width, layer.virtualCanvas.height);
