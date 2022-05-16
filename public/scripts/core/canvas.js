@@ -30,12 +30,10 @@ class CanvasState {
   }
 
   save() {
-    const currentLayers = this.currentLayers;
-    if (currentLayers !== null) {
-      CanvasState.#pushLayers(this.pastLayers, currentLayers);
+    if (this.currentLayers !== null) {
+      CanvasState.#pushLayers(this.pastLayers, this.currentLayers);
       this.nextLayers = [];
     }
-
     this.currentLayers = this.#cloneLayers();
   }
 
