@@ -76,7 +76,7 @@ function setUpExporter() {
 }
 
 function downloadImage() {
-  const image = file.canvas.getMergedImage();
+  const image = file.canvas.getJoinedImage();
   const encoder = new BmpEncoder(image, bmpVersions.bmp32);
   downloadLocalUrl(bytesToUrl(encoder.encode()), 'image.bmp');
 }
@@ -173,12 +173,12 @@ function assignLayerButtons() {
   const uniteLayerButton = document.getElementById('unite-layer-button');
 
   addLayerButton.onclick = () => file.canvas.appendLayer();
-  removeLayerButton.onclick = () => file.canvas.removeLayer(file.canvas.drawingLayer.id);
-  moveUpLayerButton.onclick = () => file.canvas.moveLayerUp(file.canvas.drawingLayer.id);
-  moveDownLayerButton.onclick = () => file.canvas.moveLayerDown(file.canvas.drawingLayer.id);
+  removeLayerButton.onclick = () => file.canvas.removeLayer(file.canvas.drawnLayerID);
+  moveUpLayerButton.onclick = () => file.canvas.moveLayerUp(file.canvas.drawnLayerID);
+  moveDownLayerButton.onclick = () => file.canvas.moveLayerDown(file.canvas.drawnLayerID);
   uniteLayerButton.onclick = () => {
-    const currentIndex = file.canvas.layers.findIndex((layer) => layer === file.canvas.drawingLayer);
-    file.canvas.unite(file.canvas.drawingLayer.id, file.canvas.layers[currentIndex - 1].id);
+    const currentIndex = file.canvas.layers.findIndex((layer) => layer.id === file.canvas.drawnLayerID);
+    file.canvas.mergeLayers(file.canvas.drawnLayerID, file.canvas.layers[currentIndex - 1].id);
   };
 }
 
@@ -219,7 +219,7 @@ function appendLayerName(layer, layerElement) {
 
 function handleLayerClasses(layer, layerElement) {
   layerElement.classList.add('layer-element');
-  if (layer === file.canvas.drawingLayer) {
+  if (layer.id === file.canvas.drawnLayerID) {
     layerElement.classList.add('layer-element-selected');
   }
 }
@@ -247,7 +247,7 @@ function getLayerImage(layer) {
 
   let url;
 
-  if (file.canvas.drawingLayer.id !== layer.id && layerCache.has(layer.id)) {
+  if (file.canvas.drawnLayerID !== layer.id && layerCache.has(layer.id)) {
     url = layerCache.get(layer.id);
   } else {
     const image = layer.context.getImageData(IMAGE_POS, IMAGE_POS, layer.virtualCanvas.width, layer.virtualCanvas.height);

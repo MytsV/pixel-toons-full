@@ -3,6 +3,7 @@ import { Color } from '../utilities/color.js';
 
 const DEFAULT_PENCIL_COLOR = '#000000';
 const IMAGE_POS = 0;
+const CACHE_MIN_LAYER_COUNT = 4; //The minimum number of layers for which we perform caching
 
 /*
 A class which stores canvas parameters that are changed outside of drawing.
@@ -24,7 +25,7 @@ class CanvasState {
     this.nextLayers = [];
     this.currentLayers = null;
 
-    //We keep the reference the canvas which created the CanvasState object
+    //We keep the reference to the canvas which created "us"
     this.canvas = canvas;
   }
 
@@ -168,17 +169,14 @@ class Canvas {
   #layers; //An ordered array of virtual canvases
   #listeners; //A variable needed to implement simple EventEmitter
 
+  drawnLayerID; //The ID of the currently drawn on layer
+  image; //Image associated with the currently drawn on layer
+
   constructor(width, height) {
     const canvasElement = createCanvasElement(width, height);
-
     //The element is the only HTMLCanvasElement that is appended to the DOM. We save its context for reuse
     this.mainElement = canvasElement;
     this.mainContext = canvasElement.getContext('2d');
-
-    //Context associated with the current drawing layer
-    this.context = null;
-    //Image associated with the current drawing layer
-    this.image = null;
 
     this.state = new CanvasState(this);
     this.#layers = [];
@@ -193,25 +191,20 @@ class Canvas {
   //Refresh the visual representation of the canvas with layers
   redraw() {
     //Apply changes to current layer
-    this.context.putImageData(this.image, IMAGE_POS, IMAGE_POS);
+    const currentLayer = this.#layers.find((layer) => layer.id === this.drawnLayerID);
+    currentLayer.context.putImageData(this.image, IMAGE_POS, IMAGE_POS);
 
     //Reset the image on real canvas to fully transparent
     const transparentImage = new ImageData(this.mainElement.width, this.mainElement.height);
     this.mainContext.putImageData(transparentImage, IMAGE_POS, IMAGE_POS);
 
     //Iterate through virtual canvases and draw them over the main canvas
-    this.#mergeLayers();
+    this.#joinLayers();
   }
 
-  getMergedImage() {
-    return this.mainContext.getImageData(IMAGE_POS, IMAGE_POS, this.mainElement.width, this.mainElement.height);
-  }
-
-  #mergeLayers() {
-    const uncachedLimit = 3; //The maximum number of layers for which we won't perform caching
-
-    if (this.#layers.length > uncachedLimit) {
-      this.cache.updateCache(this.#layers, this.drawingLayer);
+  #joinLayers() {
+    if (this.#layers.length >= CACHE_MIN_LAYER_COUNT) {
+      this.cache.updateCache(this.#layers, this.#layers.find((layer) => layer.id === this.drawnLayerID));
       this.cache.drawFromCache(this.mainContext);
     } else {
       this.#layers.forEach((layer) => {
@@ -221,10 +214,14 @@ class Canvas {
     }
   }
 
+  getJoinedImage() {
+    return this.mainContext.getImageData(IMAGE_POS, IMAGE_POS, this.mainElement.width, this.mainElement.height);
+  }
+
   //Creates a new layer and stacks in on top of other layers
   appendLayer() {
     const layer = new Layer(idGetter.get(), this.mainElement.width, this.mainElement.height);
-    this.#setDrawingLayer(layer);
+    this.#setDrawnLayer(layer);
     this.#layers.push(layer);
 
     this.save();
@@ -235,7 +232,7 @@ class Canvas {
 
     this.#layers = this.#layers.filter((layer) => layer.id !== id);
     const topLayer = this.#layers[this.#layers.length - 1];
-    this.#setDrawingLayer(topLayer);
+    this.#setDrawnLayer(topLayer);
 
     this.redraw();
     this.save();
@@ -244,7 +241,7 @@ class Canvas {
   switchLayer(id) {
     const layer = this.#layers.find((layer) => layer.id === id);
     if (!layer) return;
-    this.#setDrawingLayer(layer);
+    this.#setDrawnLayer(layer);
     this.#fixateChanges();
   }
 
@@ -273,7 +270,7 @@ class Canvas {
     this.save();
   }
 
-  unite(idA, idB) { //To refactor
+  mergeLayers(idA, idB) { //To refactor
     const positionA = this.#layers.findIndex((layer) => layer.id === idA);
     const positionB = this.#layers.findIndex((layer) => layer.id === idB);
 
@@ -282,11 +279,11 @@ class Canvas {
 
     if (positionA < positionB) {
       layerA.context.drawImage(layerB.virtualCanvas, IMAGE_POS, IMAGE_POS);
-      this.#setDrawingLayer(layerA);
+      this.#setDrawnLayer(layerA);
       this.#layers.splice(positionB, 1);
     } else {
       layerB.context.drawImage(layerA.virtualCanvas, IMAGE_POS, IMAGE_POS);
-      this.#setDrawingLayer(layerB);
+      this.#setDrawnLayer(layerB);
       this.#layers.splice(positionA, 1);
     }
 
@@ -315,17 +312,15 @@ class Canvas {
     this.#layers = this.state.retrieveState(stackRetrieved);
     const lastLayer = this.state.retrieveLastLayer();
 
-    this.#setDrawingLayer(lastLayer);
+    this.#setDrawnLayer(lastLayer);
     this.redraw();
     this.#fixateChanges();
   }
 
   //Update instance variables with current layer data
-  #setDrawingLayer(layer) {
-    this.drawingLayer = layer;
-
-    this.context = layer.virtualCanvas.getContext('2d');
-    this.image = this.context.getImageData(IMAGE_POS, IMAGE_POS, this.mainElement.width, this.mainElement.height);
+  #setDrawnLayer(layer) {
+    this.drawnLayerID = layer.id;
+    this.image = layer.context.getImageData(IMAGE_POS, IMAGE_POS, this.mainElement.width, this.mainElement.height);
     applyImageMixin(this.image);
   }
 
