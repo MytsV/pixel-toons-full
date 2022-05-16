@@ -45,7 +45,7 @@ User interface is currently extremely raw. It will be improved in the future.
     </tr>
     <tr>
         <td>
-            🟦 Undo/Redo system
+            🟩 Undo/Redo system
         </td>
         <td>
             🟥 Retrieving other's animations
@@ -56,7 +56,7 @@ User interface is currently extremely raw. It will be improved in the future.
     </tr>
     <tr>
         <td>
-            🟦 Layer system
+            🟩 Layer system
         </td>
         <td></td>
         <td>
@@ -65,7 +65,7 @@ User interface is currently extremely raw. It will be improved in the future.
     </tr>
     <tr>
         <td>
-            🟨 Zoom system
+            🟩 Zoom system
         </td>
         <td></td>
         <td>
@@ -74,27 +74,52 @@ User interface is currently extremely raw. It will be improved in the future.
     </tr>
     <tr>
         <td>
-            🟨 BMP Encoder (lacking 32bit option)
+            🟩 BMP Encoder (lacking 32bit option)
+        </td>
+        <td>
+        </td>
+        <td>
         </td>
     </tr>
     <tr>
         <td>
             🟨 Key shortcuts
         </td>
+        <td>
+        </td>
+        <td>
+        </td>
     </tr>
     <tr>
         <td>
-            🟥 Canvas "file" system
+            🟨 Canvas "file" system
+        </td>
+        <td>
+        </td>
+        <td>
         </td>
     </tr>
     <tr>
         <td>
             🟥 GIF encoder
         </td>
+        <td>
+        </td>
+        <td>
+        </td>
     </tr>
     <tr>
         <td>
             🟥 Own file format with specifications
         </td>
+        <td>
+        </td>
+        <td>
+        </td>
     </tr>
 </table>
+
+Interface demonstration <br>
+<img src="./examples/drawing.png"> <br>
+Exported image from demonstration <br>
+<img src="./examples/exported.bmp">

@@ -1,89 +1,40 @@
-import { CanvasRenderer, setupColorPicker } from './core/canvas_renderer.js';
-import { Canvas } from './core/canvas.js';
-import { bytesToUrl, downloadLocalUrl } from './utilities/bytes_conversion.js';
-import { BmpEncoder } from './utilities/bmp_encoder.js';
-import { BucketFill, Eraser, Pencil } from './core/tools.js';
+import { CanvasRenderer } from './core/canvas_renderer.js';
+import { AnimationFile } from './core/canvas.js';
+import { bytesToUrl } from './utilities/bytes_conversion.js';
+import { BmpEncoder, bmpVersions } from './utilities/bmp_encoder.js';
+import { FileMenu, StateButtons, Toolbar } from './core/ui_elements.js';
 
-/*
-This file is far from being finished.
-It will be refactored structurally.
-Mostly it consists of UI boilerplate. Other files have more interesting content
- */
-
-const canvasWidth = 50;
-const canvasHeight = 50;
-
-const canvas = new Canvas(canvasWidth, canvasHeight);
+let file;
 const renderer = new CanvasRenderer();
-
-let chosenTool = undefined;
+let elements = [];
 
 window.onload = () => {
-  renderer.appendCanvas(canvas);
-  setUpExporter();
-  setupColorPicker(canvas);
-
-  chosenTool = new Pencil();
-  chosenTool.link(canvas);
-
-  setUpUserInterface();
+  elements = [
+    new StateButtons(),
+    new FileMenu(createNewFile),
+    new Toolbar()
+  ];
 };
 
-function setUpExporter() {
-  const button = document.getElementById('export-button');
-  button.onclick = downloadImage;
+function createNewFile(width, height) {
+  file = new AnimationFile(width, height);
+
+  renderer.removeCanvases();
+  renderer.appendCanvas(file.canvas);
+
+  elements.forEach((element) => element.refresh(file));
+  setUpUserInterface();
 }
 
-function downloadImage() {
-  const image = canvas.getCombinedImage();
-  const encoder = new BmpEncoder(image);
-  downloadLocalUrl(bytesToUrl(encoder.encode()), 'image.bmp');
-}
-
-function setUpUserInterface() {
-  createToolbar();
-  assignStateButtons();
-  assignLayerButtons();
-  setUpUpdateListener();
-}
 
 /*
-Handling of toolbar creation
+NOT REFACTORED ZONE
+These functions will turn into classes in ui_elements.js or new key shorcuts handler
  */
 
-//A wrapper class for tool which defines its display name and icon
-class ToolInfo {
-  constructor(tool, name, icon) {
-    this.tool = tool;
-    this.name = name;
-    this.icon = icon;
-  }
-}
-
-function createToolbar() {
-  const toolsInfo = [
-    new ToolInfo(new Pencil(), 'Pencil', './images/favicon.ico'),
-    new ToolInfo(new Eraser(), 'Eraser', './images/eraser.ico'),
-    new ToolInfo(new BucketFill(), 'BucketFill', './images/bucket.png')
-  ];
-  const elements = toolsInfo.map((toolInfo) => createToolElement(toolInfo));
-  const container = document.getElementById('tools');
-  elements.forEach((element) => container.appendChild(element));
-}
-
-function createToolElement(toolInfo) {
-  const element = document.createElement('div');
-  element.id = toolInfo.name.toLowerCase();
-
-  element.classList.add('single-tool');
-  element.onclick = () => {
-    chosenTool.disable();
-    chosenTool = toolInfo.tool;
-    chosenTool.link(canvas);
-  };
-  element.style.backgroundImage = `url(${toolInfo.icon})`;
-
-  return element;
+function setUpUserInterface() {
+  assignLayerButtons();
+  setUpUpdateListener();
 }
 
 /*
@@ -104,13 +55,6 @@ document.addEventListener('keypress', (event) => {
   }
 });
 
-function assignStateButtons() {
-  const undoButton = document.getElementById('undo-button');
-  const redoButton = document.getElementById('redo-button');
-  undoButton.onclick = () => canvas.undo();
-  redoButton.onclick = () => canvas.redo();
-}
-
 /*
 Handling of layer-specific functions
  */
@@ -120,22 +64,27 @@ function assignLayerButtons() {
   const removeLayerButton = document.getElementById('remove-layer-button');
   const moveUpLayerButton = document.getElementById('move-up-layer-button');
   const moveDownLayerButton = document.getElementById('move-down-layer-button');
+  const uniteLayerButton = document.getElementById('unite-layer-button');
 
-  addLayerButton.onclick = () => canvas.appendLayer();
-  removeLayerButton.onclick = () => canvas.removeLayer(canvas.drawingLayer.id);
-  moveUpLayerButton.onclick = () => canvas.moveLayerUp(canvas.drawingLayer.id);
-  moveDownLayerButton.onclick = () => canvas.moveLayerDown(canvas.drawingLayer.id);
+  addLayerButton.onclick = () => file.canvas.appendLayer();
+  removeLayerButton.onclick = () => file.canvas.removeLayer(file.canvas.drawnLayerID);
+  moveUpLayerButton.onclick = () => file.canvas.moveLayerUp(file.canvas.drawnLayerID);
+  moveDownLayerButton.onclick = () => file.canvas.moveLayerDown(file.canvas.drawnLayerID);
+  uniteLayerButton.onclick = () => {
+    const currentIndex = file.canvas.layers.findIndex((layer) => layer.id === file.canvas.drawnLayerID);
+    file.canvas.mergeLayers(file.canvas.drawnLayerID, file.canvas.layers[currentIndex - 1].id);
+  };
 }
 
 function setUpUpdateListener() {
   setLayerMenu();
-  canvas.listenToUpdates(setLayerMenu);
+  file.canvas.listenToUpdates(setLayerMenu);
 }
 
 function setLayerMenu() {
-  const layers = canvas.layers;
-  let container = document.getElementById('layer-container');
-  container = clearLayerContainer(container);
+  const layers = file.canvas.layers;
+  const container = document.getElementById('layer-container');
+  container.innerHTML = '';
 
   for (let i = layers.length - 1; i >= 0; i--) { //Iterate the list in reversed order
     const layer = layers[i];
@@ -144,8 +93,9 @@ function setLayerMenu() {
 
     appendLayerName(layer, layerElement);
     handleLayerClasses(layer, layerElement);
+    // eslint-disable-next-line no-loop-func
     layerElement.onclick = () => {
-      canvas.switchLayer(layer.id);
+      file.canvas.switchLayer(layer.id);
     };
     layerElement.appendChild(getVisibilityButton(layer));
 
@@ -153,26 +103,17 @@ function setLayerMenu() {
   }
 }
 
-function clearLayerContainer(container) {
-  const sidebar = document.getElementById('sidebar');
-  container.remove();
-
-  const newContainer = document.createElement('div');
-  newContainer.id = 'layer-container';
-  sidebar.appendChild(newContainer);
-
-  return newContainer;
-}
-
 function appendLayerName(layer, layerElement) {
-  const name = document.createElement('p');
+  const name = document.createElement('span');
+  name.classList.add('text');
+  name.classList.add('layer-name');
   name.innerText = `Layer ${layer.id}`;
   layerElement.appendChild(name);
 }
 
 function handleLayerClasses(layer, layerElement) {
   layerElement.classList.add('layer-element');
-  if (layer === canvas.drawingLayer) {
+  if (layer.id === file.canvas.drawnLayerID) {
     layerElement.classList.add('layer-element-selected');
   }
 }
@@ -185,22 +126,33 @@ function getVisibilityButton(layer) {
   }
   visibilityButton.onclick = () => {
     layer.visible = !layer.visible;
-    canvas.update();
+    file.canvas.redraw();
   };
   return visibilityButton;
 }
 
 const IMAGE_POS = 0;
+const layerCache = new Map(); //Keys are layer IDs, values - URLs of layer images
 
-function getLayerImage(layer) { //To be optimized by caching
+function getLayerImage(layer) {
   const imageElement = document.createElement('div');
   imageElement.classList.add('layer-image');
+  imageElement.style.aspectRatio = renderer.canvasWrapper.style.aspectRatio;
 
-  const image = layer.context.getImageData(IMAGE_POS, IMAGE_POS, layer.virtualCanvas.width, layer.virtualCanvas.height);
-  const encoder = new BmpEncoder(image);
-  const data = encoder.encode();
-  const url = bytesToUrl(data); //Possibly replace with base64 encoded data
+  let url;
 
+  if (file.canvas.drawnLayerID !== layer.id && layerCache.has(layer.id)) {
+    url = layerCache.get(layer.id);
+  } else {
+    const image = layer.context.getImageData(IMAGE_POS, IMAGE_POS, layer.virtualCanvas.width, layer.virtualCanvas.height);
+    const encoder = new BmpEncoder(image, bmpVersions.bmp32); //Render image with transparency
+    const data = encoder.encode();
+    url = bytesToUrl(data);
+  }
+
+  layerCache.set(layer.id, url);
   imageElement.style.backgroundImage = `url(${url})`;
   return imageElement;
 }
+
+window.addEventListener('resize', () => renderer.adjustSize());

@@ -1,6 +1,20 @@
+@font-face {
+  font-family: Pixelite;
+  src: url("../fonts/pixelite.ttf");
+}
+
 body {
-  margin: 0;
   user-select: none;
+
+  --main-panel-color: #6d9fff;
+  --main-panel-color-highlight: #82acff;
+  --main-panel-color-shadow: #6092f1;
+  --border-color: #42568b;
+  --border-size: 2pt;
+  --inter-element-spacing: 10pt;
+
+  margin: var(--inter-element-spacing);
+  background-color: var(--main-panel-color);
 }
 
 .container {
@@ -14,45 +28,46 @@ body {
 #main {
   flex-grow: 1;
   display: flex;
+  margin-top: var(--inter-element-spacing);
+  margin-bottom: var(--inter-element-spacing);
 }
 
-#menu {
-  height: 45pt;
-  background-color: green;
+#toolbar {
+  width: 150pt;
+  display: flex;
+  flex-direction: column;
 }
 
 #tools {
-  width: 90pt;
-  background-color: greenyellow;
+  height: available;
+  flex-grow: 1;
+  padding: 2pt 6pt;
+  margin-top: var(--inter-element-spacing);
 }
 
 #footer {
-  background-color: darkgreen;
   height: 35pt;
 }
 
 #canvas-parent {
   width: 100%;
-  width: -moz-available;
-  width: -webkit-fill-available;
-  width: fill-available;
-  background-color: #676767;
+  background-color: var(--border-color);
   display: block;
-  overflow: scroll;
+  overflow: auto;
   position: relative;
+  margin-left: var(--inter-element-spacing);
+  margin-right: var(--inter-element-spacing);
 }
 
 #sidebar {
   width: 200pt;
-  background-color: lightgreen;
-  overflow: scroll;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 #canvas-wrapper {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
   height: 100%;
 }
 
@@ -64,16 +79,24 @@ body {
 }
 
 .single-tool {
-  width: 50pt;
-  height: 50pt;
+  width: available;
+  height: 30pt;
   background-repeat: no-repeat;
   background-size: cover;
   image-rendering: pixelated;
+  margin-bottom: 7pt;
+  margin-top: 5pt;
+}
+
+.active-tool {
+  border: none !important;
+  border-top: var(--border-size) solid var(--border-color) !important;
+  background-color: var(--border-color) !important;
 }
 
 .state-button {
-  width: 40pt;
-  height: 40pt;
+  width: 25pt;
+  height: 25pt;
   background-repeat: no-repeat;
   background-size: cover;
   image-rendering: pixelated;
@@ -81,11 +104,11 @@ body {
 }
 
 #undo-button {
-  background-image: url('../images/undo.ico');
+  background-image: url("../images/undo.png");
 }
 
 #redo-button {
-  background-image: url('../images/redo.ico');
+  background-image: url("../images/redo.png");
 }
 
 #canvas-background {
@@ -94,28 +117,203 @@ body {
   image-rendering: pixelated;
 }
 
-.layer-element {
+#layer-container {
+  flex-grow: 1;
+  overflow: auto;
+  margin-top: var(--inter-element-spacing);
+}
 
+.layer-element {
+  box-sizing: border-box;
+  background-color: white;
+  border-top: var(--border-size) solid white;
+  border-bottom: var(--border-size) solid lightgray;
+  border-right: var(--border-size) solid lightgray;
+  outline: var(--border-size) solid var(--border-color);
+  position: relative;
+  margin: 6pt 5pt;
+  display: flex;
+  align-items: center;
 }
 
 .layer-element-selected {
-  background-color: darkgreen;
+  background-color: var(--main-panel-color);
+  border-bottom: var(--border-size) solid var(--main-panel-color-shadow);
+  border-right: var(--border-size) solid var(--main-panel-color-shadow);
+  border-top: var(--border-size) solid var(--main-panel-color-highlight);
 }
 
 .layer-image {
-  width: 30pt;
-  height: 30pt;
+  width: 40pt;
+  height: 40pt;
   background-repeat: no-repeat;
+  background-size: cover;
+  image-rendering: pixelated;
+  background-color: white;
+  margin-right: 5pt;
+}
+
+.visibility-button {
+  position: absolute;
+  background: url("../images/eye-open.png");
+  background-size: cover;
+  image-rendering: pixelated;
+  width: 20pt;
+  height: 20pt;
+  top: 0;
+  right: 0;
+}
+
+.visibility-button-inactive {
+  background: url("../images/eye-closed.png");
   background-size: cover;
   image-rendering: pixelated;
 }
 
-.visibility-button {
-  background-color: blue;
-  width: 10pt;
-  height: 10pt;
+/* The Modal (background) */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgba(0, 0, 0, 0.4); /* Fallback color */
 }
 
-.visibility-button-inactive {
-  background-color: grey;
+/* Modal Content/Box */
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%; /* Could be more or less, depending on screen size */
+}
+
+.main-panel {
+  box-sizing: border-box;
+  background-color: var(--main-panel-color);
+  border-bottom: var(--border-size) solid var(--main-panel-color-shadow);
+  border-right: var(--border-size) solid var(--main-panel-color-shadow);
+  border-top: var(--border-size) solid var(--main-panel-color-highlight);
+  outline: var(--border-size) solid var(--border-color);
+  position: relative;
+  height: 25pt;
+}
+
+.white-panel {
+  box-sizing: border-box;
+  background-color: white;
+  border-bottom: var(--border-size) solid lightgray;
+  border-right: var(--border-size) solid lightgray;
+  outline: var(--border-size) solid var(--border-color);
+  position: relative;
+}
+
+.other-panel {
+  box-sizing: border-box;
+  background-color: #C2D7FF;
+  outline: var(--border-size) solid var(--border-color);
+  position: relative;
+}
+
+.text {
+  font-family: 'Pixelite', serif;
+  color: white;
+  font-size: 15pt;
+  text-shadow:
+          2px  0 0 var(--border-color),
+          0 2px 0 var(--border-color),
+          0 -2px 0 var(--border-color),
+          -2px 0 0 var(--border-color),
+          -2px -2px 0 var(--border-color),
+          2px -2px 0 var(--border-color),
+          -2px  2px 0 var(--border-color),
+          2px  2px 0 var(--border-color);
+}
+
+.menu-item {
+  padding: 5pt 20pt 4pt 20pt;
+  margin-top: -2pt;
+  width: max-content;
+  border-right: var(--border-size) solid #42568b;
+  display: inline-block;
+}
+
+.label-panel {
+  padding-top: 3pt;
+  padding-left: 8pt;
+}
+
+.thing-container {
+  padding: 6pt 4pt 6pt 6pt;
+}
+
+#state-button-container {
+  margin-top: var(--inter-element-spacing);
+  margin-bottom: var(--inter-element-spacing);
+  padding: 5pt;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6pt;
+}
+
+*{
+  box-sizing: border-box;
+}
+
+input[type="color"] {
+  -webkit-appearance: none;
+  background: #fff;
+  width: 20pt;
+  height: 20pt;
+  border: var(--border-size) solid var(--border-color);
+  padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  padding: 0;
+}
+
+input[type=color]::-moz-focus-inner {
+  border: none;
+  padding: 0;
+}
+
+input[type=color]::-moz-color-swatch {
+  border: none;
+  padding: 0;
+}
+
+#canvas-parent::-webkit-scrollbar {
+  width: 20px;
+  height: 20px;
+}
+
+/* Track */
+#canvas-parent::-webkit-scrollbar-track {
+  background: lightgray;
+}
+
+/* Handle */
+#canvas-parent::-webkit-scrollbar-thumb {
+  background: #C2D7FF;
+  border: var(--border-size) solid var(--border-color);
+}
+
+/* Handle on hover */
+#canvas-parent::-webkit-scrollbar-thumb:hover {
+  background: var(--main-panel-color);
+}
+
+#layer-actions {
+  margin-top: var(--inter-element-spacing);
 }
