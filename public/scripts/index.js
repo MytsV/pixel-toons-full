@@ -1,14 +1,9 @@
-import { CanvasRenderer, setupColorPicker } from './core/canvas_renderer.js';
+import { CanvasRenderer } from './core/canvas_renderer.js';
 import { Canvas } from './core/canvas.js';
-import { bytesToUrl, downloadLocalUrl } from './utilities/bytes_conversion.js';
+import { bytesToUrl } from './utilities/bytes_conversion.js';
 import { BmpEncoder, bmpVersions } from './utilities/bmp_encoder.js';
-import { BucketFill, Eraser, Pencil } from './core/tools.js';
+import { FileMenu, StateButtons, Toolbar } from './core/ui_elements.js';
 
-/*
-This file is far from being finished.
-It will be refactored structurally.
-Mostly it consists of UI boilerplate. Other files have more interesting content
- */
 let file = null;
 
 class AnimationFile {
@@ -20,121 +15,36 @@ class AnimationFile {
 }
 
 const renderer = new CanvasRenderer();
-let chosenTool = undefined;
+let elements = [];
 
 window.onload = () => {
-  const fileCreateButton = document.getElementById('file-create');
-  const fileClearButton = document.getElementById('file-clear');
-
-  fileCreateButton.onclick = () => onFileCreate();
-  fileClearButton.onclick = () => onFileClear();
-
-  newFile(50, 50);
+  elements = [
+    new StateButtons(),
+    new FileMenu(createNewFile),
+    new Toolbar()
+  ];
 };
 
-function onFileCreate() {
-  const modal = document.getElementById('file-create-modal');
-  modal.style.display = 'block';
 
-  const createFinishButton = document.getElementById('file-create-finish');
-  createFinishButton.onclick = () => {
-    const inputWidth = document.getElementById('width-input');
-    const inputHeight = document.getElementById('height-input');
-    newFile(inputWidth.value, inputHeight.value);
-    modal.style.display = 'none';
-  };
-}
-
-window.onclick = function(event) {
-  const modal = document.getElementById('file-create-modal');
-  if (event.target === modal) {
-    modal.style.display = 'none';
-  }
-};
-
-function onFileClear() {
-  newFile(file.width, file.height);
-}
-
-function newFile(width, height) {
+function createNewFile(width, height) {
   file = new AnimationFile(width, height);
 
   renderer.removeCanvases();
   renderer.appendCanvas(file.canvas);
 
-  setUpExporter();
-
-  chosenTool = new Pencil();
-  chosenTool.link(file.canvas);
-
+  elements.forEach((element) => element.refresh(file));
   setUpUserInterface();
 }
 
-function setUpExporter() {
-  const button = document.getElementById('export-button');
-  button.onclick = downloadImage;
-}
-
-function downloadImage() {
-  const image = file.canvas.getJoinedImage();
-  const encoder = new BmpEncoder(image, bmpVersions.bmp32);
-  downloadLocalUrl(bytesToUrl(encoder.encode()), 'image.bmp');
-}
-
 function setUpUserInterface() {
-  createToolbar();
-  assignStateButtons();
   assignLayerButtons();
   setUpUpdateListener();
 }
 
 /*
-Handling of toolbar creation
+NOT REFACTORED ZONE
+These functions will turn into classes in ui_elements.js
  */
-
-//A wrapper class for tool which defines its display name and icon
-class ToolInfo {
-  constructor(tool, name) {
-    this.tool = tool;
-    this.name = name;
-  }
-}
-
-function createToolbar() {
-  const toolsInfo = [
-    new ToolInfo(new Pencil(), 'Pencil'),
-    new ToolInfo(new Eraser(), 'Eraser'),
-    new ToolInfo(new BucketFill(), 'Bucket Fill')
-  ];
-  const elements = toolsInfo.map((toolInfo) => createToolElement(toolInfo));
-  const container = document.getElementById('tools');
-  container.innerHTML = '';
-
-  elements.forEach((element) => container.appendChild(element));
-  container.appendChild(setupColorPicker(file.canvas));
-}
-
-function createToolElement(toolInfo) {
-  const element = document.createElement('div');
-  element.id = toolInfo.name.toLowerCase();
-
-  element.classList.add('single-tool');
-  element.classList.add('label-panel');
-  element.classList.add('main-panel');
-
-  const text = document.createElement('span');
-  text.innerText = toolInfo.name;
-  text.classList.add('text');
-
-  element.appendChild(text);
-  element.onclick = () => {
-    chosenTool.disable();
-    chosenTool = toolInfo.tool;
-    chosenTool.link(file.canvas);
-  };
-
-  return element;
-}
 
 /*
 Handling of zoom
@@ -153,13 +63,6 @@ document.addEventListener('keypress', (event) => {
     renderer.zoom(zoomCodes[event.key]);
   }
 });
-
-function assignStateButtons() {
-  const undoButton = document.getElementById('undo-button');
-  const redoButton = document.getElementById('redo-button');
-  undoButton.onclick = () => file.canvas.undo();
-  redoButton.onclick = () => file.canvas.redo();
-}
 
 /*
 Handling of layer-specific functions

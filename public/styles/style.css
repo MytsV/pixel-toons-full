@@ -89,8 +89,9 @@ body {
 }
 
 .active-tool {
-  border: none;
-  background-color: var(--border-color);
+  border: none !important;
+  border-top: var(--border-size) solid var(--border-color) !important;
+  background-color: var(--border-color) !important;
 }
 
 .state-button {
