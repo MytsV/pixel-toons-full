@@ -48,7 +48,7 @@ class CanvasState {
     return stackRetrieved.pop();
   }
 
-  retrieveLastLayer() {
+  retrieveDrawnLayer() {
     const layers = this.canvas.layers;
 
     const lastLayer = layers[layers.length - 1];
@@ -119,7 +119,10 @@ class Layer {
   }
 }
 
-//Duration of update decreased by 20%
+/*
+A class implemented for faster update of canvas with many layers.
+The usage of caching decreases update time by circa 20%.
+ */
 class LayerCache {
   #lastChanged;
   #lastChangedIndex;
@@ -148,13 +151,14 @@ class LayerCache {
   }
 
   #resetCache() {
+    //IDs are set to -1 as these layers are "off-screen"
     this.beforeCache = new Layer(-1, this.width, this.height);
     this.afterCache = new Layer(-1, this.width, this.height);
   }
 
   drawFromCache(context) {
     context.drawImage(this.beforeCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
-    if (this.#lastChanged.visible) {
+    if (this.#lastChanged.visible) { //Handle only the visibility of middle layer
       context.drawImage(this.#lastChanged.virtualCanvas, IMAGE_POS, IMAGE_POS);
     }
     context.drawImage(this.afterCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
@@ -166,7 +170,7 @@ A class which wraps HTML <canvas> element and adds functionality to it.
 Implements undo/redo actions, layering and listening to changes.
  */
 class Canvas {
-  #layers; //An ordered array of virtual canvases
+  #layers; //An ordered array of virtual canvases. Soon will be reimplemented with my IdList class
   #listeners; //A variable needed to implement simple EventEmitter
 
   drawnLayerID; //The ID of the currently drawn on layer
@@ -191,20 +195,19 @@ class Canvas {
   //Refresh the visual representation of the canvas with layers
   redraw() {
     //Apply changes to current layer
-    const currentLayer = this.#layers.find((layer) => layer.id === this.drawnLayerID);
-    currentLayer.context.putImageData(this.image, IMAGE_POS, IMAGE_POS);
+    this.#getDrawnLayer().context.putImageData(this.image, IMAGE_POS, IMAGE_POS);
 
     //Reset the image on real canvas to fully transparent
     const transparentImage = new ImageData(this.mainElement.width, this.mainElement.height);
     this.mainContext.putImageData(transparentImage, IMAGE_POS, IMAGE_POS);
 
-    //Iterate through virtual canvases and draw them over the main canvas
     this.#joinLayers();
   }
 
+  //Iterate through virtual canvases and draw them over the main canvas
   #joinLayers() {
     if (this.#layers.length >= CACHE_MIN_LAYER_COUNT) {
-      this.cache.updateCache(this.#layers, this.#layers.find((layer) => layer.id === this.drawnLayerID));
+      this.cache.updateCache(this.#layers, this.#getDrawnLayer());
       this.cache.drawFromCache(this.mainContext);
     } else {
       this.#layers.forEach((layer) => {
@@ -212,6 +215,10 @@ class Canvas {
         this.mainContext.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS);
       });
     }
+  }
+
+  #getDrawnLayer() {
+    return this.#layers.find((layer) => layer.id === this.drawnLayerID);
   }
 
   getJoinedImage() {
@@ -228,7 +235,7 @@ class Canvas {
   }
 
   removeLayer(id) {
-    if (this.#layers.length <= 1) return;
+    if (this.#layers.length <= 1) throw Error('Cannot remove the only layer');
 
     this.#layers = this.#layers.filter((layer) => layer.id !== id);
     const topLayer = this.#layers[this.#layers.length - 1];
@@ -240,7 +247,7 @@ class Canvas {
 
   switchLayer(id) {
     const layer = this.#layers.find((layer) => layer.id === id);
-    if (!layer) return;
+    if (!layer) throw Error(`There is no layer with id ${id}`);
     this.#setDrawnLayer(layer);
     this.#fixateChanges();
   }
@@ -248,13 +255,14 @@ class Canvas {
   moveLayerUp(id) {
     const layerPosition = this.#layers.findIndex((layer) => layer.id === id);
     //There exists such layer and it is not the top one
-    if (layerPosition < 0 || layerPosition === this.#layers.length) return;
+    if (layerPosition < 0 || layerPosition === this.#layers.length) throw Error('Cannot move layer up');
     this.#reorderLayer(this.#layers[layerPosition], layerPosition + 1);
   }
 
   moveLayerDown(id) {
     const layerPosition = this.#layers.findIndex((layer) => layer.id === id);
-    if (layerPosition < 1) return; //There exists such layer and it is not the bottom one
+    //There exists such layer and it is not the bottom one
+    if (layerPosition < 1) throw Error('Cannot move layer down');
     this.#reorderLayer(this.#layers[layerPosition], layerPosition - 1);
   }
 
@@ -270,22 +278,16 @@ class Canvas {
     this.save();
   }
 
-  mergeLayers(idA, idB) { //To refactor
-    const positionA = this.#layers.findIndex((layer) => layer.id === idA);
-    const positionB = this.#layers.findIndex((layer) => layer.id === idB);
+  mergeLayers(idA, idB) {
+    const posA = this.#layers.findIndex((layer) => layer.id === idA);
+    const posB = this.#layers.findIndex((layer) => layer.id === idB);
+    const firstPreceding = posA < posB;
+    const updatedPos = firstPreceding ? posA : posB;
+    const deletedPos = !firstPreceding ? posA : posB;
 
-    const layerA = this.#layers[positionA];
-    const layerB = this.#layers[positionB];
-
-    if (positionA < positionB) {
-      layerA.context.drawImage(layerB.virtualCanvas, IMAGE_POS, IMAGE_POS);
-      this.#setDrawnLayer(layerA);
-      this.#layers.splice(positionB, 1);
-    } else {
-      layerB.context.drawImage(layerA.virtualCanvas, IMAGE_POS, IMAGE_POS);
-      this.#setDrawnLayer(layerB);
-      this.#layers.splice(positionA, 1);
-    }
+    this.#layers[updatedPos].context.drawImage(this.#layers[deletedPos].virtualCanvas, IMAGE_POS, IMAGE_POS);
+    this.#setDrawnLayer(this.#layers[updatedPos]);
+    this.#layers.splice(deletedPos, 1); //Remove one element at certain index
 
     this.redraw();
     this.save();
@@ -310,9 +312,9 @@ class Canvas {
   //Generalized method for working with undo/redo
   #retrieveImage(stackRetrieved) {
     this.#layers = this.state.retrieveState(stackRetrieved);
-    const lastLayer = this.state.retrieveLastLayer();
+    const drawnLayer = this.state.retrieveDrawnLayer();
 
-    this.#setDrawnLayer(lastLayer);
+    this.#setDrawnLayer(drawnLayer);
     this.redraw();
     this.#fixateChanges();
   }
