@@ -118,3 +118,8 @@ User interface is currently extremely raw. It will be improved in the future.
         </td>
     </tr>
 </table>
+
+Interface demonstration <br>
+<img src="./examples/drawing.png"> <br>
+Exported image from demonstration <br>
+<img src="./examples/exported.bmp">
