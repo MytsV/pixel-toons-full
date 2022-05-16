@@ -62,6 +62,8 @@ body {
 #sidebar {
   width: 200pt;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 #canvas-wrapper {
@@ -116,7 +118,6 @@ body {
 
 #layer-container {
   flex-grow: 1;
-  height: 225pt;
   overflow: auto;
   margin-top: var(--inter-element-spacing);
 }
@@ -312,3 +313,6 @@ input[type=color]::-moz-color-swatch {
   background: var(--main-panel-color);
 }
 
+#layer-actions {
+  margin-top: var(--inter-element-spacing);
+}

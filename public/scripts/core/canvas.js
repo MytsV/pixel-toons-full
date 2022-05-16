@@ -11,7 +11,7 @@ It uses Memento pattern to implement Undo/Redo actions.
 class CanvasState {
   static stackLimit = 50; //Setting limit for the number of states which can be saved at the same time
 
-  constructor() {
+  constructor(canvas) {
     this.color = Color.fromHex(DEFAULT_PENCIL_COLOR);
     /*
     Memento pattern is implemented with two stacks.
@@ -23,6 +23,48 @@ class CanvasState {
     this.pastLayers = [];
     this.nextLayers = [];
     this.currentLayers = null;
+
+    //We keep the reference the canvas which created the CanvasState object
+    this.canvas = canvas;
+  }
+
+  save() {
+    const currentLayers = this.currentLayers;
+    if (currentLayers !== null) {
+      CanvasState.#pushLayers(this.pastLayers, currentLayers);
+      this.nextLayers = [];
+    }
+
+    this.currentLayers = this.#cloneLayers();
+  }
+
+  retrieveState(stackRetrieved) {
+    const stackSaved = stackRetrieved !== this.pastLayers ? this.pastLayers : this.nextLayers;
+    if (stackRetrieved.length < 1) throw Error('There is nothing to retrieve');
+
+    CanvasState.#pushLayers(stackSaved, this.#cloneLayers()); //Updating the other stack
+
+    return stackRetrieved.pop();
+  }
+
+  retrieveLastLayer() {
+    const layers = this.canvas.layers;
+
+    const lastLayer = layers[layers.length - 1];
+    this.currentLayers = this.#cloneLayers();
+    return lastLayer;
+  }
+
+  //Receive an array of new Layer instances
+  #cloneLayers() {
+    return this.canvas.layers.map((layer) => layer.clone());
+  }
+
+  static #pushLayers(stack, layers) {
+    stack.push(layers);
+    if (stack.length >= CanvasState.stackLimit) {
+      stack.shift();
+    }
   }
 }
 
@@ -138,7 +180,7 @@ class Canvas {
     //Image associated with the current drawing layer
     this.image = null;
 
-    this.state = new CanvasState();
+    this.state = new CanvasState(this);
     this.#layers = [];
     this.#listeners = [];
 
@@ -252,47 +294,28 @@ class Canvas {
     this.save();
   }
 
-  /*
-  We make the variable private and create a getter to ensure encapsulation.
-  Layers variable should never get assigned outside the class.
-   */
-  get layers() {
-    return this.#layers;
-  }
-
   //Saves the current layers on the canvas for retrieving them later
   save() {
-    const currentLayers = this.state.currentLayers;
-    if (currentLayers !== null) {
-      pushLayers(this.state.pastLayers, currentLayers);
-      this.state.nextLayers = [];
-    }
-
-    this.state.currentLayers = this.#cloneLayers();
+    this.state.save(this.#layers);
     this.#fixateChanges();
   }
 
   //Reverts the layers to the previously saved ones
   undo() {
-    this.#retrieveImage(this.state.pastLayers, this.state.nextLayers);
+    this.#retrieveImage(this.state.pastLayers);
   }
 
   //Reverts the layers to the set of historically following ones
   redo() {
-    this.#retrieveImage(this.state.nextLayers, this.state.pastLayers);
+    this.#retrieveImage(this.state.nextLayers);
   }
 
   //Generalized method for working with undo/redo
-  #retrieveImage(stackRetrieved, stackSaved) {
-    if (stackRetrieved.length < 1) return; //If the stack is empty, we don't do anything
+  #retrieveImage(stackRetrieved) {
+    this.#layers = this.state.retrieveState(stackRetrieved);
+    const lastLayer = this.state.retrieveLastLayer();
 
-    pushLayers(stackSaved, this.#layers.map((layer) => layer.clone())); //Updating the other stack
-
-    this.#layers = stackRetrieved.pop();
-    const lastLayer = this.#layers[this.#layers.length - 1];
-    this.state.currentLayers = this.#cloneLayers();
     this.#setDrawingLayer(lastLayer);
-
     this.redraw();
     this.#fixateChanges();
   }
@@ -306,11 +329,6 @@ class Canvas {
     applyImageMixin(this.image);
   }
 
-  //Receive an array of new Layer instances
-  #cloneLayers() {
-    return this.#layers.map((layer) => layer.clone());
-  }
-
   //The implementation of EventEmitter pattern. Allows other entities to know when the canvas is getting a fixated state
   listenToUpdates(listener) {
     this.#listeners.push(listener);
@@ -319,6 +337,14 @@ class Canvas {
   #fixateChanges() {
     this.#listeners.forEach((listener) => listener());
   }
+
+  /*
+  We make the variable private and create a getter to ensure encapsulation.
+  Layers variable should never get assigned outside the class.
+   */
+  get layers() {
+    return this.#layers;
+  }
 }
 
 function createCanvasElement(width, height) {
@@ -326,13 +352,6 @@ function createCanvasElement(width, height) {
   canvasElement.width = width;
   canvasElement.height = height;
   return canvasElement;
-}
-
-function pushLayers(stack, layers) {
-  stack.push(layers);
-  if (stack.length >= CanvasState.stackLimit) {
-    stack.shift();
-  }
 }
 
 export { Canvas };
