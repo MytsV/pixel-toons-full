@@ -351,4 +351,12 @@ function createCanvasElement(width, height) {
   return canvasElement;
 }
 
-export { Canvas };
+class AnimationFile {
+  constructor(width, height) {
+    this.canvas = new Canvas(width, height);
+    this.width = width;
+    this.height = height;
+  }
+}
+
+export { Canvas, AnimationFile };

@@ -1,19 +1,10 @@
 import { CanvasRenderer } from './core/canvas_renderer.js';
-import { Canvas } from './core/canvas.js';
+import { AnimationFile } from './core/canvas.js';
 import { bytesToUrl } from './utilities/bytes_conversion.js';
 import { BmpEncoder, bmpVersions } from './utilities/bmp_encoder.js';
 import { FileMenu, StateButtons, Toolbar } from './core/ui_elements.js';
 
-let file = null;
-
-class AnimationFile {
-  constructor(width, height) {
-    this.canvas = new Canvas(width, height);
-    this.width = width;
-    this.height = height;
-  }
-}
-
+let file;
 const renderer = new CanvasRenderer();
 let elements = [];
 
@@ -25,7 +16,6 @@ window.onload = () => {
   ];
 };
 
-
 function createNewFile(width, height) {
   file = new AnimationFile(width, height);
 
@@ -36,15 +26,16 @@ function createNewFile(width, height) {
   setUpUserInterface();
 }
 
+
+/*
+NOT REFACTORED ZONE
+These functions will turn into classes in ui_elements.js or new key shorcuts handler
+ */
+
 function setUpUserInterface() {
   assignLayerButtons();
   setUpUpdateListener();
 }
-
-/*
-NOT REFACTORED ZONE
-These functions will turn into classes in ui_elements.js
- */
 
 /*
 Handling of zoom

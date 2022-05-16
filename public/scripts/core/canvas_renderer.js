@@ -15,6 +15,7 @@ const ZOOM_MIN = 1;
 const ZOOM_STEP = 1;
 
 const TRANSLATION = 50;
+const backgroundId = 'canvas-background'; //Will be refactored with usage of different HTML structure
 
 /*
 A class for managing graphic representation of canvas
@@ -47,7 +48,7 @@ class CanvasRenderer {
 
     const encoder = new BmpEncoder(image);
     const url = bytesToUrl(encoder.encode());
-    const imageElement = document.getElementById('canvas-background');
+    const imageElement = document.getElementById(backgroundId);
     imageElement.style.backgroundImage = `url(${url})`;
   }
 
@@ -60,7 +61,7 @@ class CanvasRenderer {
   removeCanvases() {
     const children = this.canvasWrapper.children;
     for (const child of children) {
-      if (child.id !== 'canvas-background') {
+      if (child.id !== backgroundId) {
         child.remove();
       }
     }
@@ -127,7 +128,7 @@ function setWrapperSize(wrapper, zoomValue) {
   wrapper.style.height = toWidth ? unset : maxPercent;
 }
 
-function setupColorPicker(canvas) {
+function setupColorPicker(canvas) { //To be refactored
   const colorPicker = document.createElement('input'); //Input element with type "color"
   colorPicker.type = 'color';
   colorPicker.id = 'color-picker';
