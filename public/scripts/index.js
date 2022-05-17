@@ -51,7 +51,11 @@ const zoomCodes = {
 
 document.addEventListener('keypress', (event) => {
   if (Object.keys(zoomCodes).includes(event.key)) {
-    renderer.zoom(zoomCodes[event.key]);
+    if (zoomCodes[event.key]) {
+      renderer.zoomIn();
+    } else {
+      renderer.zoomOut();
+    }
   }
 });
 

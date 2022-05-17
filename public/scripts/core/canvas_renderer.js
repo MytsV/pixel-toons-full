@@ -15,7 +15,6 @@ const ZOOM_MIN = 1;
 const ZOOM_STEP = 1;
 
 const TRANSLATION = 50;
-//Will be refactored with usage of different HTML structure
 const backgroundId = 'canvas-background';
 
 /*
@@ -71,9 +70,19 @@ class CanvasRenderer {
     }
   }
 
-  zoom(positive) {
-    if (!this.#canScale(positive)) return;
-    this.zoomValue = positive ? this.zoomValue + ZOOM_STEP : this.zoomValue - ZOOM_STEP;
+  zoomIn() {
+    this.#zoom(ZOOM_STEP);
+  }
+
+  zoomOut() {
+    this.#zoom(-ZOOM_STEP);
+  }
+
+  #zoom(step) {
+    if (!this.#canScale(step)) {
+      throw Error('Attempting to overflow zoom value');
+    }
+    this.zoomValue += step;
     this.adjustSize();
   }
 
@@ -83,12 +92,9 @@ class CanvasRenderer {
     setWrapperSize(this.canvasWrapper, this.zoomValue);
   }
 
-  #canScale(positive) {
-    if (positive) {
-      return this.zoomValue <= ZOOM_MAX;
-    } else {
-      return this.zoomValue > ZOOM_MIN;
-    }
+  #canScale(step) {
+    const newValue = this.zoomValue + step;
+    return newValue >= ZOOM_MIN && newValue <= ZOOM_MAX;
   }
 }
 
@@ -117,31 +123,23 @@ function getClearPixelColor(i, j) {
 }
 
 function handleCentering(element, centered) {
-  element.style.transform = centered ? `translate(-${TRANSLATION}%, -${TRANSLATION}%)` : 'none';
+  const centerTransformation = `translate(-${TRANSLATION}%, -${TRANSLATION}%)`;
+  element.style.transform = centered ? centerTransformation : 'none';
   element.style.left = centered ? `${TRANSLATION}%` : '0pt';
   element.style.top = centered ? `${TRANSLATION}%` : '0pt';
 }
 
 function setWrapperSize(wrapper, zoomValue) {
+  const { offsetWidth: width, offsetHeight: height } = wrapper;
   const parent = wrapper.parentElement;
+  const { offsetWidth: parentWidth, offsetHeight: parentHeight } = parent;
 
   const maxPercent = `${zoomValue * 100}%`;
   const unset = 'auto';
 
-  const toWidth = wrapper.offsetWidth * parent.offsetHeight >= parent.offsetWidth * wrapper.offsetHeight;
+  const toWidth = width * parentHeight >= parentWidth * height;
   wrapper.style.width = toWidth ? maxPercent : unset;
   wrapper.style.height = toWidth ? unset : maxPercent;
 }
 
-function setupColorPicker(canvas) { //To be refactored
-  //Input element with type "color"
-  const colorPicker = document.createElement('input');
-  colorPicker.type = 'color';
-  colorPicker.id = 'color-picker';
-  colorPicker.oninput = () => {
-    canvas.state.color = Color.fromHex(colorPicker.value);
-  };
-  return colorPicker;
-}
-
-export { CanvasRenderer, setupColorPicker };
+export { CanvasRenderer };

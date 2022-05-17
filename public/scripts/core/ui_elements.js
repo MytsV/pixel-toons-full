@@ -1,7 +1,7 @@
 import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
 import { bytesToUrl, downloadLocalUrl } from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil } from './tools.js';
-import { setupColorPicker } from './canvas_renderer.js';
+import { Color } from '../utilities/color.js';
 
 class StateButtons {
   constructor() {
@@ -113,6 +113,8 @@ class Toolbar {
     ];
     this.container = document.getElementById('tools');
     this.toolsInfo.forEach((toolInfo) => this.container.appendChild(toolInfo.element));
+
+    this.#setUpColorPicker();
   }
 
   refresh(file) {
@@ -121,7 +123,9 @@ class Toolbar {
     this.toolsInfo.forEach((toolInfo) => {
       toolInfo.element.onclick = () => this.#setChosen(toolInfo);
     });
-    this.container.appendChild(setupColorPicker(this.file.canvas)); //To be refactored
+    this.colorPicker.oninput = () => {
+      this.file.canvas.state.color = Color.fromHex(this.colorPicker.value);
+    };
   }
 
   #setChosen(toolInfo) {
@@ -132,6 +136,13 @@ class Toolbar {
     this.chosen = toolInfo;
     this.chosen.tool.link(this.file.canvas);
     this.chosen.element.classList.add(Toolbar.#activeClass);
+  }
+
+  #setUpColorPicker() {
+    this.colorPicker = document.createElement('input');
+    this.colorPicker.type = 'color';
+    this.colorPicker.id = 'color-picker';
+    return this.colorPicker;
   }
 }
 
