@@ -2,6 +2,7 @@ import { applyImageMixin } from '../utilities/image.js';
 import { Color } from '../utilities/color.js';
 
 const DEFAULT_PENCIL_COLOR = '#000000';
+//Array of x and y coordinates of image start
 const START_POS = [0, 0];
 //The minimum number of layers for which we perform caching
 const CACHE_MIN_LAYER_COUNT = 4;
@@ -40,12 +41,12 @@ class CanvasState {
   }
 
   retrieveState(stackRetrieved) {
-    const stackSaved = stackRetrieved !== this.pastLayers ? this.pastLayers : this.nextLayers;
+    const retrievingPast = stackRetrieved === this.pastLayers;
+    const stackSaved = retrievingPast ? this.nextLayers : this.pastLayers;
     if (stackRetrieved.length < 1) throw Error('There is nothing to retrieve');
 
     //Updating the other stack
     CanvasState.#pushLayers(stackSaved, this.#cloneLayers());
-
     return stackRetrieved.pop();
   }
 
@@ -137,13 +138,20 @@ class LayerCache {
     this.#lastChanged = current;
     this.#lastChangedIndex = currentIndex;
 
-    if (this.#lastChanged.id !== current.id || this.#lastChangedIndex !== currentIndex) return;
+    if (this.#currentStable(current, currentIndex)) return;
     this.#resetCache();
     for (const [layer, index] of layers.entries()) {
       if (!layer.visible || index === currentIndex) return;
-      const appendedCache = index < currentIndex ? this.beforeCache : this.afterCache;
+      const isLayerBefore = index < currentIndex;
+      const appendedCache = isLayerBefore ? this.beforeCache : this.afterCache;
       appendedCache.context.drawImage(layer.virtualCanvas, ...START_POS);
     }
+  }
+
+  #currentStable(current, currentIndex) {
+    const idStable = this.#lastChanged.id === current.id;
+    const positionStable = this.#lastChangedIndex === currentIndex;
+    return idStable && positionStable;
   }
 
   #resetCache() {
@@ -254,14 +262,18 @@ class Canvas {
   moveLayerUp(id) {
     const layerPosition = this.#layers.findIndex((layer) => layer.id === id);
     //There exists such layer and it is not the top one
-    if (layerPosition < 0 || layerPosition === this.#layers.length) throw Error('Cannot move layer up');
+    if (layerPosition < 0 || layerPosition === this.#layers.length) {
+      throw Error('Cannot move layer up');
+    }
     this.#reorderLayer(this.#layers[layerPosition], layerPosition + 1);
   }
 
   moveLayerDown(id) {
     const layerPosition = this.#layers.findIndex((layer) => layer.id === id);
     //There exists such layer and it is not the bottom one
-    if (layerPosition < 1) throw Error('Cannot move layer down');
+    if (layerPosition < 1) {
+      throw Error('Cannot move layer down');
+    }
     this.#reorderLayer(this.#layers[layerPosition], layerPosition - 1);
   }
 
@@ -281,12 +293,13 @@ class Canvas {
   mergeLayers(idA, idB) {
     const posA = this.#layers.findIndex((layer) => layer.id === idA);
     const posB = this.#layers.findIndex((layer) => layer.id === idB);
-    const firstPreceding = posA < posB;
-    const updatedPos = firstPreceding ? posA : posB;
-    const deletedPos = !firstPreceding ? posA : posB;
+    const aPrecedes = posA < posB;
+    const [updatedPos, deletedPos] = aPrecedes ? [posA, posB] : [posB, posA];
+    const updatedLayer = this.#layers[updatedPos];
+    const deletedLayer = this.#layers[deletedPos];
 
-    this.#layers[updatedPos].context.drawImage(this.#layers[deletedPos].virtualCanvas, ...START_POS);
-    this.#setDrawnLayer(this.#layers[updatedPos]);
+    updatedLayer.context.drawImage(deletedLayer.virtualCanvas, ...START_POS);
+    this.#setDrawnLayer(updatedLayer);
     this.#layers.splice(deletedPos, 1); //Remove one element at certain index
 
     this.redraw();
