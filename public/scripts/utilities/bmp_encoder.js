@@ -5,7 +5,7 @@ And, after all, why not have fun?
  */
 
 const bitsInByte = 8;
-const maxColorParameters = 4; //for RGBA format, BMP32
+const maxColorParameters = 4; //In RGBA format
 
 /*
 A class that represents a writable array of bytes.
@@ -88,18 +88,19 @@ class BmpEncoder {
   constructor(image, version = bmpVersions.bmp24) {
     this.#perPixel = version.bitCount / bitsInByte;
     this.#infoHeaderSize = version.infoHeaderSize;
+    this.dataOffset = BmpEncoder.#headerSize + this.#infoHeaderSize;
 
     this.padding = this.#is32() ? 0 : image.width % maxColorParameters;
-    this.pixelDataSize = (this.#perPixel * image.width + this.padding) * image.height;
-    this.fileSize = BmpEncoder.#headerSize + this.#infoHeaderSize + this.pixelDataSize;
+    const rowLength = this.#perPixel * image.width + this.padding;
+    this.bitmapSize = rowLength * image.height;
+    this.fileSize = this.dataOffset + this.bitmapSize;
 
     this.#buffer = new Buffer(this.fileSize);
     this.image = image;
   }
 
   /*
-  Creates a byte array which represents an image file of BMP24 format (opacity not included).
-  Each pixel will be represented as a triplet of bytes: red, green and blue intensity accordingly.
+  Creates a byte array which represents an image file of BMP24 or BMP32 format.
   Refer to this link if you want to know more about BMP file format:
   http://www.ece.ualberta.ca/~elliott/ee552/studentAppNotes/2003_w/misc/bmp_file_format/bmp_file_format.htm
   The comment lines represent structures of format in a format:
@@ -123,7 +124,7 @@ class BmpEncoder {
     //Reserved | 4 bytes | 0x06 | Left filled with 0 bytes
 
     //DataOffset | 4 bytes | 0x0A | From file start to bitmap data start
-    this.#buffer.write32Integer(BmpEncoder.#headerSize + this.#infoHeaderSize, 0x0A);
+    this.#buffer.write32Integer(this.dataOffset, 0x0A);
   }
 
   #setInfoHeader() {
@@ -139,7 +140,7 @@ class BmpEncoder {
     this.#buffer.write16Integer(this.#perPixel * bitsInByte, 0x1C);
     this.#setCompression();
     //ImageSize | 4 bytes | 0x22 | Size of the raw bitmap data
-    this.#buffer.write32Integer(this.pixelDataSize, 0x22);
+    this.#buffer.write32Integer(this.bitmapSize, 0x22);
 
     /*
     The following structures are always filled with 0 bytes:
@@ -152,10 +153,12 @@ class BmpEncoder {
 
   #setCompression() {
     /*
-    We use BI_BITFIELDS compression only for BMP32 format
-    BI_RGB in BMP24 instead
-     */
-    const compressionType = this.#is32() ? /* BI_BITFIELDS */ 0x03 : /* BI_RGB */ 0x00;
+      We use BI_BITFIELDS compression only for BMP32 format
+      BI_RGB in BMP24 instead
+    */
+    const BI_BITFIELDS = 0x03;
+    const BI_RGB = 0x00;
+    const compressionType = this.#is32() ? BI_BITFIELDS : BI_RGB;
     //Compression | 4 bytes | 0x1E | 0x00 for BI_RGB, 0x03 for BI_BITFIELDS
     this.#buffer.write32Integer(compressionType, 0x1E);
   }
@@ -182,8 +185,8 @@ class BmpEncoder {
 
     for (let i = image.height - 1; i >= 0; i--) {
       for (let j = 0; j < image.width; j++) {
-        const dataPosition = (i * image.width + j) * maxColorParameters;
-        const colors = image.data.slice(dataPosition, dataPosition + this.#perPixel);
+        const dataPos = (i * image.width + j) * maxColorParameters;
+        const colors = image.data.slice(dataPos, dataPos + this.#perPixel);
         this.#transformColorArray(colors);
         this.#buffer.writeArray(colors, position);
         position += this.#perPixel;
