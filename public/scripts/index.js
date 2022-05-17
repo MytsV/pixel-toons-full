@@ -29,7 +29,8 @@ function createNewFile(width, height) {
 
 /*
 NOT REFACTORED ZONE
-These functions will turn into classes in ui_elements.js or new key shorcuts handler
+These functions will turn into classes
+in ui_elements.js or new key shortcuts handler
  */
 
 function setUpUserInterface() {
@@ -86,7 +87,8 @@ function setLayerMenu() {
   const container = document.getElementById('layer-container');
   container.innerHTML = '';
 
-  for (let i = layers.length - 1; i >= 0; i--) { //Iterate the list in reversed order
+  //Iterate the list in reversed order
+  for (let i = layers.length - 1; i >= 0; i--) {
     const layer = layers[i];
     const layerElement = document.createElement('div');
     layerElement.appendChild(getLayerImage(layer));
@@ -132,7 +134,8 @@ function getVisibilityButton(layer) {
 }
 
 const IMAGE_POS = 0;
-const layerCache = new Map(); //Keys are layer IDs, values - URLs of layer images
+//Keys are layer IDs, values - URLs of layer images
+const layerCache = new Map();
 
 function getLayerImage(layer) {
   const imageElement = document.createElement('div');
@@ -145,7 +148,8 @@ function getLayerImage(layer) {
     url = layerCache.get(layer.id);
   } else {
     const image = layer.context.getImageData(IMAGE_POS, IMAGE_POS, layer.virtualCanvas.width, layer.virtualCanvas.height);
-    const encoder = new BmpEncoder(image, bmpVersions.bmp32); //Render image with transparency
+    //Render image with transparency
+    const encoder = new BmpEncoder(image, bmpVersions.bmp32);
     const data = encoder.encode();
     url = bytesToUrl(data);
   }

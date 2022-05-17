@@ -84,7 +84,7 @@ class FileMenu {
   }
 }
 
-//A wrapper class for tool which defines its display. In the future it will also include icons
+//A wrapper class for tool which defines its display
 class ToolInfo {
   constructor(tool, name) {
     this.tool = tool;

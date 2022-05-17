@@ -1,5 +1,6 @@
 /*
-There is a native implementation of canvas BMP conversion, but it is not supported by all browsers.
+There is a native implementation of canvas BMP conversion,
+but it is not supported by all browsers.
 And, after all, why not have fun?
  */
 
@@ -63,7 +64,10 @@ class BmpVersion {
   }
 }
 
-//Refer to this link to know more about versions https://en.wikipedia.org/wiki/BMP_file_format
+/*
+Refer to this link to know more about versions:
+https://en.wikipedia.org/wiki/BMP_file_format
+ */
 const bmpVersions = Object.freeze({
   //BMP24 format uses BITMAPINFOHEADER
   bmp24: new BmpVersion(24, 0x28),
@@ -118,7 +122,7 @@ class BmpEncoder {
 
     //Reserved | 4 bytes | 0x06 | Left filled with 0 bytes
 
-    //DataOffset | 4 bytes | 0x0A | Offset from beginning of file to the beginning of the bitmap data
+    //DataOffset | 4 bytes | 0x0A | From file start to bitmap data start
     this.#buffer.write32Integer(BmpEncoder.#headerSize + this.#infoHeaderSize, 0x0A);
   }
 
@@ -134,7 +138,7 @@ class BmpEncoder {
     //Bits Per Pixel | 2 bytes | 0x1C | 24 or 32, depending on format
     this.#buffer.write16Integer(this.#perPixel * bitsInByte, 0x1C);
     this.#setCompression();
-    //ImageSize | 4 bytes | 0x22 | Size of the raw bitmap data (including padding)
+    //ImageSize | 4 bytes | 0x22 | Size of the raw bitmap data
     this.#buffer.write32Integer(this.pixelDataSize, 0x22);
 
     /*
@@ -147,7 +151,10 @@ class BmpEncoder {
   }
 
   #setCompression() {
-    //We use BI_BITFIELDS compression only for BMP32 format, BI_RGB in BMP24 instead
+    /*
+    We use BI_BITFIELDS compression only for BMP32 format
+    BI_RGB in BMP24 instead
+     */
     const compressionType = this.#is32() ? /* BI_BITFIELDS */ 0x03 : /* BI_RGB */ 0x00;
     //Compression | 4 bytes | 0x1E | 0x00 for BI_RGB, 0x03 for BI_BITFIELDS
     this.#buffer.write32Integer(compressionType, 0x1E);
@@ -157,7 +164,7 @@ class BmpEncoder {
     //Only used in BMP32 format with BI_BITFIELDS compression
     if (!this.#is32()) return;
 
-    //Masks are defined by the usage of RGBA color format and little endian byte order
+    //Masks are defined by little endian byte order and RGBA format
 
     //Red channel bitmask | 4 bytes | 0x36 | 0x000000FF
     this.#buffer.write32Integer(0x000000FF, 0x36);

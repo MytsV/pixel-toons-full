@@ -21,7 +21,8 @@ class Color {
     const radix = 16;
 
     const expression = new RegExp(/#(.{2})(.{2})(.{2})(.{0,2})/);
-    const result = expression.exec(hexColor).slice(1, 5); //Getting second to fifth group
+    //Getting second to fifth group
+    const result = expression.exec(hexColor).slice(1, 5);
     const values = result.map((value) => {
       if (value !== '') return parseInt(value, radix);
       else return colorRange;
@@ -30,7 +31,10 @@ class Color {
     return new Color(...values);
   }
 
-  //Refer to the link https://www.wikiwand.com/en/Alpha_compositing to get to know more about the algorithm
+  /*
+  Refer to the link to get to know more about the algorithm:
+  https://www.wikiwand.com/en/Alpha_compositing
+   */
   blend(color) {
     const alphaA = color.alpha / colorRange;
     const alphaB = this.alpha / colorRange;
@@ -44,7 +48,7 @@ class Color {
     return new Color(getParam(color.r, this.r), getParam(color.g, this.g), getParam(color.b, this.b), newAlpha * colorRange);
   }
 
-  //Converts color to RGBA CSS format. Use when passing color to CSS style parameter
+  //Converts color to RGBA CSS format
   toString() {
     return `rgba(${this.r},${this.g},${this.b},${this.alpha / colorRange})`;
   }

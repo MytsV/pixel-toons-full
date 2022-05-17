@@ -2,7 +2,7 @@ const bytesToBase64 = (data) => window.btoa(data.reduce((prev, curr) => prev + S
 
 const bytesToUrl = (data) => {
   const blob = new Blob([data]);
-  // Converting the blob into a Blob URL (a special url that points to an object in the browser's memory)
+  //Create a special url that points to an object in the browser's memory
   return URL.createObjectURL(blob);
 };
 
@@ -11,9 +11,7 @@ const downloadLocalUrl = (url, filename) => {
 
   link.href = url;
   link.download = filename;
-
   document.body.appendChild(link);
-
   link.dispatchEvent(
     new MouseEvent('click', {
       view: window

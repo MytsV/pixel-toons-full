@@ -15,7 +15,8 @@ const ZOOM_MIN = 1;
 const ZOOM_STEP = 1;
 
 const TRANSLATION = 50;
-const backgroundId = 'canvas-background'; //Will be refactored with usage of different HTML structure
+//Will be refactored with usage of different HTML structure
+const backgroundId = 'canvas-background';
 
 /*
 A class for managing graphic representation of canvas
@@ -38,7 +39,8 @@ class CanvasRenderer {
 
   /*
   Layers are redrawn each time the canvas changes.
-  For optimization we convert background image to BMP format and render it with <div> tag, which doesn't update
+  For optimization we convert background image to BMP format.
+  Rendering is done with <div> tag, which doesn't update
    */
   static #setUpBackground(width, height) {
     const image = new ImageData(width, height);
@@ -53,9 +55,11 @@ class CanvasRenderer {
   }
 
   #setUpElement(canvasElement) {
-    canvasElement.oncontextmenu = () => false; //Disable right click context menu on canvas
+    //Disable right click context menu on canvas
+    canvasElement.oncontextmenu = () => false;
     canvasElement.classList.add('canvas-element');
-    this.canvasWrapper.appendChild(canvasElement); //Canvas is wrapped to manage zooming
+    //Canvas is wrapped to manage zooming
+    this.canvasWrapper.appendChild(canvasElement);
   }
 
   removeCanvases() {
@@ -92,7 +96,7 @@ class CanvasRenderer {
 const BACKGROUND_COLOR_WHITE = '#ffffff';
 const BACKGROUND_COLOR_GREY = '#e3e3e3';
 
-//Function to turn image into a basic grey-white background which indicates transparency
+//Function to turn image into a basic grey-white "transparent" background
 function toBasicBackground(image) {
   for (let i = 0; i < image.width; i++) {
     for (let j = 0; j < image.height; j++) {
@@ -104,7 +108,8 @@ function toBasicBackground(image) {
 
 //Get color of transparent pixel based on its coordinates
 function getClearPixelColor(i, j) {
-  if (i % 2 !== j % 2) { //The condition makes sure that neighbouring pixels are always of different color
+  //Make sure that neighbouring pixels are always of different color
+  if (i % 2 !== j % 2) {
     return BACKGROUND_COLOR_WHITE; //First pixel is always white
   } else {
     return BACKGROUND_COLOR_GREY;
@@ -129,7 +134,8 @@ function setWrapperSize(wrapper, zoomValue) {
 }
 
 function setupColorPicker(canvas) { //To be refactored
-  const colorPicker = document.createElement('input'); //Input element with type "color"
+  //Input element with type "color"
+  const colorPicker = document.createElement('input');
   colorPicker.type = 'color';
   colorPicker.id = 'color-picker';
   colorPicker.oninput = () => {

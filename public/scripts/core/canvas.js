@@ -3,14 +3,16 @@ import { Color } from '../utilities/color.js';
 
 const DEFAULT_PENCIL_COLOR = '#000000';
 const IMAGE_POS = 0;
-const CACHE_MIN_LAYER_COUNT = 4; //The minimum number of layers for which we perform caching
+//The minimum number of layers for which we perform caching
+const CACHE_MIN_LAYER_COUNT = 4;
 
 /*
 A class which stores canvas parameters that are changed outside of drawing.
 It uses Memento pattern to implement Undo/Redo actions.
  */
 class CanvasState {
-  static stackLimit = 50; //Setting limit for the number of states which can be saved at the same time
+  //Setting limit for the number of states which can be saved at the same time
+  static stackLimit = 50;
 
   constructor(canvas) {
     this.color = Color.fromHex(DEFAULT_PENCIL_COLOR);
@@ -41,7 +43,8 @@ class CanvasState {
     const stackSaved = stackRetrieved !== this.pastLayers ? this.pastLayers : this.nextLayers;
     if (stackRetrieved.length < 1) throw Error('There is nothing to retrieve');
 
-    CanvasState.#pushLayers(stackSaved, this.#cloneLayers()); //Updating the other stack
+    //Updating the other stack
+    CanvasState.#pushLayers(stackSaved, this.#cloneLayers());
 
     return stackRetrieved.pop();
   }
@@ -69,7 +72,7 @@ class CanvasState {
 
 /*
 Each layer is assigned its own id.
-Ids are implemented with simple number indices being updated through closure usage.
+Ids are implemented with number indices being updated through closure usage.
  */
 const layerIdGetter = () => {
   let index = 0;
@@ -88,13 +91,13 @@ class Layer {
     /*
     Virtual canvas is a canvas which is not appended to DOM.
     Instead, it is drawn over the main canvas element.
-    This is done for optimization and increases performance over any other method (checked now).
+    This is done for optimization and increases performance over other methods.
      */
     this.virtualCanvas = createCanvasElement(width, height);
     //We save context to avoid retrieving it multiple times
     this.context = this.virtualCanvas.getContext('2d');
     this.id = id;
-    //A variable to determine whether the virtual canvas is drawn over the main canvas
+    //Determines whether the layer will be drawn
     this.visible = true;
   }
 
@@ -112,7 +115,8 @@ class Layer {
 
   #getImageData(width, height) {
     const imageData = this.context.getImageData(IMAGE_POS, IMAGE_POS, width, height);
-    applyImageMixin(imageData); //We apply mixin to be able to use clone() function
+    //We apply mixin to be able to use clone() function
+    applyImageMixin(imageData);
     return imageData;
   }
 }
@@ -156,7 +160,8 @@ class LayerCache {
 
   drawFromCache(context) {
     context.drawImage(this.beforeCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
-    if (this.#lastChanged.visible) { //Handle only the visibility of middle layer
+    //Handle only the visibility of middle layer
+    if (this.#lastChanged.visible) {
       context.drawImage(this.#lastChanged.virtualCanvas, IMAGE_POS, IMAGE_POS);
     }
     context.drawImage(this.afterCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
@@ -168,7 +173,7 @@ A class which wraps HTML <canvas> element and adds functionality to it.
 Implements undo/redo actions, layering and listening to changes.
  */
 class Canvas {
-  #layers; //An ordered array of virtual canvases. Soon will be reimplemented with my IdList class
+  #layers; //An ordered array of virtual canvases
   #listeners; //A variable needed to implement simple EventEmitter
 
   drawnLayerID; //The ID of the currently drawn on layer
@@ -176,7 +181,7 @@ class Canvas {
 
   constructor(width, height) {
     const canvasElement = createCanvasElement(width, height);
-    //The element is the only HTMLCanvasElement that is appended to the DOM. We save its context for reuse
+    //The element is the only HTMLCanvasElement that is appended to the DOM
     this.mainElement = canvasElement;
     this.mainContext = canvasElement.getContext('2d');
 
@@ -269,7 +274,8 @@ class Canvas {
     if (position >= this.#layers.length) {
       this.#layers.push(layer);
     } else {
-      this.#layers.splice(position, 0, layer); //We insert the layer at certain index, deleting 0 items
+      //We insert the layer at certain index, deleting 0 items
+      this.#layers.splice(position, 0, layer);
     }
 
     this.redraw();
@@ -324,7 +330,10 @@ class Canvas {
     applyImageMixin(this.image);
   }
 
-  //The implementation of EventEmitter pattern. Allows other entities to know when the canvas is getting a fixated state
+  /*
+  The implementation of EventEmitter pattern.
+  Allows other entities to know when the canvas is getting a fixated state
+   */
   listenToUpdates(listener) {
     this.#listeners.push(listener);
   }

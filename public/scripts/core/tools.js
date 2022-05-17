@@ -53,7 +53,8 @@ class Pencil extends Tool {
 
   link(canvas) {
     super.link(canvas);
-    const mixin = { //To achieve less arguments for functions we assign mixins to canvas
+    //To achieve less arguments for functions we assign mixins to canvas
+    const mixin = {
       drawPoint,
       plotLine
     };
@@ -101,7 +102,7 @@ class Pencil extends Tool {
     this.#drawing = false;
   }
 
-  //Determines if there is enough distance between last and current point of drawing
+  //Is there enough distance between last and current point of drawing
   #isOffsetValid(event) {
     const canvasElement = this.canvas.mainElement;
     let minOffset = canvasElement.offsetWidth / canvasElement.width;
@@ -137,10 +138,11 @@ class Eraser extends Pencil {
 }
 
 /*
-Antialiasing is not suited for the application,
-hence instead of native lineTo() function we use Bresenham's algorithm to draw a line.
+Antialiasing is not suited for the application.
+Instead of native lineTo() function we use Bresenham's algorithm to draw a line.
 
-Refer to this link https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm for implementation details
+Refer to this link for implementation details:
+https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
  */
 function bresenhamLine(src, dest, plotPoint) {
   const diff = Coordinates.getDifference(src, dest);
@@ -149,7 +151,7 @@ function bresenhamLine(src, dest, plotPoint) {
   diff.x = Math.abs(diff.x);
   diff.y = -Math.abs(diff.y);
 
-  //Error allows us to perform all octant drawing. The algorithm is still precise
+  //Error allows us to perform all octant drawing
   let error = diff.x + diff.y;
   const curr = new Coordinates(src.x, src.y);
 
@@ -238,10 +240,13 @@ class BucketFill extends Tool {
   }
 
   #visit(pixel) {
-    if (pixel.x < 0 || pixel.x >= this.canvas.image.width) return; //Check for overflow
+    //Check for overflow
+    if (pixel.x < 0 || pixel.x >= this.canvas.image.width) return;
     if (pixel.y < 0 || pixel.y >= this.canvas.image.height) return;
-    if (this.#visited[pixel.x][pixel.y]) return; //If a pixel has already been viewed, skip it
-    this.#visited[pixel.x][pixel.y] = true; //Mark pixel as already viewed
+    //If a pixel has already been viewed, skip it
+    if (this.#visited[pixel.x][pixel.y]) return;
+    //Mark pixel as already viewed
+    this.#visited[pixel.x][pixel.y] = true;
     this.#queue.push(pixel);
   }
 
