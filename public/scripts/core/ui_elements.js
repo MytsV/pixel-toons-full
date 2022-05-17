@@ -112,7 +112,9 @@ class Toolbar {
       new ToolInfo(new BucketFill(), 'Bucket Fill')
     ];
     this.container = document.getElementById('tools');
-    this.toolsInfo.forEach((toolInfo) => this.container.appendChild(toolInfo.element));
+    this.toolsInfo.forEach((toolInfo) => {
+      this.container.appendChild(toolInfo.element);
+    });
 
     this.#setUpColorPicker();
   }
