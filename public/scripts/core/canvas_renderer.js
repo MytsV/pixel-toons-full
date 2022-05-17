@@ -28,11 +28,11 @@ class CanvasRenderer {
   }
 
   appendCanvas(canvas) {
-    const width = canvas.mainElement.width;
-    const height = canvas.mainElement.height;
+    const width = canvas.element.width;
+    const height = canvas.element.height;
 
     this.canvasWrapper.style.aspectRatio = width / height;
-    this.#setUpElement(canvas.mainElement);
+    this.#setUpElement(canvas.element);
     CanvasRenderer.#setUpBackground(width, height);
     this.adjustSize();
   }

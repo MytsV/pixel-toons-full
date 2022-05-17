@@ -2,7 +2,7 @@ import { applyImageMixin } from '../utilities/image.js';
 import { Color } from '../utilities/color.js';
 
 const DEFAULT_PENCIL_COLOR = '#000000';
-const IMAGE_POS = 0;
+const START_POS = [0, 0];
 //The minimum number of layers for which we perform caching
 const CACHE_MIN_LAYER_COUNT = 4;
 
@@ -88,6 +88,7 @@ A set of virtual canvas and its visibility, marked with a unique identifier.
  */
 class Layer {
   constructor(id, width, height) {
+    Object.assign(this, { width, height });
     /*
     Virtual canvas is a canvas which is not appended to DOM.
     Instead, it is drawn over the main canvas element.
@@ -103,18 +104,15 @@ class Layer {
 
   //Prototype pattern implementation
   clone() {
-    const width = this.virtualCanvas.width;
-    const height = this.virtualCanvas.height;
-
-    const cloned = new Layer(this.id, width, height);
-    const imageData = this.#getImageData(width, height);
+    const cloned = new Layer(this.id, this.width, this.height);
+    const imageData = this.#getImageData(this.width, this.height);
     //We clone the ImageData object to avoid changing pixel data by reference
-    cloned.context.putImageData(imageData.clone(), IMAGE_POS, IMAGE_POS);
+    cloned.context.putImageData(imageData.clone(), ...START_POS);
     return cloned;
   }
 
   #getImageData(width, height) {
-    const imageData = this.context.getImageData(IMAGE_POS, IMAGE_POS, width, height);
+    const imageData = this.context.getImageData(...START_POS, width, height);
     //We apply mixin to be able to use clone() function
     applyImageMixin(imageData);
     return imageData;
@@ -130,11 +128,7 @@ class LayerCache {
   #lastChangedIndex;
 
   constructor(width, height) {
-    this.#lastChanged = null;
-    this.#lastChangedIndex = null;
-    this.width = width;
-    this.height = height;
-
+    Object.assign(this, { width, height });
     this.#resetCache();
   }
 
@@ -148,7 +142,7 @@ class LayerCache {
     for (const [layer, index] of layers.entries()) {
       if (!layer.visible || index === currentIndex) return;
       const appendedCache = index < currentIndex ? this.beforeCache : this.afterCache;
-      appendedCache.context.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS);
+      appendedCache.context.drawImage(layer.virtualCanvas, ...START_POS);
     }
   }
 
@@ -159,12 +153,12 @@ class LayerCache {
   }
 
   drawFromCache(context) {
-    context.drawImage(this.beforeCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
+    context.drawImage(this.beforeCache.virtualCanvas, ...START_POS);
     //Handle only the visibility of middle layer
     if (this.#lastChanged.visible) {
-      context.drawImage(this.#lastChanged.virtualCanvas, IMAGE_POS, IMAGE_POS);
+      context.drawImage(this.#lastChanged.virtualCanvas, ...START_POS);
     }
-    context.drawImage(this.afterCache.virtualCanvas, IMAGE_POS, IMAGE_POS);
+    context.drawImage(this.afterCache.virtualCanvas, ...START_POS);
   }
 }
 
@@ -180,17 +174,19 @@ class Canvas {
   image; //Image associated with the currently drawn on layer
 
   constructor(width, height) {
-    const canvasElement = createCanvasElement(width, height);
+    //Saving width and height for later reuse
+    Object.assign(this, { width, height });
+
     //The element is the only HTMLCanvasElement that is appended to the DOM
-    this.mainElement = canvasElement;
-    this.mainContext = canvasElement.getContext('2d');
+    this.element = createCanvasElement(width, height);
+    //We save its context for later reuse
+    this.context = this.element.getContext('2d');
 
     this.state = new CanvasState(this);
     this.#layers = [];
     this.#listeners = [];
 
     this.cache = new LayerCache(width, height);
-
     //Create the first empty layer
     this.appendLayer();
   }
@@ -198,11 +194,11 @@ class Canvas {
   //Refresh the visual representation of the canvas with layers
   redraw() {
     //Apply changes to current layer
-    this.#getDrawnLayer().context.putImageData(this.image, IMAGE_POS, IMAGE_POS);
+    this.#getDrawnLayer().context.putImageData(this.image, ...START_POS);
 
     //Reset the image on real canvas to fully transparent
-    const transparentImage = new ImageData(this.mainElement.width, this.mainElement.height);
-    this.mainContext.putImageData(transparentImage, IMAGE_POS, IMAGE_POS);
+    const transparentImage = new ImageData(this.width, this.height);
+    this.context.putImageData(transparentImage, ...START_POS);
 
     this.#joinLayers();
   }
@@ -211,11 +207,11 @@ class Canvas {
   #joinLayers() {
     if (this.#layers.length >= CACHE_MIN_LAYER_COUNT) {
       this.cache.updateCache(this.#layers, this.#getDrawnLayer());
-      this.cache.drawFromCache(this.mainContext);
+      this.cache.drawFromCache(this.context);
     } else {
       this.#layers.forEach((layer) => {
         if (!layer.visible) return;
-        this.mainContext.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS);
+        this.context.drawImage(layer.virtualCanvas, ...START_POS);
       });
     }
   }
@@ -225,12 +221,12 @@ class Canvas {
   }
 
   getJoinedImage() {
-    return this.mainContext.getImageData(IMAGE_POS, IMAGE_POS, this.mainElement.width, this.mainElement.height);
+    return this.context.getImageData(...START_POS, this.width, this.height);
   }
 
   //Creates a new layer and stacks in on top of other layers
   appendLayer() {
-    const layer = new Layer(idGetter.get(), this.mainElement.width, this.mainElement.height);
+    const layer = new Layer(idGetter.get(), this.width, this.height);
     this.#setDrawnLayer(layer);
     this.#layers.push(layer);
 
@@ -289,7 +285,7 @@ class Canvas {
     const updatedPos = firstPreceding ? posA : posB;
     const deletedPos = !firstPreceding ? posA : posB;
 
-    this.#layers[updatedPos].context.drawImage(this.#layers[deletedPos].virtualCanvas, IMAGE_POS, IMAGE_POS);
+    this.#layers[updatedPos].context.drawImage(this.#layers[deletedPos].virtualCanvas, ...START_POS);
     this.#setDrawnLayer(this.#layers[updatedPos]);
     this.#layers.splice(deletedPos, 1); //Remove one element at certain index
 
@@ -326,7 +322,8 @@ class Canvas {
   //Update instance variables with current layer data
   #setDrawnLayer(layer) {
     this.drawnLayerID = layer.id;
-    this.image = layer.context.getImageData(IMAGE_POS, IMAGE_POS, this.mainElement.width, this.mainElement.height);
+    const { width, height } = this;
+    this.image = layer.context.getImageData(...START_POS, width, height);
     applyImageMixin(this.image);
   }
 
