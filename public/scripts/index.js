@@ -50,8 +50,7 @@ const zoomCodes = {
 };
 
 document.addEventListener('keypress', (event) => {
-  const index = Object.keys(zoomCodes).indexOf(event.key);
-  if (index !== -1) {
+  if (Object.keys(zoomCodes).includes(event.key)) {
     renderer.zoom(zoomCodes[event.key]);
   }
 });
@@ -95,7 +94,6 @@ function setLayerMenu() {
 
     appendLayerName(layer, layerElement);
     handleLayerClasses(layer, layerElement);
-    // eslint-disable-next-line no-loop-func
     layerElement.onclick = () => {
       file.canvas.switchLayer(layer.id);
     };
