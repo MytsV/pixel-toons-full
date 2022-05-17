@@ -145,11 +145,11 @@ class LayerCache {
 
     if (this.#lastChanged.id !== current.id || this.#lastChangedIndex !== currentIndex) return;
     this.#resetCache();
-    layers.forEach((layer, index) => {
+    for (const [layer, index] of layers.entries()) {
       if (!layer.visible || index === currentIndex) return;
       const appendedCache = index < currentIndex ? this.beforeCache : this.afterCache;
       appendedCache.context.drawImage(layer.virtualCanvas, IMAGE_POS, IMAGE_POS);
-    });
+    }
   }
 
   #resetCache() {
