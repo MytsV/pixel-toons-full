@@ -45,7 +45,12 @@ class Color {
       return Math.floor(numerator / newAlpha);
     };
 
-    return new Color(getParam(color.r, this.r), getParam(color.g, this.g), getParam(color.b, this.b), newAlpha * colorRange);
+    return new Color(
+      getParam(color.r, this.r),
+      getParam(color.g, this.g),
+      getParam(color.b, this.b),
+      newAlpha * colorRange
+    );
   }
 
   //Converts color to RGBA CSS format
@@ -55,7 +60,9 @@ class Color {
 }
 
 function checkRange(parameter) {
-  if (parameter < 0 || parameter > colorRange) throw Error(`Color parameter ${parameter} is not in range 0...${colorRange}`);
+  if (parameter < 0 || parameter > colorRange) {
+    throw Error(`Parameter ${parameter} is not in range 0...${colorRange}`);
+  }
 }
 
 export { Color };

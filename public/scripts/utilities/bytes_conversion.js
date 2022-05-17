@@ -1,4 +1,9 @@
-const bytesToBase64 = (data) => window.btoa(data.reduce((prev, curr) => prev + String.fromCharCode(curr), ''));
+const bytesToBase64 = (data) => {
+  window.btoa(data.reduce((prev, curr) => {
+    const encoded = String.fromCharCode(curr);
+    return prev + encoded;
+  }, ''));
+};
 
 const bytesToUrl = (data) => {
   const blob = new Blob([data]);
