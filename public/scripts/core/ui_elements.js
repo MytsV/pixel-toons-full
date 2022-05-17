@@ -142,7 +142,7 @@ class Toolbar {
     this.colorPicker = document.createElement('input');
     this.colorPicker.type = 'color';
     this.colorPicker.id = 'color-picker';
-    return this.colorPicker;
+    this.container.appendChild(this.colorPicker);
   }
 }
 

@@ -26,15 +26,31 @@ class Tool {
     this.setEvents();
   }
 
+  //A method which will subscribe to events in web browser
+  setEvents() {
+    this.#iterateListeners((element, [key, listener]) => {
+      element.addEventListener(key, listener);
+    });
+  }
+
+  //Unsubscribing from events when the tool is not used
   disable() {
-    this.listenersCanvas.forEach((listener, key) => this.canvas.element.removeEventListener(key, listener));
-    this.listenersDocument.forEach((listener, key) => document.removeEventListener(key, listener));
+    this.#iterateListeners((element, [key, listener]) => {
+      element.removeEventListener(key, listener);
+    });
     this.canvas = null;
   }
 
-  setEvents() { //A method which will subscribe to events in web browser
-    this.listenersCanvas.forEach((listener, key) => this.canvas.element.addEventListener(key, listener));
-    this.listenersDocument.forEach((listener, key) => document.addEventListener(key, listener));
+  #iterateListeners(updateEvent) {
+    const listenersWithElement = [
+      [this.listenersDocument, document],
+      [this.listenersCanvas, this.canvas.element]
+    ];
+    for (const [listeners, element] of listenersWithElement) {
+      for (const listenerEntry of listeners.entries()) {
+        updateEvent(element, listenerEntry);
+      }
+    }
   }
 }
 
@@ -62,10 +78,12 @@ class Pencil extends Tool {
   }
 
   setEvents() {
-    this.listenersCanvas.set('mousedown', (event) => this.#onMouseDown(event));
-    this.listenersCanvas.set('click', (event) => this.#onClick(event));
-    this.listenersDocument.set('mouseup', () => this.#onMouseUp());
-    this.listenersDocument.set('mousemove', (event) => this.#onMouseMove(event));
+    const { listenersCanvas, listenersDocument } = this;
+
+    listenersCanvas.set('mousedown', (event) => this.#onMouseDown(event));
+    listenersCanvas.set('click', (event) => this.#onClick(event));
+    listenersDocument.set('mouseup', () => this.#onMouseUp());
+    listenersDocument.set('mousemove', (event) => this.#onMouseMove(event));
 
     super.setEvents();
   }
@@ -78,15 +96,18 @@ class Pencil extends Tool {
 
   //When mouse is pressed and release, we draw one pixel
   #onClick(event) {
-    const coordinates = getRealCoordinates(this.canvas.element, new Coordinates(event.clientX, event.clientY));
-    this.canvas.drawPoint(this.getColor(), coordinates);
+    const mouseCoords = new Coordinates(event.clientX, event.clientY);
+    const canvasCoords = getRealCoordinates(this.canvas.element, mouseCoords);
+    this.canvas.drawPoint(this.getColor(), canvasCoords);
     this.canvas.redraw();
   }
 
   //When mouse is moved throughout canvas, we leave trail
   #onMouseMove(event) {
-    if (!this.#drawing) return; //We don't draw if mouse button is not held pressed
-    if (!this.#isOffsetValid(event)) return; //We don't draw if between last drawn point there is not enough space
+    //We don't draw if mouse button is not held pressed
+    if (!this.#drawing) return;
+    //We don't draw if between last drawn point there is not enough space
+    if (!this.#isOffsetValid(event)) return;
 
     const dest = new Coordinates(event.clientX, event.clientY);
     this.canvas.plotLine(this.getColor(), this.#lastCoordinates, dest);
@@ -125,7 +146,8 @@ class Pencil extends Tool {
 function plotLine(color, src, dest) {
   const srcReal = getRealCoordinates(this.element, dest);
   const destReal = getRealCoordinates(this.element, src);
-  bresenhamLine(destReal, srcReal, ({ x, y }) => this.drawPoint(color, { x, y }));
+  const plotPoint = ({ x, y }) => this.drawPoint(color, { x, y });
+  bresenhamLine(destReal, srcReal, plotPoint);
 }
 
 /*
@@ -197,14 +219,16 @@ class BucketFill extends Tool {
   }
 
   #onClick(event) {
-    const coordinates = getRealCoordinates(this.canvas.element, new Coordinates(event.clientX, event.clientY));
-    this.#floodFill(coordinates);
+    const mouseCoords = new Coordinates(event.clientX, event.clientY);
+    const realCoords = getRealCoordinates(this.canvas.element, mouseCoords);
+    this.#floodFill(realCoords);
     this.canvas.redraw();
     this.canvas.save();
   }
 
   #floodFill(initial) {
-    const initialColor = this.canvas.image.getPixelColor(initial.x, initial.y);
+    const image = this.canvas.image;
+    const initialColor = image.getPixelColor(initial.x, initial.y);
 
     this.#queue = [];
     this.#visited = this.#initVisited();
@@ -212,7 +236,7 @@ class BucketFill extends Tool {
 
     while (this.#queue.length !== 0) {
       const current = this.#queue.shift();
-      const currentColor = this.canvas.image.getPixelColor(current.x, current.y);
+      const currentColor = image.getPixelColor(current.x, current.y);
       if (!this.#isColorValid(initialColor, currentColor)) continue;
       this.canvas.drawPoint(this.getColor(), current);
 
@@ -226,7 +250,8 @@ class BucketFill extends Tool {
   #initVisited() {
     const width = this.canvas.image.width;
     const height = this.canvas.image.height;
-    return Array(width).fill(null).map(() => Array(height).fill(false)); //Create a matrix
+    //Create a matrix
+    return Array(width).fill(null).map(() => Array(height).fill(false));
   }
 
   #isColorValid(initial, current) {
@@ -235,8 +260,8 @@ class BucketFill extends Tool {
       return parameterB <= (parameterA + this.tolerance);
     };
 
-    return inRange(initial.r, current.r) && inRange(initial.g, current.g) && inRange(initial.b, current.b) &&
-      inRange(initial.alpha, current.alpha);
+    return inRange(initial.r, current.r) && inRange(initial.g, current.g) &&
+      inRange(initial.b, current.b) && inRange(initial.alpha, current.alpha);
   }
 
   #visit(pixel) {
@@ -259,17 +284,22 @@ function drawPoint(color, { x, y }) {
   this.image.setPixelColor(x, y, color);
 }
 
-function getRealCoordinates(element, absCoordinates) {
-  const rect = element.getBoundingClientRect(); //Allows to retrieve offset
-  const relative = new Coordinates(absCoordinates.x - rect.left, absCoordinates.y - rect.top);
+function getRealCoordinates(element, absCoords) {
+  const { width, height, offsetWidth, offsetHeight } = element;
 
-  const resolution = { width: element.width / element.offsetWidth, height: element.height / element.offsetHeight };
-  const curr = new Coordinates(relative.x * resolution.width, relative.y * resolution.height);
+  const rect = element.getBoundingClientRect(); //Allows to retrieve offset
+  const rel = new Coordinates(absCoords.x - rect.left, absCoords.y - rect.top);
+
+  const ratio = {
+    width: width / offsetWidth,
+    height: height / offsetHeight
+  };
+  const curr = new Coordinates(rel.x * ratio.width, rel.y * ratio.height);
 
   //Check for overflow
-  curr.x = Math.min(element.width - 1, curr.x);
+  curr.x = Math.min(width - 1, curr.x);
   curr.x = Math.max(0, curr.x);
-  curr.y = Math.min(element.height - 1, curr.y);
+  curr.y = Math.min(width - 1, curr.y);
   curr.y = Math.max(0, curr.y);
 
   return new Coordinates(Math.floor(curr.x), Math.floor(curr.y));
