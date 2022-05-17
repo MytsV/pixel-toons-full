@@ -81,6 +81,8 @@ function setUpUpdateListener() {
   file.canvas.listenToUpdates(setLayerMenu);
 }
 
+const onLayerClick = (id) => () => file.canvas.switchLayer(id);
+
 function setLayerMenu() {
   const layers = file.canvas.layers;
   const container = document.getElementById('layer-container');
@@ -94,9 +96,7 @@ function setLayerMenu() {
 
     appendLayerName(layer, layerElement);
     handleLayerClasses(layer, layerElement);
-    layerElement.onclick = () => {
-      file.canvas.switchLayer(layer.id);
-    };
+    layerElement.onclick = onLayerClick(layer.id);
     layerElement.appendChild(getVisibilityButton(layer));
 
     container.appendChild(layerElement);
