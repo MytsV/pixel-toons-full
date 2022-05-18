@@ -3,54 +3,66 @@ import { bytesToUrl, downloadLocalUrl } from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil } from './tools.js';
 import { Color } from '../utilities/color.js';
 
-const clickEvent = 'onclick';
-
-class ButtonsSetter {
+class VariableDependentButtons {
   constructor() {
     this.buttons = new Map();
   }
 
   addButton(id, listener) {
     const element = document.getElementById(id);
-    this.buttons.set(element, listener);
+    const closureListener = (variable) => () => listener(variable);
+    this.buttons.set(element, closureListener);
   }
 
-  enableButtons() {
+  enableButtons(variable) {
     for (const [element, listener] of this.buttons) {
-      element.addEventListener(clickEvent, listener);
-    }
-  }
-
-  disableButtons() {
-    for (const [element, listener] of this.buttons) {
-      element.removeEventListener(clickEvent, listener);
+      element.onclick = listener(variable);
     }
   }
 }
 
 class StateButtons {
   constructor() {
-    this.undoButton = document.getElementById('undo-button');
-    this.redoButton = document.getElementById('redo-button');
+    this.buttons = new VariableDependentButtons();
+    this.buttons.addButton('undo-button', (canvas) => canvas.undo());
+    this.buttons.addButton('redo-button', (canvas) => canvas.redo());
   }
 
   refresh(file) {
-    this.undoButton.onclick = () => file.canvas.undo();
-    this.redoButton.onclick = () => file.canvas.redo();
+    this.buttons.enableButtons(file.canvas);
   }
 }
 
 class FileMenu {
   constructor(createNewFile) {
     this.createNewFile = createNewFile; //A function passed from the context
+    this.buttons = new VariableDependentButtons();
+    this.#setUpDependentButtons();
+
     this.#setUpModal();
-    this.#setUpButtons();
-    this.#setUpExporter();
+    this.#setUpCreateButton();
     this.#setUpCreateFinish();
   }
 
   refresh(file) {
-    this.file = file;
+    this.buttons.enableButtons(file.canvas);
+  }
+
+  #setUpDependentButtons() {
+    this.buttons.addButton('file-clear', (canvas) => this.#clear(canvas));
+    this.buttons.addButton('export-button', (canvas) => {
+      FileMenu.#exportImage(canvas);
+    });
+  }
+
+  #clear(canvas) {
+    this.createNewFile(canvas.width, canvas.height);
+  }
+
+  static #exportImage(canvas) {
+    const image = canvas.getJoinedImage();
+    const encoder = new BmpEncoder(image, bmpVersions.bmp32);
+    downloadLocalUrl(bytesToUrl(encoder.encode()), 'image.bmp');
   }
 
   #setUpModal() {
@@ -62,11 +74,9 @@ class FileMenu {
     };
   }
 
-  #setUpButtons() {
+  #setUpCreateButton() {
     const createButton = document.getElementById('file-create');
-    const clearButton = document.getElementById('file-clear');
-    createButton.onclick = () => this.create();
-    clearButton.onclick = () => this.clear();
+    createButton.onclick = () => this.#showModal();
   }
 
   #setUpCreateFinish() {
@@ -77,27 +87,6 @@ class FileMenu {
       this.createNewFile(inputWidth.value, inputHeight.value);
       this.#hideModal();
     };
-  }
-
-  #setUpExporter() {
-    const button = document.getElementById('export-button');
-    button.onclick = () => this.exportImage();
-  }
-
-  create() {
-    this.#showModal();
-  }
-
-  clear() {
-    if (!this.file) throw Error('Open a file first to clear the canvas');
-    this.createNewFile(this.file.width, this.file.height);
-  }
-
-  exportImage() {
-    if (!this.file) throw Error('There is no image to export');
-    const image = this.file.canvas.getJoinedImage();
-    const encoder = new BmpEncoder(image, bmpVersions.bmp32);
-    downloadLocalUrl(bytesToUrl(encoder.encode()), 'image.bmp');
   }
 
   #showModal() {
@@ -136,40 +125,53 @@ class Toolbar {
       new ToolInfo(new Eraser(), 'Eraser'),
       new ToolInfo(new BucketFill(), 'Bucket Fill')
     ];
+    this.buttons = new VariableDependentButtons();
     this.container = document.getElementById('tools');
-    this.toolsInfo.forEach((toolInfo) => {
-      this.container.appendChild(toolInfo.element);
-    });
 
+    this.#setUpTools();
     this.#setUpColorPicker();
   }
 
   refresh(file) {
-    this.file = file;
-    this.#setChosen(this.toolsInfo[0]);
-    this.toolsInfo.forEach((toolInfo) => {
-      toolInfo.element.onclick = () => this.#setChosen(toolInfo);
-    });
-    this.colorPicker.oninput = () => {
-      this.file.canvas.state.color = Color.fromHex(this.colorPicker.value);
-    };
+    const canvas = file.canvas;
+    this.#setChosen(this.toolsInfo[0], canvas);
+    this.buttons.enableButtons(canvas);
+    this.#refreshColorPicker(canvas);
   }
 
-  #setChosen(toolInfo) {
+  #setUpTools() {
+    this.toolsInfo.forEach((toolInfo) => {
+      this.container.appendChild(toolInfo.element);
+      this.buttons.addButton(toolInfo.element.id, (canvas) => {
+        this.#setChosen(toolInfo, canvas);
+      });
+    });
+  }
+
+  #setChosen(toolInfo, canvas) {
     if (this.chosen) {
       this.chosen.tool.disable();
       this.chosen.element.classList.remove(Toolbar.#activeClass);
     }
     this.chosen = toolInfo;
-    this.chosen.tool.link(this.file.canvas);
+    this.chosen.tool.link(canvas);
     this.chosen.element.classList.add(Toolbar.#activeClass);
   }
 
+  #refreshColorPicker(canvas) {
+    //this.colorPicker.value = canvas.state.color.toHex();
+    this.colorPicker.oninput = () => {
+      canvas.state.color = Color.fromHex(this.colorPicker.value);
+    };
+  }
+
   #setUpColorPicker() {
-    this.colorPicker = document.createElement('input');
-    this.colorPicker.type = 'color';
-    this.colorPicker.id = 'color-picker';
-    this.container.appendChild(this.colorPicker);
+    const colorPicker = document.createElement('input');
+    colorPicker.type = 'color';
+    colorPicker.id = 'color-picker';
+
+    this.container.appendChild(colorPicker);
+    this.colorPicker = colorPicker;
   }
 }
 
@@ -183,7 +185,7 @@ function getTextElement(text) {
 class LayerMenu {
   constructor() {
     this.container = document.getElementById('layer-container');
-    this.buttonSetter = new ButtonsSetter();
+    this.buttonSetter = new VariableDependentButtons();
 
     this.buttonSetter.addButton('add-layer-button', this.addLayer);
     this.buttonSetter.addButton('remove-layer-button', this.removeLayer);

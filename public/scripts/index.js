@@ -68,7 +68,7 @@ function assignLayerButtons() {
   const removeLayerButton = document.getElementById('remove-layer-button');
   const moveUpLayerButton = document.getElementById('move-up-layer-button');
   const moveDownLayerButton = document.getElementById('move-down-layer-button');
-  const uniteLayerButton = document.getElementById('unite-layer-button');
+  const uniteLayerButton = document.getElementById('merge-layers-button');
 
   addLayerButton.onclick = () => file.canvas.appendLayer();
   removeLayerButton.onclick = () => file.canvas.removeLayer(file.canvas.drawnLayerID);
