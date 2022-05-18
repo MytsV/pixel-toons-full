@@ -3,6 +3,31 @@ import { bytesToUrl, downloadLocalUrl } from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil } from './tools.js';
 import { Color } from '../utilities/color.js';
 
+const clickEvent = 'onclick';
+
+class ButtonsSetter {
+  constructor() {
+    this.buttons = new Map();
+  }
+
+  addButton(id, listener) {
+    const element = document.getElementById(id);
+    this.buttons.set(element, listener);
+  }
+
+  enableButtons() {
+    for (const [element, listener] of this.buttons) {
+      element.addEventListener(clickEvent, listener);
+    }
+  }
+
+  disableButtons() {
+    for (const [element, listener] of this.buttons) {
+      element.removeEventListener(clickEvent, listener);
+    }
+  }
+}
+
 class StateButtons {
   constructor() {
     this.undoButton = document.getElementById('undo-button');
@@ -153,6 +178,57 @@ function getTextElement(text) {
   textElement.innerText = text;
   textElement.classList.add('text');
   return textElement;
+}
+
+class LayerMenu {
+  constructor() {
+    this.container = document.getElementById('layer-container');
+    this.buttonSetter = new ButtonsSetter();
+
+    this.buttonSetter.addButton('add-layer-button', this.addLayer);
+    this.buttonSetter.addButton('remove-layer-button', this.removeLayer);
+    this.buttonSetter.addButton('move-up-layer-button', this.moveLayerUp);
+    this.buttonSetter.addButton('move-down-layer-button', this.moveLayerDown);
+    this.buttonSetter.addButton('merge-layers-button', this.mergeLayers);
+  }
+
+
+  refresh(file) {
+    this.canvas = file.canvas;
+    this.buttonSetter.enableButtons();
+  }
+
+  #updateLayers() {
+
+  }
+
+  addLayer() {
+    this.canvas.appendLayer();
+  }
+
+  removeLayer() {
+    const removedId = this.canvas.drawnLayerID;
+    this.canvas.removeLayer(removedId);
+  }
+
+  moveLayerUp() {
+    const movedId = this.canvas.drawnLayerID;
+    this.canvas.moveLayerUp(movedId);
+  }
+
+  moveLayerDown() {
+    const movedId = this.canvas.drawnLayerID;
+    this.canvas.moveLayerDown(movedId);
+  }
+
+  mergeLayers() {
+    const isLayerDrawn = (layer) => layer.id === this.canvas.drawnLayerID;
+    const currentIndex = this.canvas.layers.findIndex(isLayerDrawn);
+
+    const mergedId = this.canvas.drawnLayerID;
+    const bottomLayer = this.canvas.layers[currentIndex - 1];
+    this.canvas.mergeLayers(mergedId, bottomLayer.id);
+  }
 }
 
 export { StateButtons, FileMenu, Toolbar };
