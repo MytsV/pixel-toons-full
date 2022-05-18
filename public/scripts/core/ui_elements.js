@@ -185,52 +185,64 @@ function getTextElement(text) {
 class LayerMenu {
   constructor() {
     this.container = document.getElementById('layer-container');
-    this.buttonSetter = new VariableDependentButtons();
-
-    this.buttonSetter.addButton('add-layer-button', this.addLayer);
-    this.buttonSetter.addButton('remove-layer-button', this.removeLayer);
-    this.buttonSetter.addButton('move-up-layer-button', this.moveLayerUp);
-    this.buttonSetter.addButton('move-down-layer-button', this.moveLayerDown);
-    this.buttonSetter.addButton('merge-layers-button', this.mergeLayers);
+    this.buttons = new VariableDependentButtons();
+    this.#setUpButtons();
   }
 
+  #setUpButtons() {
+    this.buttons.addButton('add-layer-button', (canvas) => {
+      LayerMenu.#addLayer(canvas);
+    });
+    this.buttons.addButton('remove-layer-button', (canvas) => {
+      LayerMenu.#removeLayer(canvas);
+    });
+    this.buttons.addButton('move-up-layer-button', (canvas) => {
+      LayerMenu.#moveLayerUp(canvas);
+    });
+    this.buttons.addButton('move-down-layer-button', (canvas) => {
+      LayerMenu.#moveLayerDown(canvas);
+    });
+    this.buttons.addButton('merge-layers-button', (canvas) => {
+      LayerMenu.#mergeLayers(canvas);
+    });
+  }
 
   refresh(file) {
-    this.canvas = file.canvas;
-    this.buttonSetter.enableButtons();
+    this.buttons.enableButtons(file.canvas);
   }
 
   #updateLayers() {
 
   }
 
-  addLayer() {
-    this.canvas.appendLayer();
+  static #addLayer(canvas) {
+    canvas.appendLayer();
   }
 
-  removeLayer() {
-    const removedId = this.canvas.drawnLayerID;
-    this.canvas.removeLayer(removedId);
+  static #removeLayer(canvas) {
+    const removedId = canvas.drawnLayerID;
+    canvas.removeLayer(removedId);
   }
 
-  moveLayerUp() {
-    const movedId = this.canvas.drawnLayerID;
-    this.canvas.moveLayerUp(movedId);
+  static #moveLayerUp(canvas) {
+    const movedId = canvas.drawnLayerID;
+    canvas.moveLayerUp(movedId);
   }
 
-  moveLayerDown() {
-    const movedId = this.canvas.drawnLayerID;
-    this.canvas.moveLayerDown(movedId);
+  static #moveLayerDown(canvas) {
+    const movedId = canvas.drawnLayerID;
+    canvas.moveLayerDown(movedId);
   }
 
-  mergeLayers() {
-    const isLayerDrawn = (layer) => layer.id === this.canvas.drawnLayerID;
-    const currentIndex = this.canvas.layers.findIndex(isLayerDrawn);
+  static #mergeLayers(canvas) {
+    const isLayerDrawn = (layer) => layer.id === canvas.drawnLayerID;
+    const mergedId = canvas.drawnLayerID;
 
-    const mergedId = this.canvas.drawnLayerID;
-    const bottomLayer = this.canvas.layers[currentIndex - 1];
-    this.canvas.mergeLayers(mergedId, bottomLayer.id);
+    const currentIndex = canvas.layers.findIndex(isLayerDrawn);
+    const bottomLayer = canvas.layers[currentIndex - 1];
+
+    canvas.mergeLayers(mergedId, bottomLayer.id);
   }
 }
 
-export { StateButtons, FileMenu, Toolbar };
+export { StateButtons, FileMenu, Toolbar, LayerMenu };

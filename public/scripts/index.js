@@ -2,9 +2,14 @@ import { CanvasRenderer } from './core/canvas_renderer.js';
 import { AnimationFile } from './core/canvas.js';
 import { bytesToUrl } from './utilities/bytes_conversion.js';
 import { BmpEncoder, bmpVersions } from './utilities/bmp_encoder.js';
-import { FileMenu, StateButtons, Toolbar } from './core/ui_elements.js';
+import {
+  FileMenu,
+  LayerMenu,
+  StateButtons,
+  Toolbar
+} from './core/ui_elements.js';
 
-let file;
+let file; //to fix
 const renderer = new CanvasRenderer();
 let elements = [];
 
@@ -12,7 +17,8 @@ window.onload = () => {
   elements = [
     new StateButtons(),
     new FileMenu(createNewFile),
-    new Toolbar()
+    new Toolbar(),
+    new LayerMenu()
   ];
 };
 
@@ -34,7 +40,6 @@ in ui_elements.js or new key shortcuts handler
  */
 
 function setUpUserInterface() {
-  assignLayerButtons();
   setUpUpdateListener();
 }
 
@@ -62,23 +67,6 @@ document.addEventListener('keypress', (event) => {
 /*
 Handling of layer-specific functions
  */
-
-function assignLayerButtons() {
-  const addLayerButton = document.getElementById('add-layer-button');
-  const removeLayerButton = document.getElementById('remove-layer-button');
-  const moveUpLayerButton = document.getElementById('move-up-layer-button');
-  const moveDownLayerButton = document.getElementById('move-down-layer-button');
-  const uniteLayerButton = document.getElementById('merge-layers-button');
-
-  addLayerButton.onclick = () => file.canvas.appendLayer();
-  removeLayerButton.onclick = () => file.canvas.removeLayer(file.canvas.drawnLayerID);
-  moveUpLayerButton.onclick = () => file.canvas.moveLayerUp(file.canvas.drawnLayerID);
-  moveDownLayerButton.onclick = () => file.canvas.moveLayerDown(file.canvas.drawnLayerID);
-  uniteLayerButton.onclick = () => {
-    const currentIndex = file.canvas.layers.findIndex((layer) => layer.id === file.canvas.drawnLayerID);
-    file.canvas.mergeLayers(file.canvas.drawnLayerID, file.canvas.layers[currentIndex - 1].id);
-  };
-}
 
 function setUpUpdateListener() {
   setLayerMenu();
