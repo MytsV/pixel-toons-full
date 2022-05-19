@@ -313,6 +313,19 @@ class Canvas {
     this.save();
   }
 
+  duplicateLayer(id) {
+    const copyVal = ' copy';
+
+    const layer = this.#layers.byIdentifier(id);
+    const duplicate = layer.clone();
+    duplicate.id = this.idGetter.get();
+    duplicate.name = layer.name.replace(copyVal, '') + copyVal;
+
+    this.#setDrawnLayer(duplicate);
+    this.#layers.push(duplicate);
+    this.save();
+  }
+
   //Saves the current layers on the canvas for retrieving them later
   save() {
     this.state.save(this.#layers);

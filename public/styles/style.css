@@ -154,6 +154,10 @@ body {
   margin-right: 5pt;
 }
 
+.layer-name {
+  margin-right: 15pt;
+}
+
 .visibility-button {
   position: absolute;
   background: url("../images/eye-open.png");

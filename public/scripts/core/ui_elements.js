@@ -285,6 +285,9 @@ class LayerMenu {
     this.buttons.addButton('merge-layers', (canvas) => {
       LayerMenu.#mergeLayers(canvas);
     });
+    this.buttons.addButton('duplicate-layer', (canvas) => {
+      LayerMenu.#duplicateLayer(canvas);
+    });
   }
 
   refresh(file) {
@@ -331,6 +334,11 @@ class LayerMenu {
     const currentIndex = canvas.layers.getIndex(mergedId);
     const bottomLayer = canvas.layers[currentIndex - 1];
     canvas.mergeLayers(mergedId, bottomLayer.id);
+  }
+
+  static #duplicateLayer(canvas) {
+    const duplicatedId = canvas.drawnId;
+    canvas.duplicateLayer(duplicatedId);
   }
 }
 
