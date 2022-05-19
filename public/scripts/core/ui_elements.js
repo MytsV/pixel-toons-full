@@ -175,11 +175,86 @@ class Toolbar {
   }
 }
 
-function getTextElement(text) {
-  const textElement = document.createElement('span');
-  textElement.innerText = text;
-  textElement.classList.add('text');
-  return textElement;
+class LayerBox {
+  static #layerCache = new Map();
+
+  constructor(canvas, layerIndex) {
+    this.canvas = canvas;
+    this.layer = canvas.layers[layerIndex];
+    this.element = this.#createElement();
+    this.#appendLayerImage();
+    this.#appendLayerName();
+    this.#appendVisibilityButton();
+  }
+
+  #createElement() {
+    const element = document.createElement('div');
+    element.classList.add('layer-element');
+
+    const isLayerDrawnOn = this.layer.id === this.canvas.drawnLayerId;
+    if (isLayerDrawnOn) {
+      element.classList.add('layer-element-selected');
+    }
+    element.onclick = () => {
+      this.canvas.switchLayer(this.layer.id);
+    };
+
+    return element;
+  }
+
+  #appendLayerName() {
+    const name = getTextElement(`Layer ${this.layer.id}`);
+    name.classList.add('layer-name');
+    this.element.appendChild(name);
+  }
+
+  #appendVisibilityButton() {
+    const button = document.createElement('div');
+    this.#setVisibility(button);
+    button.onclick = () => {
+      this.layer.visible = !this.layer.visible;
+      this.canvas.redraw();
+      this.#setVisibility(button);
+    };
+    this.element.appendChild(button);
+  }
+
+  #setVisibility(button) {
+    button.classList.remove(...button.classList);
+    button.classList.add('visibility-button');
+    if (!this.layer.visible) {
+      button.classList.add('visibility-button-inactive');
+    }
+  }
+
+  #appendLayerImage() {
+    const image = document.createElement('div');
+    image.classList.add('layer-image');
+
+    const url = this.#getLayerImageUrl();
+    LayerBox.#layerCache.set(this.layer.id, url);
+    image.style.backgroundImage = `url(${url})`;
+
+    this.element.appendChild(image);
+  }
+
+  #getLayerImageUrl() {
+    const layer = this.layer;
+    const isLayerDrawnOn = this.canvas.drawnLayerId === layer.id;
+    const isCached = LayerBox.#layerCache.has(layer.id);
+    if (!isLayerDrawnOn && isCached) {
+      return LayerBox.#layerCache.get(layer.id);
+    }
+
+    const imagePosition = [0, 0];
+    const { width, height } = layer;
+    const image = layer.context.getImageData(...imagePosition, width, height);
+
+    //Render image with transparency
+    const encoder = new BmpEncoder(image, bmpVersions.bmp32);
+    const data = encoder.encode();
+    return bytesToUrl(data);
+  }
 }
 
 class LayerMenu {
@@ -209,10 +284,22 @@ class LayerMenu {
 
   refresh(file) {
     this.buttons.enableButtons(file.canvas);
+    this.#updateLayers(file.canvas);
+    this.#setFixationListener(file.canvas);
   }
 
-  #updateLayers() {
+  #updateLayers(canvas) {
+    this.container.innerHTML = '';
 
+    //Iterate the list in reversed order
+    for (let i = canvas.layers.length - 1; i >= 0; i--) {
+      const layerBox = new LayerBox(canvas, i);
+      this.container.appendChild(layerBox.element);
+    }
+  }
+
+  #setFixationListener(canvas) {
+    canvas.listenToUpdates(() => this.#updateLayers(canvas));
   }
 
   static #addLayer(canvas) {
@@ -220,29 +307,36 @@ class LayerMenu {
   }
 
   static #removeLayer(canvas) {
-    const removedId = canvas.drawnLayerID;
+    const removedId = canvas.drawnLayerId;
     canvas.removeLayer(removedId);
   }
 
   static #moveLayerUp(canvas) {
-    const movedId = canvas.drawnLayerID;
+    const movedId = canvas.drawnLayerId;
     canvas.moveLayerUp(movedId);
   }
 
   static #moveLayerDown(canvas) {
-    const movedId = canvas.drawnLayerID;
+    const movedId = canvas.drawnLayerId;
     canvas.moveLayerDown(movedId);
   }
 
   static #mergeLayers(canvas) {
-    const isLayerDrawn = (layer) => layer.id === canvas.drawnLayerID;
-    const mergedId = canvas.drawnLayerID;
+    const isLayerDrawnOn = (layer) => layer.id === canvas.drawnLayerId;
+    const mergedId = canvas.drawnLayerId;
 
-    const currentIndex = canvas.layers.findIndex(isLayerDrawn);
+    const currentIndex = canvas.layers.findIndex(isLayerDrawnOn);
     const bottomLayer = canvas.layers[currentIndex - 1];
 
     canvas.mergeLayers(mergedId, bottomLayer.id);
   }
+}
+
+function getTextElement(text) {
+  const textElement = document.createElement('span');
+  textElement.innerText = text;
+  textElement.classList.add('text');
+  return textElement;
 }
 
 export { StateButtons, FileMenu, Toolbar, LayerMenu };

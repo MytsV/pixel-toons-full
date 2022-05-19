@@ -178,7 +178,7 @@ class Canvas {
   #layers; //An ordered array of virtual canvases
   #listeners; //A variable needed to implement simple EventEmitter
 
-  drawnLayerID; //The ID of the currently drawn on layer
+  drawnLayerId; //The ID of the currently drawn on layer
   image; //Image associated with the currently drawn on layer
 
   constructor(width, height) {
@@ -225,7 +225,7 @@ class Canvas {
   }
 
   #getDrawnLayer() {
-    return this.#layers.find((layer) => layer.id === this.drawnLayerID);
+    return this.#layers.find((layer) => layer.id === this.drawnLayerId);
   }
 
   getJoinedImage() {
@@ -334,7 +334,7 @@ class Canvas {
 
   //Update instance variables with current layer data
   #setDrawnLayer(layer) {
-    this.drawnLayerID = layer.id;
+    this.drawnLayerId = layer.id;
     const { width, height } = this;
     this.image = layer.context.getImageData(...START_POS, width, height);
     applyImageMixin(this.image);
