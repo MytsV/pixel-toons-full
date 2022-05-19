@@ -24,8 +24,8 @@ class VariableDependentButtons {
 class StateButtons {
   constructor() {
     this.buttons = new VariableDependentButtons();
-    this.buttons.addButton('undo-button', (canvas) => canvas.undo());
-    this.buttons.addButton('redo-button', (canvas) => canvas.redo());
+    this.buttons.addButton('undo', (canvas) => canvas.undo());
+    this.buttons.addButton('redo', (canvas) => canvas.redo());
   }
 
   refresh(file) {

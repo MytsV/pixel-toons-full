@@ -24,12 +24,14 @@ class InterfaceShortcut {
 
 class Shortcuts {
   constructor() {
-    this.shortcuts = new Map(Object.entries({
+    this.shortcuts = toMap({
       'c': new InterfaceShortcut('create-file'),
       'p': new InterfaceShortcut('pencil'),
       '=': new InterfaceShortcut('zoom-in'),
-      '-': new InterfaceShortcut('zoom-out')
-    }));
+      '-': new InterfaceShortcut('zoom-out'),
+      'ctrl+z': new InterfaceShortcut('undo'),
+      'ctrl+y': new InterfaceShortcut('redo')
+    });
   }
 
   enable() {
@@ -43,11 +45,11 @@ class Shortcuts {
   }
 }
 
-const modifierParsing = new Map(Object.entries({
+const modifierParsing = toMap({
   'ctrlKey': 'ctrl',
   'shiftKey': 'shift',
   'altKey': 'alt',
-}));
+});
 
 function parseKeybinding(event) {
   const modifiers = [];
@@ -67,6 +69,10 @@ function parseKeybinding(event) {
     return `${modString}+${event.key}`;
   }
   return event.key;
+}
+
+function toMap(obj) {
+  return new Map(Object.entries(obj));
 }
 
 export { Shortcuts };

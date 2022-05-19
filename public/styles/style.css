@@ -103,11 +103,11 @@ body {
   display: inline-block;
 }
 
-#undo-button {
+#undo {
   background-image: url("../images/undo.png");
 }
 
-#redo-button {
+#redo {
   background-image: url("../images/redo.png");
 }
 
