@@ -20,6 +20,7 @@ window.onload = () => {
     new LayerMenu()
   ];
   const shortcuts = new Shortcuts();
+  shortcuts.enable();
 };
 
 function createNewFile(width, height) {
