@@ -176,7 +176,7 @@ class Toolbar {
 }
 
 class LayerBox {
-  static #layerCache = new Map();
+  static #imageCache = new Map();
 
   constructor(canvas, layerIndex) {
     this.canvas = canvas;
@@ -232,7 +232,7 @@ class LayerBox {
     image.classList.add('layer-image');
 
     const url = this.#getLayerImageUrl();
-    LayerBox.#layerCache.set(this.layer.id, url);
+    LayerBox.#imageCache.set(this.layer, url);
     image.style.backgroundImage = `url(${url})`;
 
     this.element.appendChild(image);
@@ -241,9 +241,13 @@ class LayerBox {
   #getLayerImageUrl() {
     const layer = this.layer;
     const isLayerDrawnOn = this.canvas.drawnLayerId === layer.id;
-    const isCached = LayerBox.#layerCache.has(layer.id);
-    if (!isLayerDrawnOn && isCached) {
-      return LayerBox.#layerCache.get(layer.id);
+    const isCached = LayerBox.#imageCache.has(layer);
+    if (!isLayerDrawnOn) {
+      if (isCached) {
+        return LayerBox.#imageCache.get(layer);
+      }
+    } else if (!isCached) {
+      LayerBox.#imageCache.clear();
     }
 
     const imagePosition = [0, 0];
