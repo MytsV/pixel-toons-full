@@ -317,3 +317,10 @@ input[type=color]::-moz-color-swatch {
 #layer-actions {
   margin-top: var(--inter-element-spacing);
 }
+
+.zoom-button {
+  height: 20pt;
+  width: 20pt;
+  background-color: #6d9fff;
+  display: inline-block;
+}

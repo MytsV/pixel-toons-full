@@ -4,7 +4,7 @@ import {
   FileMenu,
   LayerMenu,
   StateButtons,
-  Toolbar
+  Toolbar, ZoomButtons
 } from './core/ui_elements.js';
 import { Shortcuts } from './core/key_shortcuts.js';
 
@@ -17,7 +17,8 @@ window.onload = () => {
     new StateButtons(),
     new FileMenu(createNewFile),
     new Toolbar(),
-    new LayerMenu()
+    new LayerMenu(),
+    new ZoomButtons(renderer)
   ];
   const shortcuts = new Shortcuts();
   shortcuts.enable();

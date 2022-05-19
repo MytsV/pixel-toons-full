@@ -337,6 +337,18 @@ class LayerMenu {
   }
 }
 
+class ZoomButtons {
+  constructor(renderer) {
+    this.buttons = new VariableDependentButtons();
+    this.buttons.addButton('zoom-in', () => renderer.zoomIn());
+    this.buttons.addButton('zoom-out', () => renderer.zoomOut());
+  }
+
+  refresh() {
+    this.buttons.enableButtons();
+  }
+}
+
 function getTextElement(text) {
   const textElement = document.createElement('span');
   textElement.innerText = text;
@@ -344,4 +356,4 @@ function getTextElement(text) {
   return textElement;
 }
 
-export { StateButtons, FileMenu, Toolbar, LayerMenu };
+export { StateButtons, FileMenu, Toolbar, LayerMenu, ZoomButtons };
