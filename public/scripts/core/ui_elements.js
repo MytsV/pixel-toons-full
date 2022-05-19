@@ -49,8 +49,8 @@ class FileMenu {
   }
 
   #setUpDependentButtons() {
-    this.buttons.addButton('file-clear', (canvas) => this.#clear(canvas));
-    this.buttons.addButton('export-button', (canvas) => {
+    this.buttons.addButton('clear-file', (canvas) => this.#clear(canvas));
+    this.buttons.addButton('export-image', (canvas) => {
       FileMenu.#exportImage(canvas);
     });
   }
@@ -75,12 +75,12 @@ class FileMenu {
   }
 
   #setUpCreateButton() {
-    const createButton = document.getElementById('file-create');
+    const createButton = document.getElementById('create-file');
     createButton.onclick = () => this.#showModal();
   }
 
   #setUpCreateFinish() {
-    const createFinishButton = document.getElementById('file-create-finish');
+    const createFinishButton = document.getElementById('create-file-final');
     createFinishButton.onclick = () => {
       const inputWidth = document.getElementById('width-input');
       const inputHeight = document.getElementById('height-input');
@@ -182,6 +182,7 @@ class LayerBox {
     this.canvas = canvas;
     this.layer = canvas.layers[layerIndex];
     this.element = this.#createElement();
+    this.#setUpElementClasses();
     this.#appendLayerImage();
     this.#appendLayerName();
     this.#appendVisibilityButton();
@@ -189,17 +190,17 @@ class LayerBox {
 
   #createElement() {
     const element = document.createElement('div');
-    element.classList.add('layer-element');
-
-    const isLayerDrawnOn = this.layer.id === this.canvas.drawnLayerId;
-    if (isLayerDrawnOn) {
-      element.classList.add('layer-element-selected');
-    }
     element.onclick = () => {
       this.canvas.switchLayer(this.layer.id);
     };
-
     return element;
+  }
+
+  #setUpElementClasses() {
+    this.element.classList.add('layer');
+    if (this.layer.id === this.canvas.drawnLayerId) {
+      this.element.classList.add('layer-selected');
+    }
   }
 
   #appendLayerName() {
@@ -272,16 +273,16 @@ class LayerMenu {
     this.buttons.addButton('add-layer-button', (canvas) => {
       LayerMenu.#addLayer(canvas);
     });
-    this.buttons.addButton('remove-layer-button', (canvas) => {
+    this.buttons.addButton('remove-layer', (canvas) => {
       LayerMenu.#removeLayer(canvas);
     });
-    this.buttons.addButton('move-up-layer-button', (canvas) => {
+    this.buttons.addButton('move-layer-up', (canvas) => {
       LayerMenu.#moveLayerUp(canvas);
     });
-    this.buttons.addButton('move-down-layer-button', (canvas) => {
+    this.buttons.addButton('move-layer-down', (canvas) => {
       LayerMenu.#moveLayerDown(canvas);
     });
-    this.buttons.addButton('merge-layers-button', (canvas) => {
+    this.buttons.addButton('merge-layers', (canvas) => {
       LayerMenu.#mergeLayers(canvas);
     });
   }

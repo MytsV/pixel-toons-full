@@ -29,7 +29,7 @@ class InterfaceShortcut {
 class Shortcuts {
   constructor() {
     this.shortcuts = new Map(Object.entries({
-      'c': new InterfaceShortcut('file-create'),
+      'c': new InterfaceShortcut('create-file'),
       'p': new InterfaceShortcut('pencil')
     }));
   }
@@ -37,7 +37,6 @@ class Shortcuts {
   enable() {
     document.addEventListener('keydown', (event) => {
       const keybinding = parseKeybinding(event);
-      console.log(keybinding);
       if (this.shortcuts.has(keybinding)) {
         const shortcut = this.shortcuts.get(keybinding);
         shortcut.fire();
