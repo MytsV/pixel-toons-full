@@ -138,10 +138,10 @@ class LayerCache {
     this.#lastChanged = current;
     this.#lastChangedIndex = currentIndex;
 
-    if (this.#currentStable(current, currentIndex)) return;
+    if (!this.#currentStable(current, currentIndex)) return;
     this.#resetCache();
-    for (const [layer, index] of layers.entries()) {
-      if (!layer.visible || index === currentIndex) return;
+    for (const [index, layer] of layers.entries()) {
+      if (!layer.visible || index === currentIndex) continue;
       const isLayerBefore = index < currentIndex;
       const appendedCache = isLayerBefore ? this.beforeCache : this.afterCache;
       appendedCache.context.drawImage(layer.virtualCanvas, ...START_POS);
