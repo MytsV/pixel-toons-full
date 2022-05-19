@@ -1,7 +1,3 @@
-/*
-Interface shortcut is connected with a button.
-It triggers button click event when the keybinding is pressed.
- */
 class InterfaceShortcut {
   static #event = new Event('click');
 
@@ -30,7 +26,9 @@ class Shortcuts {
   constructor() {
     this.shortcuts = new Map(Object.entries({
       'c': new InterfaceShortcut('create-file'),
-      'p': new InterfaceShortcut('pencil')
+      'p': new InterfaceShortcut('pencil'),
+      '=': new InterfaceShortcut('zoom-in'),
+      '-': new InterfaceShortcut('zoom-out')
     }));
   }
 

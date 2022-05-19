@@ -33,25 +33,4 @@ function createNewFile(width, height) {
   elements.forEach((element) => element.refresh(file));
 }
 
-/*
-Handling of zoom
- */
-
-const zoomCodes = {
-  '+': true,
-  '=': true,
-  '-': false,
-  '_': false
-};
-
-document.addEventListener('keypress', (event) => {
-  if (Object.keys(zoomCodes).includes(event.key)) {
-    if (zoomCodes[event.key]) {
-      renderer.zoomIn();
-    } else {
-      renderer.zoomOut();
-    }
-  }
-});
-
 window.addEventListener('resize', () => renderer.adjustSize());
