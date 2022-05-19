@@ -77,7 +77,7 @@ class CanvasState {
 Each layer is assigned its own id.
 Ids are implemented with number indices being updated through closure usage.
  */
-const layerIdGetter = () => {
+function IdGetter() {
   let index = 0;
   return {
     get: () => index++,
@@ -85,7 +85,7 @@ const layerIdGetter = () => {
       index = 0;
     }
   };
-};
+}
 
 /*
 A set of virtual canvas and its visibility, marked with a unique identifier.
@@ -198,7 +198,7 @@ class Canvas {
     this.state = new CanvasState(this);
     this.#layers = new IdentifiedList();
     this.#listeners = [];
-    this.idGetter = layerIdGetter();
+    this.idGetter = new IdGetter();
 
     this.cache = new LayerCache(width, height);
     //Create the first empty layer
@@ -388,11 +388,34 @@ function createCanvasElement(width, height) {
   return canvasElement;
 }
 
+class Frame {
+  constructor(id, canvas) {
+    this.id = id;
+    this.canvas = canvas;
+  }
+}
+
 class AnimationFile {
   constructor(width, height) {
-    this.canvas = new Canvas(width, height);
-    this.width = width;
-    this.height = height;
+    this.idGetter = new IdGetter();
+    this.frames = new IdentifiedList();
+    Object.assign(this, { width, height });
+    this.appendFrame();
+  }
+
+  appendFrame() {
+    const canvas = new Canvas(this.width, this.height);
+    const frame = new Frame(this.idGetter.get(), canvas);
+    this.frames.push(frame);
+    this.#setCurrentFrame(frame);
+  }
+
+  #setCurrentFrame(frame) {
+    this.currentId = frame.id;
+  }
+
+  get canvas() {
+    return this.frames.byIdentifier(this.currentId).canvas;
   }
 }
 
