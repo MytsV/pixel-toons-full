@@ -104,6 +104,8 @@ class Layer {
     this.id = id;
     //Determines whether the layer will be drawn
     this.visible = true;
+
+    this.name = `Layer ${id}`;
   }
 
   //Prototype pattern implementation

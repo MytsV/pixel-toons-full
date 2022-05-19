@@ -204,7 +204,7 @@ class LayerBox {
   }
 
   #appendLayerName() {
-    const name = getTextElement(`Layer ${this.layer.id}`);
+    const name = getTextElement(this.layer.name);
     name.classList.add('layer-name');
     this.element.appendChild(name);
   }
