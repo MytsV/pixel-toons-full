@@ -299,7 +299,7 @@ function getRealCoordinates(element, absCoords) {
   //Check for overflow
   curr.x = Math.min(width - 1, curr.x);
   curr.x = Math.max(0, curr.x);
-  curr.y = Math.min(width - 1, curr.y);
+  curr.y = Math.min(height - 1, curr.y);
   curr.y = Math.max(0, curr.y);
 
   return new Coordinates(Math.floor(curr.x), Math.floor(curr.y));
