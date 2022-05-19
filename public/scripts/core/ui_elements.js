@@ -198,7 +198,7 @@ class LayerBox {
 
   #setUpElementClasses() {
     this.element.classList.add('layer');
-    if (this.layer.id === this.canvas.drawnLayerId) {
+    if (this.layer.id === this.canvas.drawnId) {
       this.element.classList.add('layer-selected');
     }
   }
@@ -241,7 +241,7 @@ class LayerBox {
 
   #getLayerImageUrl() {
     const layer = this.layer;
-    const isLayerDrawnOn = this.canvas.drawnLayerId === layer.id;
+    const isLayerDrawnOn = this.canvas.drawnId === layer.id;
     const isCached = LayerBox.#imageCache.has(layer);
     if (!isLayerDrawnOn) {
       if (isCached) {
@@ -312,27 +312,24 @@ class LayerMenu {
   }
 
   static #removeLayer(canvas) {
-    const removedId = canvas.drawnLayerId;
+    const removedId = canvas.drawnId;
     canvas.removeLayer(removedId);
   }
 
   static #moveLayerUp(canvas) {
-    const movedId = canvas.drawnLayerId;
+    const movedId = canvas.drawnId;
     canvas.moveLayerUp(movedId);
   }
 
   static #moveLayerDown(canvas) {
-    const movedId = canvas.drawnLayerId;
+    const movedId = canvas.drawnId;
     canvas.moveLayerDown(movedId);
   }
 
   static #mergeLayers(canvas) {
-    const isLayerDrawnOn = (layer) => layer.id === canvas.drawnLayerId;
-    const mergedId = canvas.drawnLayerId;
-
-    const currentIndex = canvas.layers.findIndex(isLayerDrawnOn);
+    const mergedId = canvas.drawnId;
+    const currentIndex = canvas.layers.getIndex(mergedId);
     const bottomLayer = canvas.layers[currentIndex - 1];
-
     canvas.mergeLayers(mergedId, bottomLayer.id);
   }
 }

@@ -1,5 +1,6 @@
 import { applyImageMixin } from '../utilities/image.js';
 import { Color } from '../utilities/color.js';
+import { IdentifiedList } from '../utilities/intentified_list.js';
 
 const DEFAULT_PENCIL_COLOR = '#000000';
 //Array of x and y coordinates of image start
@@ -60,7 +61,8 @@ class CanvasState {
 
   //Receive an array of new Layer instances
   #cloneLayers() {
-    return this.canvas.layers.map((layer) => layer.clone());
+    const clonedArray = this.canvas.layers.map((layer) => layer.clone());
+    return new IdentifiedList(clonedArray);
   }
 
   static #pushLayers(stack, layers) {
@@ -135,7 +137,7 @@ class LayerCache {
   }
 
   updateCache(layers, current) {
-    const currentIndex = layers.findIndex((layer) => layer === current);
+    const currentIndex = layers.getIndex(current.id);
     this.#lastChanged = current;
     this.#lastChangedIndex = currentIndex;
 
@@ -179,7 +181,7 @@ class Canvas {
   #layers; //An ordered array of virtual canvases
   #listeners; //A variable needed to implement simple EventEmitter
 
-  drawnLayerId; //The ID of the currently drawn on layer
+  drawnId; //The ID of the currently drawn on layer
   image; //Image associated with the currently drawn on layer
 
   constructor(width, height) {
@@ -192,7 +194,7 @@ class Canvas {
     this.context = this.element.getContext('2d');
 
     this.state = new CanvasState(this);
-    this.#layers = [];
+    this.#layers = new IdentifiedList();
     this.#listeners = [];
     this.idGetter = layerIdGetter();
 
@@ -227,7 +229,8 @@ class Canvas {
   }
 
   #getDrawnLayer() {
-    return this.#layers.find((layer) => layer.id === this.drawnLayerId);
+    const position = this.#layers.getIndex(this.drawnId);
+    return this.#layers[position];
   }
 
   getJoinedImage() {
@@ -246,7 +249,7 @@ class Canvas {
   removeLayer(id) {
     if (this.#layers.length <= 1) throw Error('Cannot remove the only layer');
 
-    this.#layers = this.#layers.filter((layer) => layer.id !== id);
+    this.#layers = this.#layers.remove(id);
     const topLayer = this.#layers[this.#layers.length - 1];
     this.#setDrawnLayer(topLayer);
 
@@ -255,14 +258,14 @@ class Canvas {
   }
 
   switchLayer(id) {
-    const layer = this.#layers.find((layer) => layer.id === id);
+    const layer = this.#layers.byIdentifier(id);
     if (!layer) throw Error(`There is no layer with id ${id}`);
     this.#setDrawnLayer(layer);
     this.#fixateChanges();
   }
 
   moveLayerUp(id) {
-    const layerPosition = this.#layers.findIndex((layer) => layer.id === id);
+    const layerPosition = this.#layers.getIndex(id);
     //There exists such layer and it is not the top one
     if (layerPosition < 0 || layerPosition === this.#layers.length) {
       throw Error('Cannot move layer up');
@@ -271,7 +274,7 @@ class Canvas {
   }
 
   moveLayerDown(id) {
-    const layerPosition = this.#layers.findIndex((layer) => layer.id === id);
+    const layerPosition = this.#layers.getIndex(id);
     //There exists such layer and it is not the bottom one
     if (layerPosition < 1) {
       throw Error('Cannot move layer down');
@@ -280,7 +283,7 @@ class Canvas {
   }
 
   #reorderLayer(layer, position) {
-    this.#layers = this.#layers.filter((element) => element !== layer);
+    this.#layers = this.#layers.remove(layer.id);
     if (position >= this.#layers.length) {
       this.#layers.push(layer);
     } else {
@@ -293,8 +296,8 @@ class Canvas {
   }
 
   mergeLayers(idA, idB) {
-    const posA = this.#layers.findIndex((layer) => layer.id === idA);
-    const posB = this.#layers.findIndex((layer) => layer.id === idB);
+    const posA = this.#layers.getIndex(idA);
+    const posB = this.#layers.getIndex(idB);
     const aPrecedes = posA < posB;
     const [updatedPos, deletedPos] = aPrecedes ? [posA, posB] : [posB, posA];
     const updatedLayer = this.#layers[updatedPos];
@@ -336,7 +339,7 @@ class Canvas {
 
   //Update instance variables with current layer data
   #setDrawnLayer(layer) {
-    this.drawnLayerId = layer.id;
+    this.drawnId = layer.id;
     const { width, height } = this;
     this.image = layer.context.getImageData(...START_POS, width, height);
     applyImageMixin(this.image);
