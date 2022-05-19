@@ -1,6 +1,9 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import { BmpEncoder, bmpVersions } from '../public/scripts/utilities/bmp_encoder.js';
+import {
+  BmpEncoder,
+  bmpVersions
+} from '../public/scripts/utilities/bmp_encoder.js';
 import { readFile } from 'fs/promises';
 
 describe('BmpEncode class', () => {
@@ -16,7 +19,9 @@ async function testBlack() {
     height: imageSize,
     data:  new Uint8Array(imageSize * imageSize * parameterCount)
   };
-  for (let i = parameterCount - 1; i < imageData.data.length; i += parameterCount) {
+
+  const start = parameterCount - 1;
+  for (let i = start; i < imageData.data.length; i += parameterCount) {
     imageData.data[i] = 255;
   }
   const encoder = new BmpEncoder(imageData, bmpVersions.bmp32);
