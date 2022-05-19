@@ -6,6 +6,7 @@ import {
   StateButtons,
   Toolbar
 } from './core/ui_elements.js';
+import { Shortcuts } from './core/key_shortcuts.js';
 
 let file;
 const renderer = new CanvasRenderer();
@@ -18,6 +19,7 @@ window.onload = () => {
     new Toolbar(),
     new LayerMenu()
   ];
+  const shortcuts = new Shortcuts();
 };
 
 function createNewFile(width, height) {
