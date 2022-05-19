@@ -8,29 +8,33 @@ import {
 } from './core/ui_elements.js';
 import { Shortcuts } from './core/key_shortcuts.js';
 
-let file;
-const renderer = new CanvasRenderer();
-let elements = [];
+class Application {
+  constructor() {
+    this.canvasRenderer = new CanvasRenderer();
+    this.uiElements = [
+      new StateButtons(),
+      new FileMenu((width, height) => this.#setNewFile(width, height)),
+      new Toolbar(),
+      new LayerMenu(),
+      new ZoomButtons(this.canvasRenderer)
+    ];
+    this.shortcuts = new Shortcuts();
+  }
 
-window.onload = () => {
-  elements = [
-    new StateButtons(),
-    new FileMenu(createNewFile),
-    new Toolbar(),
-    new LayerMenu(),
-    new ZoomButtons(renderer)
-  ];
-  const shortcuts = new Shortcuts();
-  shortcuts.enable();
-};
+  #setNewFile(width, height) {
+    const file = new AnimationFile(width, height);
+    this.canvasRenderer.removeCanvases();
+    this.canvasRenderer.appendCanvas(file.canvas);
+    this.uiElements.forEach((element) => element.refresh(file));
+  }
 
-function createNewFile(width, height) {
-  file = new AnimationFile(width, height);
-
-  renderer.removeCanvases();
-  renderer.appendCanvas(file.canvas);
-
-  elements.forEach((element) => element.refresh(file));
+  start() {
+    this.shortcuts.enable();
+    window.onresize = () => this.canvasRenderer.adjustSize();
+  }
 }
 
-window.addEventListener('resize', () => renderer.adjustSize());
+window.onload = () => {
+  const application = new Application();
+  application.start();
+};
