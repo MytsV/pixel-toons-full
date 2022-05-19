@@ -78,11 +78,12 @@ Ids are implemented with number indices being updated through closure usage.
 const layerIdGetter = () => {
   let index = 0;
   return {
-    get: () => index++
+    get: () => index++,
+    refresh: () => {
+      index = 0;
+    }
   };
 };
-
-const idGetter = layerIdGetter();
 
 /*
 A set of virtual canvas and its visibility, marked with a unique identifier.
@@ -193,6 +194,7 @@ class Canvas {
     this.state = new CanvasState(this);
     this.#layers = [];
     this.#listeners = [];
+    this.idGetter = layerIdGetter();
 
     this.cache = new LayerCache(width, height);
     //Create the first empty layer
@@ -234,7 +236,7 @@ class Canvas {
 
   //Creates a new layer and stacks in on top of other layers
   appendLayer() {
-    const layer = new Layer(idGetter.get(), this.width, this.height);
+    const layer = new Layer(this.idGetter.get(), this.width, this.height);
     this.#setDrawnLayer(layer);
     this.#layers.push(layer);
 
