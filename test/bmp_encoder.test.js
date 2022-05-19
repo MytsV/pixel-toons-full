@@ -24,8 +24,8 @@ async function testBlack() {
   for (let i = start; i < imageData.data.length; i += parameterCount) {
     imageData.data[i] = 255;
   }
-  const encoder = new BmpEncoder(imageData, bmpVersions.bmp32);
-  const data = encoder.encode();
+  const encoder = new BmpEncoder(bmpVersions.bmp32);
+  const data = encoder.encode(imageData);
 
   const result = await readFile('./test/images/black.bmp');
   expect(data).to.deep.equal(new Uint8Array(result));

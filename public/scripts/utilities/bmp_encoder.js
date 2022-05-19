@@ -85,18 +85,10 @@ class BmpEncoder {
 
   #buffer;
 
-  constructor(image, version = bmpVersions.bmp24) {
+  constructor(version = bmpVersions.bmp24) {
     this.#perPixel = version.bitCount / bitsInByte;
     this.#infoHeaderSize = version.infoHeaderSize;
     this.dataOffset = BmpEncoder.#headerSize + this.#infoHeaderSize;
-
-    this.padding = this.#is32() ? 0 : image.width % maxColorParameters;
-    const rowLength = this.#perPixel * image.width + this.padding;
-    this.bitmapSize = rowLength * image.height;
-    this.fileSize = this.dataOffset + this.bitmapSize;
-
-    this.#buffer = new Buffer(this.fileSize);
-    this.image = image;
   }
 
   /*
@@ -106,13 +98,22 @@ class BmpEncoder {
   The comment lines represent structures of format in a format:
   Name | Size | Offset | Description
    */
-  encode() {
+  encode(image) {
+    this.#setUpEncoding(image);
     this.#setHeader();
-    this.#setInfoHeader();
+    this.#setInfoHeader(image);
     this.#setExtendedInfoHeader();
-    this.#setPixelData();
-
+    this.#setPixelData(image);
     return this.#buffer.data;
+  }
+
+  #setUpEncoding(image) {
+    this.padding = this.#is32() ? 0 : image.width % maxColorParameters;
+    const rowLength = this.#perPixel * image.width + this.padding;
+    this.bitmapSize = rowLength * image.height;
+    this.fileSize = this.dataOffset + this.bitmapSize;
+
+    this.#buffer = new Buffer(this.fileSize);
   }
 
   #setHeader() {
@@ -127,13 +128,13 @@ class BmpEncoder {
     this.#buffer.write32Integer(this.dataOffset, 0x0A);
   }
 
-  #setInfoHeader() {
+  #setInfoHeader(image) {
     //Size | 4 bytes | 0x0E | Size of InfoHeader
     this.#buffer.write32Integer(this.#infoHeaderSize, 0x0E);
     //Width | 4 bytes | 0x12 | Horizontal width in pixels
-    this.#buffer.write32Integer(this.image.width, 0x12);
+    this.#buffer.write32Integer(image.width, 0x12);
     //Height | 4 bytes | 0x16 | Vertical height in pixels
-    this.#buffer.write32Integer(this.image.height, 0x16);
+    this.#buffer.write32Integer(image.height, 0x16);
     //Planes | 2 bytes | 0x1A | Number of planes = 1
     this.#buffer.write16Integer(1, 0x1A);
     //Bits Per Pixel | 2 bytes | 0x1C | 24 or 32, depending on format
@@ -179,8 +180,7 @@ class BmpEncoder {
     this.#buffer.write32Integer(0xFF000000, 0x42);
   }
 
-  #setPixelData() {
-    const image = this.image;
+  #setPixelData(image) {
     let position = this.#infoHeaderSize + BmpEncoder.#headerSize;
 
     for (let i = image.height - 1; i >= 0; i--) {

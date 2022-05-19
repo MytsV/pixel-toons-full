@@ -47,8 +47,8 @@ class CanvasRenderer {
 
     toBasicBackground(image);
 
-    const encoder = new BmpEncoder(image);
-    const url = bytesToUrl(encoder.encode());
+    const encoder = new BmpEncoder();
+    const url = bytesToUrl(encoder.encode(image));
     const imageElement = document.getElementById(backgroundId);
     imageElement.style.backgroundImage = `url(${url})`;
   }

@@ -61,8 +61,8 @@ class FileMenu {
 
   static #exportImage(canvas) {
     const image = canvas.getJoinedImage();
-    const encoder = new BmpEncoder(image, bmpVersions.bmp32);
-    downloadLocalUrl(bytesToUrl(encoder.encode()), 'image.bmp');
+    const encoder = new BmpEncoder(bmpVersions.bmp32);
+    downloadLocalUrl(bytesToUrl(encoder.encode(image)), 'image.bmp');
   }
 
   #setUpModal() {
@@ -256,8 +256,8 @@ class LayerBox {
     const image = layer.context.getImageData(...imagePosition, width, height);
 
     //Render image with transparency
-    const encoder = new BmpEncoder(image, bmpVersions.bmp32);
-    const data = encoder.encode();
+    const encoder = new BmpEncoder(bmpVersions.bmp32);
+    const data = encoder.encode(image);
     return bytesToUrl(data);
   }
 }
