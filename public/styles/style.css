@@ -119,6 +119,7 @@ body {
 
 #layer-container {
   flex-grow: 1;
+  height: 1pt;
   overflow: auto;
   margin-top: var(--inter-element-spacing);
 }
