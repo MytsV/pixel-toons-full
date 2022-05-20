@@ -24,7 +24,6 @@ class VariableDependentButtons {
 class Modal {
   constructor(id) {
     this.element = document.getElementById(id);
-    this.#setUpEvents();
   }
 
   #setUpEvents() {
@@ -37,6 +36,7 @@ class Modal {
 
   show() {
     this.element.style.display = 'block';
+    this.#setUpEvents();
   }
 
   hide() {
