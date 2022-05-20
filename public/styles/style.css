@@ -349,4 +349,10 @@ input[type=color]::-moz-color-swatch {
   background-image: url("../images/zoom-out.png");
 }
 
+.button {
+  transition: background-color 150ms;
+}
 
+.button:hover {
+  background-color: var(--main-panel-color-shadow);
+}
