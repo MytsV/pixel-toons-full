@@ -323,9 +323,25 @@ input[type=color]::-moz-color-swatch {
   margin-top: var(--inter-element-spacing);
 }
 
+#zoom-container {
+  display: flex;
+  margin-bottom: var(--inter-element-spacing);
+  justify-content: space-between;
+}
+
 .zoom-button {
   height: 20pt;
   width: 20pt;
-  background-color: #6d9fff;
   display: inline-block;
+  background-repeat: no-repeat;
+  background-size: contain;
+  image-rendering: pixelated;
+}
+
+#zoom-in {
+  background-image: url("../images/zoom-in.png");
+}
+
+#zoom-out {
+  background-image: url("../images/zoom-out.png");
 }
