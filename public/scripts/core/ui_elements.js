@@ -270,7 +270,7 @@ class LayerMenu {
   }
 
   #setUpButtons() {
-    this.buttons.addButton('add-layer-button', (canvas) => {
+    this.buttons.addButton('add-layer', (canvas) => {
       LayerMenu.#addLayer(canvas);
     });
     this.buttons.addButton('remove-layer', (canvas) => {

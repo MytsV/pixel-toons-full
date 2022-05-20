@@ -321,6 +321,9 @@ input[type=color]::-moz-color-swatch {
 
 #layer-actions {
   margin-top: var(--inter-element-spacing);
+  display: grid;
+  grid-template-rows: auto;
+  grid-template-columns: 1fr 1fr 1fr;
 }
 
 #zoom-container {
@@ -345,3 +348,5 @@ input[type=color]::-moz-color-swatch {
 #zoom-out {
   background-image: url("../images/zoom-out.png");
 }
+
+
