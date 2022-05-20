@@ -62,11 +62,15 @@
 
     <div id="file-create-modal" class="modal">
       <div class="modal-content">
-        <label>Width</label>
-        <input type="number" id="width-input" value="50">
-        <label>Height</label>
-        <input type="number" id="height-input" value="50">
-        <button id="create-file-final">CREATE</button>
+        <div class="main-panel label-panel"><span class="text">Create a new file</span></div>
+        <div id="file-create-form">
+          <div class="text">Width</div>
+          <input type="number" id="width-input" value="50" class="white-panel text-ordinary">
+          <div class="text">Height</div>
+          <input type="number" id="height-input" value="50" class="white-panel text-ordinary">
+          <div class="text-ordinary">Limit is 250x250</div>
+          <div id="create-file-final" class="main-panel label-panel button"><span class="text">CREATE</span></div>
+        </div>
       </div>
     </div>
   </body>
