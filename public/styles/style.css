@@ -392,5 +392,5 @@ input {
   grid-template-columns: 1fr 3fr;
   padding: var(--border-size);
   overflow: scroll;
-  height: available;
+  height: 100%;
 }
