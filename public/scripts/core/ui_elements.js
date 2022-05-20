@@ -21,18 +21,6 @@ class VariableDependentButtons {
   }
 }
 
-class StateButtons {
-  constructor() {
-    this.buttons = new VariableDependentButtons();
-    this.buttons.addButton('undo', (canvas) => canvas.undo());
-    this.buttons.addButton('redo', (canvas) => canvas.redo());
-  }
-
-  refresh(file) {
-    this.buttons.enableButtons(file.canvas);
-  }
-}
-
 class Modal {
   constructor(id) {
     this.element = document.getElementById(id);
@@ -53,6 +41,18 @@ class Modal {
 
   hide() {
     this.element.style.display = 'none';
+  }
+}
+
+class StateButtons {
+  constructor() {
+    this.buttons = new VariableDependentButtons();
+    this.buttons.addButton('undo', (canvas) => canvas.undo());
+    this.buttons.addButton('redo', (canvas) => canvas.redo());
+  }
+
+  refresh(file) {
+    this.buttons.enableButtons(file.canvas);
   }
 }
 
@@ -373,10 +373,27 @@ class ZoomButtons {
 }
 
 class ShortcutsMenu {
-  constructor(shortcuts) {
-    this.shortcuts = shortcuts;
+  constructor(manager) {
+    this.manager = manager;
     this.modal = new Modal('shortcuts-modal');
     this.#setUpButton();
+    this.#setUpShortcuts();
+  }
+
+  #setUpShortcuts() {
+    const container = document.getElementById('shortcuts-table');
+    const shortcuts = this.manager.shortcuts;
+    for (const [keybinding, shortcut] of shortcuts) {
+      const name = document.createElement('div');
+      name.classList.add('white-panel', 'label-panel', 'text-ordinary');
+      name.innerText = shortcut.name;
+
+      const bindingElement = name.cloneNode();
+      bindingElement.innerText = keybinding;
+
+      container.appendChild(name);
+      container.appendChild(bindingElement);
+    }
   }
 
   #setUpButton() {
