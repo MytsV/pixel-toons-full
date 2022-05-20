@@ -4,7 +4,9 @@ import {
   FileMenu,
   LayerMenu,
   StateButtons,
-  Toolbar, ZoomButtons
+  Toolbar,
+  ZoomButtons,
+  ShortcutsMenu
 } from './core/ui_elements.js';
 import { Shortcuts } from './core/key_shortcuts.js';
 
@@ -16,9 +18,10 @@ class Application {
       new FileMenu((width, height) => this.#setNewFile(width, height)),
       new Toolbar(),
       new LayerMenu(),
-      new ZoomButtons(this.canvasRenderer)
+      new ZoomButtons(this.canvasRenderer),
     ];
     this.shortcuts = new Shortcuts();
+    this.uiElements.push(new ShortcutsMenu(this.shortcuts));
   }
 
   #setNewFile(width, height) {

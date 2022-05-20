@@ -33,6 +33,29 @@ class StateButtons {
   }
 }
 
+class Modal {
+  constructor(id) {
+    this.element = document.getElementById(id);
+    this.#setUpEvents();
+  }
+
+  #setUpEvents() {
+    window.onclick = (event) => {
+      if (event.target === this.element) {
+        this.hide();
+      }
+    };
+  }
+
+  show() {
+    this.element.style.display = 'block';
+  }
+
+  hide() {
+    this.element.style.display = 'none';
+  }
+}
+
 const sizeLimit = 250;
 
 class FileMenu {
@@ -41,7 +64,7 @@ class FileMenu {
     this.buttons = new VariableDependentButtons();
     this.#setUpDependentButtons();
 
-    this.#setUpModal();
+    this.modal = new Modal('file-create-modal');
     this.#setUpCreateButton();
     this.#setUpCreateFinish();
     FileMenu.#setUpLimit();
@@ -68,18 +91,9 @@ class FileMenu {
     downloadLocalUrl(bytesToUrl(encoder.encode(image)), 'image.bmp');
   }
 
-  #setUpModal() {
-    this.modal = document.getElementById('file-create-modal');
-    window.onclick = (event) => {
-      if (event.target === this.modal) {
-        this.#hideModal();
-      }
-    };
-  }
-
   #setUpCreateButton() {
     const createButton = document.getElementById('create-file');
-    createButton.onclick = () => this.#showModal();
+    createButton.onclick = () => this.modal.show();
   }
 
   #setUpCreateFinish() {
@@ -92,21 +106,13 @@ class FileMenu {
         throw Error('Size values are illegal');
       }
       this.createNewFile(inputWidth.value, inputHeight.value);
-      this.#hideModal();
+      this.modal.hide();
     };
   }
 
   static #setUpLimit() {
     const limit = document.getElementById('limit');
     limit.innerText = `Size limit is ${sizeLimit}x${sizeLimit}`;
-  }
-
-  #showModal() {
-    this.modal.style.display = 'block';
-  }
-
-  #hideModal() {
-    this.modal.style.display = 'none';
   }
 }
 
@@ -366,6 +372,24 @@ class ZoomButtons {
   }
 }
 
+class ShortcutsMenu {
+  constructor(shortcuts) {
+    this.shortcuts = shortcuts;
+    this.modal = new Modal('shortcuts-modal');
+    this.#setUpButton();
+  }
+
+  #setUpButton() {
+    const button = document.getElementById('shortcuts');
+    button.onclick = () => {
+      this.modal.show();
+    };
+  }
+
+  refresh() {
+  }
+}
+
 function getTextElement(text) {
   const textElement = document.createElement('span');
   textElement.innerText = text;
@@ -373,4 +397,11 @@ function getTextElement(text) {
   return textElement;
 }
 
-export { StateButtons, FileMenu, Toolbar, LayerMenu, ZoomButtons };
+export {
+  StateButtons,
+  FileMenu,
+  Toolbar,
+  LayerMenu,
+  ZoomButtons,
+  ShortcutsMenu
+};
