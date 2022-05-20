@@ -376,6 +376,7 @@ class ShortcutsMenu {
   constructor(manager) {
     this.manager = manager;
     this.modal = new Modal('shortcuts-modal');
+    this.classList = ['white-panel', 'label-panel', 'text-ordinary'];
     this.#setUpButton();
     this.#setUpShortcuts();
   }
@@ -384,16 +385,25 @@ class ShortcutsMenu {
     const container = document.getElementById('shortcuts-table');
     const shortcuts = this.manager.shortcuts;
     for (const [keybinding, shortcut] of shortcuts) {
-      const name = document.createElement('div');
-      name.classList.add('white-panel', 'label-panel', 'text-ordinary');
-      name.innerText = shortcut.name;
-
-      const bindingElement = name.cloneNode();
-      bindingElement.innerText = keybinding;
-
+      const name = this.#getNameElement(shortcut);
+      const bindingElement = this.#getBindingElement(keybinding);
       container.appendChild(name);
       container.appendChild(bindingElement);
     }
+  }
+
+  #getNameElement(shortcut) {
+    const name = document.createElement('div');
+    name.classList.add(...this.classList);
+    name.innerText = shortcut.name;
+    return name;
+  }
+
+  #getBindingElement(keybinding) {
+    const bindingElement = document.createElement('div');
+    bindingElement.classList.add(...this.classList);
+    bindingElement.innerText = keybinding;
+    return bindingElement;
   }
 
   #setUpButton() {
