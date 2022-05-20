@@ -25,18 +25,29 @@ class InterfaceShortcut {
 class Shortcuts {
   constructor() {
     this.shortcuts = toMap({
-      'c': new InterfaceShortcut('create-file'),
+      'ctrl+shift+n': new InterfaceShortcut('create-file'),
+      'ctrl+shift+c': new InterfaceShortcut('clear-file'),
+      'ctrl+shift+e': new InterfaceShortcut('export-image'),
       'p': new InterfaceShortcut('pencil'),
+      'e': new InterfaceShortcut('eraser'),
+      'b': new InterfaceShortcut('bucket fill'),
       '=': new InterfaceShortcut('zoom-in'),
       '-': new InterfaceShortcut('zoom-out'),
       'ctrl+z': new InterfaceShortcut('undo'),
-      'ctrl+y': new InterfaceShortcut('redo')
+      'ctrl+y': new InterfaceShortcut('redo'),
+      'shift+a': new InterfaceShortcut('add-layer'),
+      'shift+r': new InterfaceShortcut('remove-layer'),
+      'shift+u': new InterfaceShortcut('move-layer-up'),
+      'shift+d': new InterfaceShortcut('move-layer-down'),
+      'shift+m': new InterfaceShortcut('merge-layers'),
+      'shift+c': new InterfaceShortcut('duplicate-layer'),
+      'shift+e': new InterfaceShortcut('rename-layer')
     });
   }
 
   enable() {
     document.addEventListener('keydown', (event) => {
-      const keybinding = parseKeybinding(event);
+      const keybinding = parseKeybinding(event).toLowerCase();
       if (this.shortcuts.has(keybinding)) {
         const shortcut = this.shortcuts.get(keybinding);
         shortcut.fire();
