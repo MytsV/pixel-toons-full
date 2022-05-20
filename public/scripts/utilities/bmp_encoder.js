@@ -107,6 +107,11 @@ class BmpEncoder {
     return this.#buffer.data;
   }
 
+  //Determines if the last encoded image was fully transparent
+  isLastEncodedTransparent() {
+    return this.lastTransp;
+  }
+
   #setUpEncoding(image) {
     this.padding = this.#is32() ? 0 : image.width % maxColorParameters;
     const rowLength = this.#perPixel * image.width + this.padding;
@@ -114,6 +119,7 @@ class BmpEncoder {
     this.fileSize = this.dataOffset + this.bitmapSize;
 
     this.#buffer = new Buffer(this.fileSize);
+    this.lastTransp = true;
   }
 
   #setHeader() {
@@ -182,16 +188,23 @@ class BmpEncoder {
 
   #setPixelData(image) {
     let position = this.#infoHeaderSize + BmpEncoder.#headerSize;
-
     for (let i = image.height - 1; i >= 0; i--) {
       for (let j = 0; j < image.width; j++) {
         const dataPos = (i * image.width + j) * maxColorParameters;
-        const colors = image.data.slice(dataPos, dataPos + this.#perPixel);
-        this.#transformColorArray(colors);
-        this.#buffer.writeArray(colors, position);
+        const color = image.data.slice(dataPos, dataPos + this.#perPixel);
+        this.#handleTransparency(color);
+        this.#transformColorArray(color);
+        this.#buffer.writeArray(color, position);
         position += this.#perPixel;
       }
       position += this.padding;
+    }
+  }
+
+  #handleTransparency(color) {
+    const alphaPosition = 3;
+    if (color[alphaPosition] > 0) {
+      this.lastTransp = false;
     }
   }
 

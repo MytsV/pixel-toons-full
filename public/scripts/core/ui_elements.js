@@ -258,7 +258,7 @@ class LayerBox {
     //Render image with transparency
     const encoder = new BmpEncoder(bmpVersions.bmp32);
     const data = encoder.encode(image);
-    return bytesToUrl(data);
+    return encoder.isLastEncodedTransparent() ? '' : bytesToUrl(data);
   }
 }
 
