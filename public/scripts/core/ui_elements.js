@@ -33,6 +33,8 @@ class StateButtons {
   }
 }
 
+const sizeLimit = 250;
+
 class FileMenu {
   constructor(createNewFile) {
     this.createNewFile = createNewFile; //A function passed from the context
@@ -42,6 +44,7 @@ class FileMenu {
     this.#setUpModal();
     this.#setUpCreateButton();
     this.#setUpCreateFinish();
+    FileMenu.#setUpLimit();
   }
 
   refresh(file) {
@@ -81,12 +84,21 @@ class FileMenu {
 
   #setUpCreateFinish() {
     const createFinishButton = document.getElementById('create-file-final');
+    const inRange = (value) => value > 0 && value <= sizeLimit;
     createFinishButton.onclick = () => {
       const inputWidth = document.getElementById('width-input');
       const inputHeight = document.getElementById('height-input');
+      if (!inRange(inputWidth.value) || !inRange(inputHeight.value)) {
+        throw Error('Size values are illegal');
+      }
       this.createNewFile(inputWidth.value, inputHeight.value);
       this.#hideModal();
     };
+  }
+
+  static #setUpLimit() {
+    const limit = document.getElementById('limit');
+    limit.innerText = `Size limit is ${sizeLimit}x${sizeLimit}`;
   }
 
   #showModal() {
