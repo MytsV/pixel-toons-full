@@ -8,7 +8,7 @@ import {
   ZoomButtons,
   ShortcutsMenu
 } from './core/ui_elements.js';
-import { Shortcuts } from './core/key_shortcuts.js';
+import { ShortcutManager } from './core/key_shortcuts.js';
 
 class Application {
   constructor() {
@@ -20,7 +20,7 @@ class Application {
       new LayerMenu(),
       new ZoomButtons(this.canvasRenderer),
     ];
-    this.shortcuts = new Shortcuts();
+    this.shortcuts = new ShortcutManager();
     this.uiElements.push(new ShortcutsMenu(this.shortcuts));
   }
 

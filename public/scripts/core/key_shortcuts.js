@@ -22,10 +22,10 @@ class InterfaceShortcut {
   }
 }
 
-class Shortcuts {
+class ShortcutManager {
   constructor() {
     this.shortcuts = toMap({
-      'ctrl+shift+n': new InterfaceShortcut('create-file'),
+      'ctrl+shift+f': new InterfaceShortcut('create-file'),
       'ctrl+shift+c': new InterfaceShortcut('clear-file'),
       'ctrl+shift+e': new InterfaceShortcut('export-image'),
       'p': new InterfaceShortcut('pencil'),
@@ -46,21 +46,32 @@ class Shortcuts {
   }
 
   enable() {
-    document.addEventListener('keydown', (event) => {
+    window.onkeydown = (event) => {
       const keybinding = parseKeybinding(event).toLowerCase();
       if (this.shortcuts.has(keybinding)) {
+        event.preventDefault();
         const shortcut = this.shortcuts.get(keybinding);
         shortcut.fire();
       }
-    });
+    };
+    window.onkeypress = () => (event) => event.preventDefault();
+    window.onkeyup = () => (event) => event.preventDefault();
   }
+
 }
 
-const modifierParsing = toMap({
-  'ctrlKey': 'ctrl',
-  'shiftKey': 'shift',
-  'altKey': 'alt',
-});
+const modifierParsing = getModifierParsing();
+
+function getModifierParsing() {
+  const modifierParsing = new Map();
+  const isMac = navigator.platform.indexOf('Mac') > -1;
+
+  modifierParsing.set(isMac ? 'metaKey' : 'ctrlKey', 'ctrl');
+  modifierParsing.set('shiftKey', 'shift');
+  modifierParsing.set('altKey', 'alt');
+
+  return modifierParsing;
+}
 
 function parseKeybinding(event) {
   const modifiers = [];
@@ -86,4 +97,4 @@ function toMap(obj) {
   return new Map(Object.entries(obj));
 }
 
-export { Shortcuts };
+export { ShortcutManager };
