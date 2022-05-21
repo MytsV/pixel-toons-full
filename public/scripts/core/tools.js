@@ -42,6 +42,7 @@ class Tool {
   }
 
   #iterateListeners(updateEvent) {
+    if (!this.canvas) return;
     const listenersWithElement = [
       [this.listenersDocument, document],
       [this.listenersCanvas, this.canvas.element]

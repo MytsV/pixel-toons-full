@@ -134,7 +134,6 @@ class ToolInfo {
 }
 
 class Toolbar {
-  chosen;
   static #activeClass = 'active-tool';
 
   constructor() {
@@ -145,13 +144,13 @@ class Toolbar {
     ];
     this.buttons = new VariableDependentButtons();
     this.container = document.getElementById('tools');
-
     this.#setUpTools();
     this.#setUpColorPicker();
+    this.chosen = this.toolsInfo[0];
   }
 
   refresh(canvas) {
-    this.#setChosen(this.toolsInfo[0], canvas);
+    this.#setChosen(this.chosen, canvas);
     this.buttons.enableButtons(canvas);
     this.#refreshColorPicker(canvas);
   }
@@ -176,10 +175,11 @@ class Toolbar {
   }
 
   #refreshColorPicker(canvas) {
-    //this.colorPicker.value = canvas.state.color.toHex();
-    this.colorPicker.oninput = () => {
+    const onInput = () => {
       canvas.state.color = Color.fromHex(this.colorPicker.value);
     };
+    this.colorPicker.oninput = onInput;
+    onInput();
   }
 
   #setUpColorPicker() {
