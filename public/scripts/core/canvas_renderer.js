@@ -60,13 +60,22 @@ class CanvasRenderer {
 
   static #setUpImage(id, image) {
     const imageElement = document.getElementById(id);
+    const clearImage = () => {
+      imageElement.style.backgroundImage = '';
+    };
+
     if (!image) {
-      imageElement.style.backgroundImage = null;
+      clearImage();
       return;
     }
+
     const encoder = new BmpEncoder(bmpVersions.bmp32);
     const url = bytesToUrl(encoder.encode(image));
-    imageElement.style.backgroundImage = `url(${url})`;
+    if (encoder.isLastEncodedTransparent()) {
+      clearImage();
+    } else {
+      imageElement.style.backgroundImage = `url(${url})`;
+    }
   }
 
   #setUpElement(canvasElement) {
