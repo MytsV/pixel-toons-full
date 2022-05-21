@@ -24,6 +24,7 @@ class CanvasRenderer {
     this.canvasWrapper = document.getElementById('canvas-wrapper');
     this.canvasLayers = document.getElementById('canvas-layers');
     this.zoomValue = 1;
+    this.isBackgroundSet = false;
   }
 
   appendCanvas(canvas) {
@@ -32,7 +33,9 @@ class CanvasRenderer {
 
     this.canvasWrapper.style.aspectRatio = width / height;
     this.#setUpElement(canvas.element);
-    CanvasRenderer.#setUpBackground(width, height);
+    if (!this.isBackgroundSet) {
+      this.#setUpBackground(width, height);
+    }
     this.adjustSize();
   }
 
@@ -41,26 +44,28 @@ class CanvasRenderer {
   For optimization we convert background image to BMP format.
   Rendering is done with <div> tag, which doesn't update
    */
-  static #setUpBackground(width, height) {
+  #setUpBackground(width, height) {
     const image = new ImageData(width, height);
     applyImageMixin(image);
-
     toBasicBackground(image);
 
-    const encoder = new BmpEncoder();
-    const url = bytesToUrl(encoder.encode(image));
-    const imageElement = document.getElementById('canvas-background');
-    imageElement.style.backgroundImage = `url(${url})`;
+    CanvasRenderer.#setUpImage('canvas-background', image);
+    this.isBackgroundSet = true;
   }
 
   setOverlay(canvas) {
-    const imageElement = document.getElementById('canvas-overlay');
-    if (!canvas) {
-      imageElement.style.backgroundImage = 'none';
+    const image = canvas ? canvas.getJoinedImage() : null;
+    CanvasRenderer.#setUpImage('canvas-overlay', image);
+  }
+
+  static #setUpImage(id, image) {
+    const imageElement = document.getElementById(id);
+    if (!image) {
+      imageElement.style.backgroundImage = null;
       return;
     }
     const encoder = new BmpEncoder(bmpVersions.bmp32);
-    const url = bytesToUrl(encoder.encode(canvas.getJoinedImage()));
+    const url = bytesToUrl(encoder.encode(image));
     imageElement.style.backgroundImage = `url(${url})`;
   }
 
