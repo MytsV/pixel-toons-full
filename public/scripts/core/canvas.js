@@ -388,9 +388,10 @@ function createCanvasElement(width, height) {
 }
 
 class Frame {
-  constructor(id, canvas) {
+  constructor(id, canvas, duration = 100) {
     this.id = id;
     this.canvas = canvas;
+    this.duration = duration;
   }
 }
 
