@@ -167,6 +167,7 @@ body {
   image-rendering: pixelated;
   background-color: white;
   margin-right: 5pt;
+  transition: background-image 1s ease-in-out;
 }
 
 .layer-name {

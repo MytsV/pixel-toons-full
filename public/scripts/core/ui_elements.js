@@ -1,5 +1,5 @@
 import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
-import { bytesToUrl, downloadLocalUrl } from '../utilities/bytes_conversion.js';
+import { bytesToUrl, downloadLocalUrl, setImageUrl } from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil } from './tools.js';
 import { Color } from '../utilities/color.js';
 
@@ -251,7 +251,7 @@ class LayerBox {
 
     const url = this.#getLayerImageUrl();
     LayerBox.#imageCache.set(this.layer, url);
-    image.style.backgroundImage = `url(${url})`;
+    setImageUrl(image, url);
 
     this.element.appendChild(image);
   }

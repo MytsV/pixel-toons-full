@@ -4,7 +4,7 @@ Set of functions which define how canvas is rendered into HTML.
 import { Color } from '../utilities/color.js';
 import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
 import { applyImageMixin } from '../utilities/image.js';
-import { bytesToUrl } from '../utilities/bytes_conversion.js';
+import { bytesToUrl, setImageUrl } from '../utilities/bytes_conversion.js';
 
 /*
 Constants associated with zoom system
@@ -74,7 +74,7 @@ class CanvasRenderer {
     if (encoder.isLastEncodedTransparent()) {
       clearImage();
     } else {
-      imageElement.style.backgroundImage = `url(${url})`;
+      setImageUrl(imageElement, url);
     }
   }
 

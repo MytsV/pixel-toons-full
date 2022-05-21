@@ -13,17 +13,19 @@ const bytesToUrl = (data) => {
 
 const downloadLocalUrl = (url, filename) => {
   const link = document.createElement('a');
-
   link.href = url;
   link.download = filename;
   document.body.appendChild(link);
-  link.dispatchEvent(
-    new MouseEvent('click', {
-      view: window
-    })
-  );
-
+  link.dispatchEvent(new MouseEvent('click', { view: window }));
   document.body.removeChild(link);
 };
 
-export { bytesToUrl, downloadLocalUrl, bytesToBase64 };
+const setImageUrl = (element, url) => {
+  const newElement = new Image();
+  newElement.onload = () => {
+    element.style.backgroundImage = `url(${url})`;
+  };
+  newElement.src = url;
+};
+
+export { bytesToUrl, downloadLocalUrl, bytesToBase64, setImageUrl };
