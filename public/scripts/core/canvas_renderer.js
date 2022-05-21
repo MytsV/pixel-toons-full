@@ -15,7 +15,6 @@ const ZOOM_MIN = 1;
 const ZOOM_STEP = 1;
 
 const TRANSLATION = 50;
-const backgroundId = 'canvas-background';
 
 /*
 A class for managing graphic representation of canvas
@@ -23,6 +22,7 @@ A class for managing graphic representation of canvas
 class CanvasRenderer {
   constructor() {
     this.canvasWrapper = document.getElementById('canvas-wrapper');
+    this.canvasLayers = document.getElementById('canvas-layers');
     this.zoomValue = 1;
   }
 
@@ -49,7 +49,7 @@ class CanvasRenderer {
 
     const encoder = new BmpEncoder();
     const url = bytesToUrl(encoder.encode(image));
-    const imageElement = document.getElementById(backgroundId);
+    const imageElement = document.getElementById('canvas-background');
     imageElement.style.backgroundImage = `url(${url})`;
   }
 
@@ -58,16 +58,11 @@ class CanvasRenderer {
     canvasElement.oncontextmenu = () => false;
     canvasElement.classList.add('canvas-element');
     //Canvas is wrapped to manage zooming
-    this.canvasWrapper.appendChild(canvasElement);
+    this.canvasLayers.appendChild(canvasElement);
   }
 
   removeCanvases() {
-    const children = this.canvasWrapper.children;
-    for (const child of children) {
-      if (child.id !== backgroundId) {
-        child.remove();
-      }
-    }
+    this.canvasLayers.innerHTML = '';
   }
 
   zoomIn() {
