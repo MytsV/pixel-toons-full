@@ -1,5 +1,9 @@
 import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
-import { bytesToUrl, downloadLocalUrl, setImageUrl } from '../utilities/bytes_conversion.js';
+import {
+  bytesToUrl,
+  downloadLocalUrl,
+  setImageUrl
+} from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
 
