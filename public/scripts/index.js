@@ -28,8 +28,8 @@ class Application {
   #setNewFile(width, height) {
     const file = new AnimationFile(width, height);
     const refresh = () => this.#refreshRenderer(file);
-    refresh();
     file.listenToUpdates(refresh);
+    refresh();
   }
 
   #refreshRenderer(file) {

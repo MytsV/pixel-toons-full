@@ -54,10 +54,13 @@ class CanvasRenderer {
   }
 
   setOverlay(canvas) {
-    if (!canvas) return;
+    const imageElement = document.getElementById('canvas-overlay');
+    if (!canvas) {
+      imageElement.style.backgroundImage = 'none';
+      return;
+    }
     const encoder = new BmpEncoder(bmpVersions.bmp32);
     const url = bytesToUrl(encoder.encode(canvas.getJoinedImage()));
-    const imageElement = document.getElementById('canvas-overlay');
     imageElement.style.backgroundImage = `url(${url})`;
   }
 
