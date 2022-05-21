@@ -421,6 +421,10 @@ class FrameMenu {
   constructor() {
     this.buttons = new VariableDependentButtons();
     this.buttons.addButton('add-frame', (file) => file.appendFrame());
+    this.buttons.addButton('switch-frame', (file) => {
+      const input = document.getElementById('switch-input');
+      file.switchFrame(parseInt(input.value));
+    });
   }
 
   refresh(file) {

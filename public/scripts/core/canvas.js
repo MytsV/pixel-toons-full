@@ -414,7 +414,7 @@ class AnimationFile {
 
   switchFrame(id) {
     const frame = this.frames.byIdentifier(id);
-    if (!frame) throw Error(`There is no layer with id ${id}`);
+    if (!frame) throw Error(`There is no frame with id ${id}`);
     this.#setCurrentFrame(frame);
   }
 
