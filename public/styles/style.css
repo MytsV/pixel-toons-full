@@ -126,6 +126,12 @@ body {
   opacity: 0.2;
 }
 
+#preview {
+  background-repeat: no-repeat;
+  background-size: contain;
+  image-rendering: pixelated;
+}
+
 #layer-container {
   flex-grow: 1;
   height: 1pt;
@@ -400,4 +406,8 @@ input {
   padding: var(--border-size);
   overflow: scroll;
   height: 100%;
+}
+
+#preview {
+  display: none;
 }

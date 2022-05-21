@@ -432,6 +432,46 @@ class FrameMenu {
   }
 }
 
+class Preview {
+  constructor() {
+    this.buttons = new VariableDependentButtons();
+    this.buttons.addButton('preview-animation', (file) => this.#start(file));
+  }
+
+  #start(file) {
+    const encoder = new BmpEncoder(bmpVersions.bmp32);
+    const imageUrls = file.frames.map((frame) => {
+      const image = frame.canvas.getJoinedImage();
+      return bytesToUrl(encoder.encode(image));
+    });
+
+    const previewContainer = document.getElementById('preview');
+    previewContainer.style.display = 'block';
+
+    let iterator;
+    const renewIterator = () => {
+      iterator = imageUrls[Symbol.iterator]();
+    };
+    renewIterator();
+
+    const frameDuration = 100;
+    const changeImage = () => {
+      const next = iterator.next();
+      if (next.value) {
+        previewContainer.style.backgroundImage = `url(${next.value})`;
+      } else {
+        renewIterator();
+      }
+      window.setTimeout(changeImage, frameDuration);
+    };
+    changeImage();
+  }
+
+  refresh(file) {
+    this.buttons.enableButtons(file);
+  }
+}
+
 function getTextElement(text) {
   const textElement = document.createElement('span');
   textElement.innerText = text;
@@ -446,5 +486,6 @@ export {
   LayerMenu,
   ZoomButtons,
   ShortcutsMenu,
-  FrameMenu
+  FrameMenu,
+  Preview
 };
