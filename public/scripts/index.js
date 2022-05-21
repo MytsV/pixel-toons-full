@@ -27,16 +27,16 @@ class Application {
 
   #setNewFile(width, height) {
     const file = new AnimationFile(width, height);
-    this.frameMenu.refresh(file);
-    const refresh = () => this.#refreshRenderer(file.canvas);
+    const refresh = () => this.#refreshRenderer(file);
     refresh();
     file.listenToUpdates(refresh);
   }
 
-  #refreshRenderer(canvas) {
+  #refreshRenderer(file) {
     this.canvasRenderer.removeCanvases();
-    this.canvasRenderer.appendCanvas(canvas);
-    this.uiElements.forEach((element) => element.refresh(canvas));
+    this.canvasRenderer.appendCanvas(file.canvas);
+    this.uiElements.forEach((element) => element.refresh(file.canvas));
+    this.frameMenu.refresh(file);
   }
 
   start() {
