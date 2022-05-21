@@ -51,8 +51,8 @@ class StateButtons {
     this.buttons.addButton('redo', (canvas) => canvas.redo());
   }
 
-  refresh(file) {
-    this.buttons.enableButtons(file.canvas);
+  refresh(canvas) {
+    this.buttons.enableButtons(canvas);
   }
 }
 
@@ -70,8 +70,8 @@ class FileMenu {
     FileMenu.#setUpLimit();
   }
 
-  refresh(file) {
-    this.buttons.enableButtons(file.canvas);
+  refresh(canvas) {
+    this.buttons.enableButtons(canvas);
   }
 
   #setUpDependentButtons() {
@@ -150,8 +150,7 @@ class Toolbar {
     this.#setUpColorPicker();
   }
 
-  refresh(file) {
-    const canvas = file.canvas;
+  refresh(canvas) {
     this.#setChosen(this.toolsInfo[0], canvas);
     this.buttons.enableButtons(canvas);
     this.#refreshColorPicker(canvas);
@@ -308,10 +307,10 @@ class LayerMenu {
     });
   }
 
-  refresh(file) {
-    this.buttons.enableButtons(file.canvas);
-    this.#updateLayers(file.canvas);
-    this.#setFixationListener(file.canvas);
+  refresh(canvas) {
+    this.buttons.enableButtons(canvas);
+    this.#updateLayers(canvas);
+    this.#setFixationListener(canvas);
   }
 
   #updateLayers(canvas) {
@@ -417,6 +416,18 @@ class ShortcutsMenu {
   }
 }
 
+
+class FrameMenu {
+  constructor() {
+    this.buttons = new VariableDependentButtons();
+    this.buttons.addButton('add-frame', (file) => file.appendFrame());
+  }
+
+  refresh(file) {
+    this.buttons.enableButtons(file);
+  }
+}
+
 function getTextElement(text) {
   const textElement = document.createElement('span');
   textElement.innerText = text;
@@ -430,5 +441,6 @@ export {
   Toolbar,
   LayerMenu,
   ZoomButtons,
-  ShortcutsMenu
+  ShortcutsMenu,
+  FrameMenu
 };

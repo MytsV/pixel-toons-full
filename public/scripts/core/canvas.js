@@ -395,9 +395,12 @@ class Frame {
 }
 
 class AnimationFile {
+  #listeners;
+
   constructor(width, height) {
     this.idGetter = new IdGetter();
     this.frames = new IdentifiedList();
+    this.#listeners = [];
     Object.assign(this, { width, height });
     this.appendFrame();
   }
@@ -409,8 +412,23 @@ class AnimationFile {
     this.#setCurrentFrame(frame);
   }
 
+  switchFrame(id) {
+    const frame = this.frames.byIdentifier(id);
+    if (!frame) throw Error(`There is no layer with id ${id}`);
+    this.#setCurrentFrame(frame);
+  }
+
   #setCurrentFrame(frame) {
     this.currentId = frame.id;
+    this.#update();
+  }
+
+  listenToUpdates(listener) {
+    this.#listeners.push(listener);
+  }
+
+  #update() {
+    this.#listeners.forEach((listener) => listener());
   }
 
   get canvas() {
