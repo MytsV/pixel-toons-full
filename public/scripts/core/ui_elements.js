@@ -1,6 +1,6 @@
 import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
 import { bytesToUrl, downloadLocalUrl, setImageUrl } from '../utilities/bytes_conversion.js';
-import { BucketFill, Eraser, Pencil } from './tools.js';
+import { BucketFill, Eraser, Pencil, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
 
 class VariableDependentButtons {
@@ -152,7 +152,6 @@ class Toolbar {
   refresh(canvas) {
     this.#setChosen(this.chosen, canvas);
     this.buttons.enableButtons(canvas);
-    this.#refreshColorPicker(canvas);
   }
 
   #setUpTools() {
@@ -174,21 +173,15 @@ class Toolbar {
     this.chosen.element.classList.add(Toolbar.#activeClass);
   }
 
-  #refreshColorPicker(canvas) {
-    const onInput = () => {
-      canvas.state.color = Color.fromHex(this.colorPicker.value);
-    };
-    this.colorPicker.oninput = onInput;
-    onInput();
-  }
-
   #setUpColorPicker() {
     const colorPicker = document.createElement('input');
     colorPicker.type = 'color';
     colorPicker.id = 'color-picker';
 
     this.container.appendChild(colorPicker);
-    this.colorPicker = colorPicker;
+    colorPicker.oninput = () => {
+      Tool.color = Color.fromHex(colorPicker.value);
+    };
   }
 }
 

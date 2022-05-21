@@ -1,8 +1,6 @@
 import { applyImageMixin } from '../utilities/image.js';
-import { Color } from '../utilities/color.js';
 import { IdentifiedList } from '../utilities/intentified_list.js';
 
-const DEFAULT_PENCIL_COLOR = '#000000';
 //Array of x and y coordinates of image start
 const START_POS = [0, 0];
 //The minimum number of layers for which we perform caching
@@ -17,7 +15,6 @@ class CanvasState {
   static stackLimit = 50;
 
   constructor(canvas) {
-    this.color = Color.fromHex(DEFAULT_PENCIL_COLOR);
     /*
     Memento pattern is implemented with two stacks.
     Canvases state is a set of its layers.
