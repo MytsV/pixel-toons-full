@@ -438,6 +438,7 @@ class Preview {
     this.buttons.addButton('preview-animation', (file) => this.#play(file));
     this.buttons.addButton('stop-animation', () => this.#stop());
     this.playing = false;
+    this.background = document.getElementById('canvas-background');
   }
 
   #play(file) {
@@ -460,7 +461,7 @@ class Preview {
     };
     renewIterator();
 
-    const frameDuration = 500;
+    const frameDuration = 100;
     const changeImage = () => {
       const next = iterator.next();
       if (next.value) {
@@ -482,12 +483,15 @@ class Preview {
     };
     this.playing = true;
     changeImage();
+
+    this.background.style.zIndex = '1';
   }
 
   #stop() {
     this.playing = false;
     const previewContainer = document.getElementById('preview');
     previewContainer.style.display = 'none';
+    this.background.style.zIndex = '0';
   }
 
   refresh(file) {
