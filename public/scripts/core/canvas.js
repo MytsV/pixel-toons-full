@@ -420,6 +420,9 @@ class AnimationFile {
 
   #setCurrentFrame(frame) {
     this.currentId = frame.id;
+    const index = this.frames.getIndex(frame.id);
+    const overlayFrame = this.frames[index - 1];
+    this.overlayId = overlayFrame ? overlayFrame.id : -1;
     this.#update();
   }
 
@@ -433,6 +436,11 @@ class AnimationFile {
 
   get canvas() {
     return this.frames.byIdentifier(this.currentId).canvas;
+  }
+
+  get overlay() {
+    const overlay = this.frames.byIdentifier(this.overlayId);
+    return overlay ? overlay.canvas : null;
   }
 }
 

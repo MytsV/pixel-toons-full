@@ -2,7 +2,7 @@
 Set of functions which define how canvas is rendered into HTML.
  */
 import { Color } from '../utilities/color.js';
-import { BmpEncoder } from '../utilities/bmp_encoder.js';
+import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
 import { applyImageMixin } from '../utilities/image.js';
 import { bytesToUrl } from '../utilities/bytes_conversion.js';
 
@@ -50,6 +50,14 @@ class CanvasRenderer {
     const encoder = new BmpEncoder();
     const url = bytesToUrl(encoder.encode(image));
     const imageElement = document.getElementById('canvas-background');
+    imageElement.style.backgroundImage = `url(${url})`;
+  }
+
+  setOverlay(canvas) {
+    if (!canvas) return;
+    const encoder = new BmpEncoder(bmpVersions.bmp32);
+    const url = bytesToUrl(encoder.encode(canvas.getJoinedImage()));
+    const imageElement = document.getElementById('canvas-overlay');
     imageElement.style.backgroundImage = `url(${url})`;
   }
 
