@@ -435,14 +435,20 @@ class FrameMenu {
 class Preview {
   constructor() {
     this.buttons = new VariableDependentButtons();
-    this.buttons.addButton('preview-animation', (file) => this.#start(file));
+    this.buttons.addButton('preview-animation', (file) => this.#play(file));
+    this.buttons.addButton('stop-animation', () => this.#stop());
+    this.playing = false;
   }
 
-  #start(file) {
+  #play(file) {
+    if (this.playing) return;
+    const noUrl = 'none';
+
     const encoder = new BmpEncoder(bmpVersions.bmp32);
     const imageUrls = file.frames.map((frame) => {
       const image = frame.canvas.getJoinedImage();
-      return bytesToUrl(encoder.encode(image));
+      const data = encoder.encode(image);
+      return encoder.isLastEncodedTransparent() ? noUrl : bytesToUrl(data);
     });
 
     const previewContainer = document.getElementById('preview');
@@ -454,17 +460,34 @@ class Preview {
     };
     renewIterator();
 
-    const frameDuration = 100;
+    const frameDuration = 500;
     const changeImage = () => {
       const next = iterator.next();
       if (next.value) {
-        previewContainer.style.backgroundImage = `url(${next.value})`;
+        if (next.value !== noUrl) {
+          previewContainer.style.backgroundImage = `url(${next.value})`;
+        } else {
+          previewContainer.style.backgroundImage = '';
+        }
+        if (this.playing) {
+          window.setTimeout(changeImage, frameDuration);
+        }
       } else {
         renewIterator();
+        if (this.playing) {
+          changeImage();
+        }
       }
-      window.setTimeout(changeImage, frameDuration);
+
     };
+    this.playing = true;
     changeImage();
+  }
+
+  #stop() {
+    this.playing = false;
+    const previewContainer = document.getElementById('preview');
+    previewContainer.style.display = 'none';
   }
 
   refresh(file) {
