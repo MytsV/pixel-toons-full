@@ -12,7 +12,8 @@ describe('Color class', () => {
 
 function cssToRgba() {
   const caseCount = 20;
-  const colorAnswers = [...Array(caseCount).keys()].map(() => generateRandomRgba());
+  const indices = [...Array(caseCount).keys()];
+  const colorAnswers = indices.map(() => generateRandomRgba());
   const colors = colorAnswers.map((color) => getColorFromRgba(color));
 
   colors.forEach((color, index) => {
@@ -26,7 +27,10 @@ function hexToColor() {
   const caseCount = 10;
 
   const testCases = [...Array(caseCount).keys()].map(() => generateRandomHex());
-  const hexStrings = testCases.map((test) => '#' + test.reduce((prev, curr) => prev + curr));
+  const hexStrings = testCases.map((test) => {
+    const hexValue = test.reduce((prev, curr) => prev + curr);
+    return '#' + hexValue;
+  });
 
   const colors = hexStrings.map((string) => Color.fromHex(string));
   colors.forEach((color, index) => {
@@ -43,7 +47,12 @@ function hexToColor() {
 function generateRandomRgba() {
   const alphaPrecision = 100;
   const alpha = Math.round(Math.random() * alphaPrecision) / alphaPrecision;
-  return `rgba(${getRandInt(colorRange)},${getRandInt(colorRange)},${getRandInt(colorRange)},${alpha})`;
+  const [r, g, b] = [
+    getRandInt(colorRange),
+    getRandInt(colorRange),
+    getRandInt(colorRange)
+  ];
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 function getColorFromRgba(string) {
@@ -57,8 +66,10 @@ function generateRandomHex() {
   const parameterCount = 3;
   const getRandomParameter = () => Math.floor(Math.random() * colorRange);
 
-  const color = [...Array(parameterCount).keys()].map(() => getRandomParameter());
-  if (color[0] % 2 === 0) { //Only some part of colors will have alpha parameter specified
+  const indices = [...Array(parameterCount).keys()];
+  const color = indices.map(() => getRandomParameter());
+  //Only some part of colors will have alpha parameter specified
+  if (color[0] % 2 === 0) {
     color.push(getRandomParameter());
   }
 

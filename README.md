@@ -58,7 +58,9 @@ User interface is currently extremely raw. It will be improved in the future.
         <td>
             🟩 Layer system
         </td>
-        <td></td>
+        <td>
+            ⬜ Likes, comments
+        </td>
         <td>
             More file export formats
         </td>
@@ -79,24 +81,37 @@ User interface is currently extremely raw. It will be improved in the future.
         <td>
         </td>
         <td>
+            Opacity
         </td>
     </tr>
     <tr>
         <td>
-            🟨 Key shortcuts
+            🟩 Key shortcuts
         </td>
         <td>
         </td>
         <td>
+            Shortcut setting
         </td>
     </tr>
     <tr>
         <td>
-            🟨 Canvas "file" system
+            🟩 Canvas "file" system
         </td>
         <td>
         </td>
         <td>
+            Pointer and coordinates
+        </td>
+    </tr>
+    <tr>
+        <td>
+            🟥 Frames
+        </td>
+        <td>
+        </td>
+        <td>
+            Layer names
         </td>
     </tr>
     <tr>
@@ -111,6 +126,15 @@ User interface is currently extremely raw. It will be improved in the future.
     <tr>
         <td>
             🟥 Own file format with specifications
+        </td>
+        <td>
+        </td>
+        <td>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            🟥 Set up one file assembling, babel, minifier for release
         </td>
         <td>
         </td>

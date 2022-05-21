@@ -1,5 +1,6 @@
 /*
-Useful mixin functions for working with ImageData class. Created to avoid complications in working with pixel color array
+Useful mixin functions for working with ImageData class
+Created to avoid complications in working with pixel color array
  */
 
 import { Color } from './color.js';

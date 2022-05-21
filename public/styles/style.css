@@ -12,6 +12,8 @@ body {
   --border-color: #42568b;
   --border-size: 2pt;
   --inter-element-spacing: 10pt;
+  --panel-height: 25pt;
+  --panel-width: 100pt;
 
   margin: var(--inter-element-spacing);
   background-color: var(--main-panel-color);
@@ -103,11 +105,11 @@ body {
   display: inline-block;
 }
 
-#undo-button {
+#undo {
   background-image: url("../images/undo.png");
 }
 
-#redo-button {
+#redo {
   background-image: url("../images/redo.png");
 }
 
@@ -119,11 +121,12 @@ body {
 
 #layer-container {
   flex-grow: 1;
+  height: 1pt;
   overflow: auto;
   margin-top: var(--inter-element-spacing);
 }
 
-.layer-element {
+.layer {
   box-sizing: border-box;
   background-color: white;
   border-top: var(--border-size) solid white;
@@ -136,7 +139,7 @@ body {
   align-items: center;
 }
 
-.layer-element-selected {
+.layer-selected {
   background-color: var(--main-panel-color);
   border-bottom: var(--border-size) solid var(--main-panel-color-shadow);
   border-right: var(--border-size) solid var(--main-panel-color-shadow);
@@ -151,6 +154,10 @@ body {
   image-rendering: pixelated;
   background-color: white;
   margin-right: 5pt;
+}
+
+.layer-name {
+  margin-right: 15pt;
 }
 
 .visibility-button {
@@ -172,9 +179,9 @@ body {
 
 /* The Modal (background) */
 .modal {
-  display: none; /* Hidden by default */
-  position: fixed; /* Stay in place */
-  z-index: 1; /* Sit on top */
+  display: none;
+  position: fixed;
+  z-index: 1;
   left: 0;
   top: 0;
   width: 100%; /* Full width */
@@ -185,11 +192,16 @@ body {
 
 /* Modal Content/Box */
 .modal-content {
-  background-color: #fefefe;
-  margin: 15% auto; /* 15% from the top and centered */
+  margin: 5% auto; /* 15% from the top and centered */
   padding: 20px;
   border: 1px solid #888;
   width: 80%; /* Could be more or less, depending on screen size */
+  height: 70%;
+  box-sizing: border-box;
+  background-color: white;
+  border-bottom: var(--border-size) solid lightgray;
+  border-right: var(--border-size) solid lightgray;
+  outline: var(--border-size) solid var(--border-color);
 }
 
 .main-panel {
@@ -200,7 +212,7 @@ body {
   border-top: var(--border-size) solid var(--main-panel-color-highlight);
   outline: var(--border-size) solid var(--border-color);
   position: relative;
-  height: 25pt;
+  height: var(--panel-height);
 }
 
 .white-panel {
@@ -316,4 +328,69 @@ input[type=color]::-moz-color-swatch {
 
 #layer-actions {
   margin-top: var(--inter-element-spacing);
+  display: grid;
+  grid-template-rows: auto;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+#zoom-container {
+  display: flex;
+  margin-bottom: var(--inter-element-spacing);
+  justify-content: space-between;
+}
+
+.zoom-button {
+  height: 20pt;
+  width: 20pt;
+  display: inline-block;
+  background-repeat: no-repeat;
+  background-size: contain;
+  image-rendering: pixelated;
+}
+
+#zoom-in {
+  background-image: url("../images/zoom-in.png");
+}
+
+#zoom-out {
+  background-image: url("../images/zoom-out.png");
+}
+
+.button {
+  transition: background-color 150ms;
+}
+
+.button:hover {
+  background-color: var(--main-panel-color-shadow);
+}
+
+#file-create-form div {
+  margin: 10pt 0;
+}
+
+input {
+  border: none;
+  height: var(--panel-height);
+  width: var(--panel-width);
+  text-align: center;
+}
+
+.text-ordinary {
+  font-family: 'Pixelite', serif;
+  color: var(--border-color);
+  font-size: 15pt;
+}
+
+#create-file-final {
+  width: var(--panel-width);
+}
+
+#shortcuts-table {
+  display: grid;
+  width: 100%;
+  grid-template-rows: auto;
+  grid-template-columns: 1fr 3fr;
+  padding: var(--border-size);
+  overflow: scroll;
+  height: 100%;
 }

@@ -1,90 +1,122 @@
 import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
 import { bytesToUrl, downloadLocalUrl } from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil } from './tools.js';
-import { setupColorPicker } from './canvas_renderer.js';
+import { Color } from '../utilities/color.js';
 
-class StateButtons {
+class VariableDependentButtons {
   constructor() {
-    this.undoButton = document.getElementById('undo-button');
-    this.redoButton = document.getElementById('redo-button');
+    this.buttons = new Map();
   }
 
-  refresh(file) {
-    this.undoButton.onclick = () => file.canvas.undo();
-    this.redoButton.onclick = () => file.canvas.redo();
+  addButton(id, listener) {
+    const element = document.getElementById(id);
+    const closureListener = (variable) => () => listener(variable);
+    this.buttons.set(element, closureListener);
+  }
+
+  enableButtons(variable) {
+    for (const [element, listener] of this.buttons) {
+      element.onclick = listener(variable);
+    }
   }
 }
 
-class FileMenu {
-  constructor(createNewFile) {
-    this.createNewFile = createNewFile; //A function passed from the context
-    this.#setUpModal();
-    this.#setUpButtons();
-    this.#setUpExporter();
-    this.#setUpCreateFinish();
+class Modal {
+  constructor(id) {
+    this.element = document.getElementById(id);
   }
 
-  refresh(file) {
-    this.file = file;
-  }
-
-  #setUpModal() {
-    this.modal = document.getElementById('file-create-modal');
+  #setUpEvents() {
     window.onclick = (event) => {
-      if (event.target === this.modal) {
-        this.#hideModal();
+      if (event.target === this.element) {
+        this.hide();
       }
     };
   }
 
-  #setUpButtons() {
-    const createButton = document.getElementById('file-create');
-    const clearButton = document.getElementById('file-clear');
-    createButton.onclick = () => this.create();
-    clearButton.onclick = () => this.clear();
+  show() {
+    this.element.style.display = 'block';
+    this.#setUpEvents();
   }
 
-  #setUpCreateFinish() {
-    const createFinishButton = document.getElementById('file-create-finish');
-    createFinishButton.onclick = () => {
-      const inputWidth = document.getElementById('width-input');
-      const inputHeight = document.getElementById('height-input');
-      this.createNewFile(inputWidth.value, inputHeight.value);
-      this.#hideModal();
-    };
-  }
-
-  #setUpExporter() {
-    const button = document.getElementById('export-button');
-    button.onclick = () => this.exportImage();
-  }
-
-  create() {
-    this.#showModal();
-  }
-
-  clear() {
-    if (!this.file) throw Error('Open a file first to clear the canvas');
-    this.createNewFile(this.file.width, this.file.height);
-  }
-
-  exportImage() {
-    if (!this.file) throw Error('There is no image to export');
-    const image = this.file.canvas.getJoinedImage();
-    const encoder = new BmpEncoder(image, bmpVersions.bmp32);
-    downloadLocalUrl(bytesToUrl(encoder.encode()), 'image.bmp');
-  }
-
-  #showModal() {
-    this.modal.style.display = 'block';
-  }
-
-  #hideModal() {
-    this.modal.style.display = 'none';
+  hide() {
+    this.element.style.display = 'none';
   }
 }
 
-//A wrapper class for tool which defines its display. In the future it will also include icons
+class StateButtons {
+  constructor() {
+    this.buttons = new VariableDependentButtons();
+    this.buttons.addButton('undo', (canvas) => canvas.undo());
+    this.buttons.addButton('redo', (canvas) => canvas.redo());
+  }
+
+  refresh(file) {
+    this.buttons.enableButtons(file.canvas);
+  }
+}
+
+const sizeLimit = 250;
+
+class FileMenu {
+  constructor(createNewFile) {
+    this.createNewFile = createNewFile; //A function passed from the context
+    this.buttons = new VariableDependentButtons();
+    this.#setUpDependentButtons();
+
+    this.modal = new Modal('file-create-modal');
+    this.#setUpCreateButton();
+    this.#setUpCreateFinish();
+    FileMenu.#setUpLimit();
+  }
+
+  refresh(file) {
+    this.buttons.enableButtons(file.canvas);
+  }
+
+  #setUpDependentButtons() {
+    this.buttons.addButton('clear-file', (canvas) => this.#clear(canvas));
+    this.buttons.addButton('export-image', (canvas) => {
+      FileMenu.#exportImage(canvas);
+    });
+  }
+
+  #clear(canvas) {
+    this.createNewFile(canvas.width, canvas.height);
+  }
+
+  static #exportImage(canvas) {
+    const image = canvas.getJoinedImage();
+    const encoder = new BmpEncoder(bmpVersions.bmp32);
+    downloadLocalUrl(bytesToUrl(encoder.encode(image)), 'image.bmp');
+  }
+
+  #setUpCreateButton() {
+    const createButton = document.getElementById('create-file');
+    createButton.onclick = () => this.modal.show();
+  }
+
+  #setUpCreateFinish() {
+    const createFinishButton = document.getElementById('create-file-final');
+    const inRange = (value) => value > 0 && value <= sizeLimit;
+    createFinishButton.onclick = () => {
+      const inputWidth = document.getElementById('width-input');
+      const inputHeight = document.getElementById('height-input');
+      if (!inRange(inputWidth.value) || !inRange(inputHeight.value)) {
+        throw Error('Size values are illegal');
+      }
+      this.createNewFile(inputWidth.value, inputHeight.value);
+      this.modal.hide();
+    };
+  }
+
+  static #setUpLimit() {
+    const limit = document.getElementById('limit');
+    limit.innerText = `Size limit is ${sizeLimit}x${sizeLimit}`;
+  }
+}
+
+//A wrapper class for tool which defines its display
 class ToolInfo {
   constructor(tool, name) {
     this.tool = tool;
@@ -111,27 +143,277 @@ class Toolbar {
       new ToolInfo(new Eraser(), 'Eraser'),
       new ToolInfo(new BucketFill(), 'Bucket Fill')
     ];
+    this.buttons = new VariableDependentButtons();
     this.container = document.getElementById('tools');
-    this.toolsInfo.forEach((toolInfo) => this.container.appendChild(toolInfo.element));
+
+    this.#setUpTools();
+    this.#setUpColorPicker();
   }
 
   refresh(file) {
-    this.file = file;
-    this.#setChosen(this.toolsInfo[0]);
-    this.toolsInfo.forEach((toolInfo) => {
-      toolInfo.element.onclick = () => this.#setChosen(toolInfo);
-    });
-    this.container.appendChild(setupColorPicker(this.file.canvas)); //To be refactored
+    const canvas = file.canvas;
+    this.#setChosen(this.toolsInfo[0], canvas);
+    this.buttons.enableButtons(canvas);
+    this.#refreshColorPicker(canvas);
   }
 
-  #setChosen(toolInfo) {
+  #setUpTools() {
+    this.toolsInfo.forEach((toolInfo) => {
+      this.container.appendChild(toolInfo.element);
+      this.buttons.addButton(toolInfo.element.id, (canvas) => {
+        this.#setChosen(toolInfo, canvas);
+      });
+    });
+  }
+
+  #setChosen(toolInfo, canvas) {
     if (this.chosen) {
       this.chosen.tool.disable();
       this.chosen.element.classList.remove(Toolbar.#activeClass);
     }
     this.chosen = toolInfo;
-    this.chosen.tool.link(this.file.canvas);
+    this.chosen.tool.link(canvas);
     this.chosen.element.classList.add(Toolbar.#activeClass);
+  }
+
+  #refreshColorPicker(canvas) {
+    //this.colorPicker.value = canvas.state.color.toHex();
+    this.colorPicker.oninput = () => {
+      canvas.state.color = Color.fromHex(this.colorPicker.value);
+    };
+  }
+
+  #setUpColorPicker() {
+    const colorPicker = document.createElement('input');
+    colorPicker.type = 'color';
+    colorPicker.id = 'color-picker';
+
+    this.container.appendChild(colorPicker);
+    this.colorPicker = colorPicker;
+  }
+}
+
+class LayerBox {
+  static #imageCache = new Map();
+
+  constructor(canvas, layerIndex) {
+    this.canvas = canvas;
+    this.layer = canvas.layers[layerIndex];
+    this.element = this.#createElement();
+    this.#setUpElementClasses();
+    this.#appendLayerImage();
+    this.#appendLayerName();
+    this.#appendVisibilityButton();
+  }
+
+  #createElement() {
+    const element = document.createElement('div');
+    element.onclick = () => {
+      this.canvas.switchLayer(this.layer.id);
+    };
+    return element;
+  }
+
+  #setUpElementClasses() {
+    this.element.classList.add('layer');
+    if (this.layer.id === this.canvas.drawnId) {
+      this.element.classList.add('layer-selected');
+    }
+  }
+
+  #appendLayerName() {
+    const name = getTextElement(this.layer.name);
+    name.classList.add('layer-name');
+    this.element.appendChild(name);
+  }
+
+  #appendVisibilityButton() {
+    const button = document.createElement('div');
+    this.#setVisibility(button);
+    button.onclick = () => {
+      this.layer.visible = !this.layer.visible;
+      this.canvas.redraw();
+      this.#setVisibility(button);
+    };
+    this.element.appendChild(button);
+  }
+
+  #setVisibility(button) {
+    button.classList.remove(...button.classList);
+    button.classList.add('visibility-button');
+    if (!this.layer.visible) {
+      button.classList.add('visibility-button-inactive');
+    }
+  }
+
+  #appendLayerImage() {
+    const image = document.createElement('div');
+    image.classList.add('layer-image');
+
+    const url = this.#getLayerImageUrl();
+    LayerBox.#imageCache.set(this.layer, url);
+    image.style.backgroundImage = `url(${url})`;
+
+    this.element.appendChild(image);
+  }
+
+  #getLayerImageUrl() {
+    const layer = this.layer;
+    const isLayerDrawnOn = this.canvas.drawnId === layer.id;
+    const isCached = LayerBox.#imageCache.has(layer);
+    if (!isLayerDrawnOn) {
+      if (isCached) {
+        return LayerBox.#imageCache.get(layer);
+      }
+    } else if (!isCached) {
+      LayerBox.#imageCache.clear();
+    }
+
+    const imagePosition = [0, 0];
+    const { width, height } = layer;
+    const image = layer.context.getImageData(...imagePosition, width, height);
+
+    //Render image with transparency
+    const encoder = new BmpEncoder(bmpVersions.bmp32);
+    const data = encoder.encode(image);
+    return encoder.isLastEncodedTransparent() ? '' : bytesToUrl(data);
+  }
+}
+
+class LayerMenu {
+  constructor() {
+    this.container = document.getElementById('layer-container');
+    this.buttons = new VariableDependentButtons();
+    this.#setUpButtons();
+  }
+
+  #setUpButtons() {
+    this.buttons.addButton('add-layer', (canvas) => {
+      LayerMenu.#addLayer(canvas);
+    });
+    this.buttons.addButton('remove-layer', (canvas) => {
+      LayerMenu.#removeLayer(canvas);
+    });
+    this.buttons.addButton('move-layer-up', (canvas) => {
+      LayerMenu.#moveLayerUp(canvas);
+    });
+    this.buttons.addButton('move-layer-down', (canvas) => {
+      LayerMenu.#moveLayerDown(canvas);
+    });
+    this.buttons.addButton('merge-layers', (canvas) => {
+      LayerMenu.#mergeLayers(canvas);
+    });
+    this.buttons.addButton('duplicate-layer', (canvas) => {
+      LayerMenu.#duplicateLayer(canvas);
+    });
+  }
+
+  refresh(file) {
+    this.buttons.enableButtons(file.canvas);
+    this.#updateLayers(file.canvas);
+    this.#setFixationListener(file.canvas);
+  }
+
+  #updateLayers(canvas) {
+    this.container.innerHTML = '';
+
+    //Iterate the list in reversed order
+    for (let i = canvas.layers.length - 1; i >= 0; i--) {
+      const layerBox = new LayerBox(canvas, i);
+      this.container.appendChild(layerBox.element);
+    }
+  }
+
+  #setFixationListener(canvas) {
+    canvas.listenToUpdates(() => this.#updateLayers(canvas));
+  }
+
+  static #addLayer(canvas) {
+    canvas.appendLayer();
+  }
+
+  static #removeLayer(canvas) {
+    const removedId = canvas.drawnId;
+    canvas.removeLayer(removedId);
+  }
+
+  static #moveLayerUp(canvas) {
+    const movedId = canvas.drawnId;
+    canvas.moveLayerUp(movedId);
+  }
+
+  static #moveLayerDown(canvas) {
+    const movedId = canvas.drawnId;
+    canvas.moveLayerDown(movedId);
+  }
+
+  static #mergeLayers(canvas) {
+    const mergedId = canvas.drawnId;
+    const currentIndex = canvas.layers.getIndex(mergedId);
+    const bottomLayer = canvas.layers[currentIndex - 1];
+    canvas.mergeLayers(mergedId, bottomLayer.id);
+  }
+
+  static #duplicateLayer(canvas) {
+    const duplicatedId = canvas.drawnId;
+    canvas.duplicateLayer(duplicatedId);
+  }
+}
+
+class ZoomButtons {
+  constructor(renderer) {
+    this.buttons = new VariableDependentButtons();
+    this.buttons.addButton('zoom-in', () => renderer.zoomIn());
+    this.buttons.addButton('zoom-out', () => renderer.zoomOut());
+  }
+
+  refresh() {
+    this.buttons.enableButtons();
+  }
+}
+
+class ShortcutsMenu {
+  constructor(manager) {
+    this.manager = manager;
+    this.modal = new Modal('shortcuts-modal');
+    this.classList = ['white-panel', 'label-panel', 'text-ordinary'];
+    this.#setUpButton();
+    this.#setUpShortcuts();
+  }
+
+  #setUpShortcuts() {
+    const container = document.getElementById('shortcuts-table');
+    const shortcuts = this.manager.shortcuts;
+    for (const [keybinding, shortcut] of shortcuts) {
+      const name = this.#getNameElement(shortcut);
+      const bindingElement = this.#getBindingElement(keybinding);
+      container.appendChild(name);
+      container.appendChild(bindingElement);
+    }
+  }
+
+  #getNameElement(shortcut) {
+    const name = document.createElement('div');
+    name.classList.add(...this.classList);
+    name.innerText = shortcut.name;
+    return name;
+  }
+
+  #getBindingElement(keybinding) {
+    const bindingElement = document.createElement('div');
+    bindingElement.classList.add(...this.classList);
+    bindingElement.innerText = keybinding;
+    return bindingElement;
+  }
+
+  #setUpButton() {
+    const button = document.getElementById('shortcuts');
+    button.onclick = () => {
+      this.modal.show();
+    };
+  }
+
+  refresh() {
   }
 }
 
@@ -142,4 +424,11 @@ function getTextElement(text) {
   return textElement;
 }
 
-export { StateButtons, FileMenu, Toolbar };
+export {
+  StateButtons,
+  FileMenu,
+  Toolbar,
+  LayerMenu,
+  ZoomButtons,
+  ShortcutsMenu
+};
