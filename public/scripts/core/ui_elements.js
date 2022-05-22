@@ -425,6 +425,9 @@ class FrameMenu {
       const input = document.getElementById('switch-input');
       file.switchFrame(parseInt(input.value));
     });
+    this.buttons.addButton('duplicate-frame', (file) => {
+      file.duplicateFrame(file.currentId);
+    });
   }
 
   refresh(file) {

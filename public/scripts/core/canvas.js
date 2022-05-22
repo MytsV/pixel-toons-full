@@ -58,8 +58,7 @@ class CanvasState {
 
   //Receive an array of new Layer instances
   #cloneLayers() {
-    const clonedArray = this.canvas.layers.map((layer) => layer.clone());
-    return new IdentifiedList(clonedArray);
+    return deepCloneList(this.canvas.layers);
   }
 
   static #pushLayers(stack, layers) {
@@ -236,11 +235,13 @@ class Canvas {
   }
 
   //Creates a new layer and stacks in on top of other layers
-  appendLayer() {
-    const layer = new Layer(this.idGetter.get(), this.width, this.height);
-    this.#setDrawnLayer(layer);
-    this.#layers.push(layer);
+  appendLayer(layer) {
+    const { width, height } = this;
+    const appended = layer ?? new Layer(this.idGetter.get(), width, height);
+    this.#setDrawnLayer(appended);
+    this.#layers.push(appended);
 
+    if (layer) this.redraw();
     this.save();
   }
 
@@ -368,6 +369,14 @@ class Canvas {
     this.#listeners.forEach((listener) => listener());
   }
 
+  clone() {
+    const cloned = new Canvas(this.width, this.height);
+    const layers = deepCloneList(this.#layers);
+    cloned.#layers = new IdentifiedList();
+    layers.forEach((layer) => cloned.appendLayer(layer));
+    return cloned;
+  }
+
   /*
   We make the variable private and create a getter to ensure encapsulation.
   Layers variable should never get assigned outside the class.
@@ -390,14 +399,19 @@ class Frame {
     this.canvas = canvas;
     this.duration = duration;
   }
+
+  clone() {
+    return new Frame(this.id, this.canvas.clone(), this.duration);
+  }
 }
 
 class AnimationFile {
+  #frames;
   #listeners;
 
   constructor(width, height) {
     this.idGetter = new IdGetter();
-    this.frames = new IdentifiedList();
+    this.#frames = new IdentifiedList();
     this.#listeners = [];
     Object.assign(this, { width, height });
     this.appendFrame();
@@ -406,20 +420,29 @@ class AnimationFile {
   appendFrame() {
     const canvas = new Canvas(this.width, this.height);
     const frame = new Frame(this.idGetter.get(), canvas);
-    this.frames.push(frame);
+    this.#frames.push(frame);
     this.#setCurrentFrame(frame);
   }
 
   switchFrame(id) {
-    const frame = this.frames.byIdentifier(id);
+    const frame = this.#frames.byIdentifier(id);
     if (!frame) throw Error(`There is no frame with id ${id}`);
     this.#setCurrentFrame(frame);
   }
 
+  duplicateFrame(id) {
+    const frame = this.#frames.byIdentifier(id);
+    const duplicate = frame.clone();
+    duplicate.id = this.idGetter.get();
+
+    this.#frames.push(duplicate);
+    this.#setCurrentFrame(duplicate);
+  }
+
   #setCurrentFrame(frame) {
     this.currentId = frame.id;
-    const index = this.frames.getIndex(frame.id);
-    const overlayFrame = this.frames[index - 1];
+    const index = this.#frames.getIndex(frame.id);
+    const overlayFrame = this.#frames[index - 1];
     this.overlayId = overlayFrame ? overlayFrame.id : -1;
     this.#update();
   }
@@ -433,13 +456,22 @@ class AnimationFile {
   }
 
   get canvas() {
-    return this.frames.byIdentifier(this.currentId).canvas;
+    return this.#frames.byIdentifier(this.currentId).canvas;
   }
 
   get overlay() {
-    const overlay = this.frames.byIdentifier(this.overlayId);
+    const overlay = this.#frames.byIdentifier(this.overlayId);
     return overlay ? overlay.canvas : null;
   }
+
+  get frames() {
+    return this.#frames;
+  }
+}
+
+function deepCloneList(list) {
+  const clonedArray = list.map((value) => value.clone());
+  return new IdentifiedList(clonedArray);
 }
 
 export { Canvas, AnimationFile };
