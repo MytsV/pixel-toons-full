@@ -439,11 +439,34 @@ class AnimationFile {
     this.#setCurrentFrame(duplicate);
   }
 
+  moveFrameUp(id) {
+    const framePosition = this.#frames.getIndex(id);
+    if (framePosition < 0 || framePosition === this.#frames.length) {
+      throw Error('Cannot move frame up');
+    }
+    this.#reorderFrame(this.#frames[framePosition], framePosition + 1);
+  }
+
+  moveFrameDown(id) {
+    const framePosition = this.#frames.getIndex(id);
+    if (framePosition < 1) {
+      throw Error('Cannot move frame down');
+    }
+    this.#reorderFrame(this.#frames[framePosition], framePosition - 1);
+  }
+
+  #reorderFrame(frame, position) {
+    this.#frames = this.#frames.remove(frame.id);
+    if (position >= this.#frames.length) {
+      this.#frames.push(frame);
+    } else {
+      this.#frames.splice(position, 0, frame);
+    }
+    this.#update();
+  }
+
   #setCurrentFrame(frame) {
     this.currentId = frame.id;
-    const index = this.#frames.getIndex(frame.id);
-    const overlayFrame = this.#frames[index - 1];
-    this.overlayId = overlayFrame ? overlayFrame.id : -1;
     this.#update();
   }
 
@@ -452,6 +475,9 @@ class AnimationFile {
   }
 
   #update() {
+    const index = this.#frames.getIndex(this.currentId);
+    const overlayFrame = this.#frames[index - 1];
+    this.overlayId = overlayFrame ? overlayFrame.id : -1;
     this.#listeners.forEach((listener) => listener());
   }
 

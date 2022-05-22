@@ -428,6 +428,12 @@ class FrameMenu {
     this.buttons.addButton('duplicate-frame', (file) => {
       file.duplicateFrame(file.currentId);
     });
+    this.buttons.addButton('move-frame-up', (file) => {
+      file.moveFrameUp(file.currentId);
+    });
+    this.buttons.addButton('move-frame-down', (file) => {
+      file.moveFrameDown(file.currentId);
+    });
   }
 
   refresh(file) {
