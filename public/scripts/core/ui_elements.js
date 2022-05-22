@@ -1,7 +1,8 @@
 import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
 import {
+  bytesToBase64,
   bytesToUrl,
-  downloadLocalUrl,
+  downloadLocalUrl, setImageBase64,
   setImageUrl
 } from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil, Tool } from './tools.js';
@@ -477,7 +478,7 @@ class Preview {
       if (!this.playing) return;
 
       const frame = frames[index];
-      this.#setImage(this.#getImageUrl(frame));
+      this.#setImage(this.#getImageData(frame));
       window.setTimeout(changeImage, frame.duration);
       index++;
       if (index >= frames.length) {
@@ -487,21 +488,21 @@ class Preview {
     return changeImage;
   }
 
-  #getImageUrl(frame) {
-    let url;
+  #getImageData(frame) {
+    let data;
     if (this.#savedFrames.has(frame.id)) {
-      url = this.#savedFrames.get(frame.id);
+      data = this.#savedFrames.get(frame.id);
     } else {
       const image = frame.canvas.getJoinedImage();
-      const data = this.encoder.encode(image);
-      url = this.encoder.isLastEncodedTransparent() ? null : bytesToUrl(data);
+      const encoded = this.encoder.encode(image);
+      data = this.encoder.isLastEncodedTransparent() ? null : bytesToBase64(encoded);
     }
-    return url;
+    return data;
   }
 
   #setImage(url) {
     if (url) {
-      setImageUrl(this.container, url);
+      setImageBase64(this.container, url);
     } else {
       this.container.style.backgroundImage = '';
     }

@@ -1,5 +1,5 @@
 const bytesToBase64 = (data) => {
-  window.btoa(data.reduce((prev, curr) => {
+  return window.btoa(data.reduce((prev, curr) => {
     const encoded = String.fromCharCode(curr);
     return prev + encoded;
   }, ''));
@@ -28,4 +28,19 @@ const setImageUrl = (element, url) => {
   newElement.src = url;
 };
 
-export { bytesToUrl, downloadLocalUrl, bytesToBase64, setImageUrl };
+const setImageBase64 = (element, data) => {
+  const newElement = new Image();
+  const value = `data:image/bmp;base64,${data}`;
+  newElement.onload = () => {
+    element.style.backgroundImage = `url("${value}")`;
+  };
+  newElement.src = value;
+};
+
+export {
+  bytesToUrl,
+  downloadLocalUrl,
+  bytesToBase64,
+  setImageUrl,
+  setImageBase64
+};
