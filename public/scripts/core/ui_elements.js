@@ -434,61 +434,52 @@ class Preview {
     this.buttons = new VariableDependentButtons();
     this.buttons.addButton('preview-animation', (file) => this.#play(file));
     this.buttons.addButton('stop-animation', () => this.#stop());
-    this.playing = false;
     this.background = document.getElementById('canvas-background');
+    this.container = document.getElementById('preview');
+    this.playing = false;
   }
 
   #play(file) {
-    if (this.playing) return;
-    const noUrl = 'none';
-
+    this.#showPreview();
     const encoder = new BmpEncoder(bmpVersions.bmp32);
-    const imageUrls = file.frames.map((frame) => {
-      const image = frame.canvas.getJoinedImage();
-      const data = encoder.encode(image);
-      return encoder.isLastEncodedTransparent() ? noUrl : bytesToUrl(data);
-    });
+    this.playing = true;
 
-    const previewContainer = document.getElementById('preview');
-    previewContainer.style.display = 'block';
-
-    let iterator;
-    const renewIterator = () => {
-      iterator = imageUrls[Symbol.iterator]();
-    };
-    renewIterator();
-
+    let index = 0;
     const frameDuration = 100;
     const changeImage = () => {
-      const next = iterator.next();
-      if (next.value) {
-        if (next.value !== noUrl) {
-          previewContainer.style.backgroundImage = `url(${next.value})`;
-        } else {
-          previewContainer.style.backgroundImage = '';
-        }
-        if (this.playing) {
-          window.setTimeout(changeImage, frameDuration);
-        }
+      if (!this.playing) return;
+      const frame = file.frames[index];
+      const image = frame.canvas.getJoinedImage();
+      const data = encoder.encode(image);
+      if (encoder.isLastEncodedTransparent()) {
+        this.container.style.backgroundImage = '';
       } else {
-        renewIterator();
-        if (this.playing) {
-          changeImage();
-        }
+        setImageUrl(this.container, bytesToUrl(data));
       }
-
+      window.setTimeout(changeImage, frameDuration);
+      index++;
+      if (index >= file.frames.length) {
+        index = 0;
+      }
     };
-    this.playing = true;
     changeImage();
-
-    this.background.style.zIndex = '1';
   }
 
   #stop() {
     this.playing = false;
-    const previewContainer = document.getElementById('preview');
-    previewContainer.style.display = 'none';
-    this.background.style.zIndex = '0';
+    this.#hidePreview();
+  }
+
+  #showPreview() {
+    this.container.style.display = 'block';
+    const frontIndex = 1;
+    this.background.style.zIndex = frontIndex.toString();
+  }
+
+  #hidePreview() {
+    this.container.style.display = 'none';
+    const backIndex = 0;
+    this.background.style.zIndex = backIndex.toString();
   }
 
   refresh(file) {
