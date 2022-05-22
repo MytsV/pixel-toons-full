@@ -24,7 +24,6 @@ class CanvasRenderer {
     this.canvasWrapper = document.getElementById('canvas-wrapper');
     this.canvasLayers = document.getElementById('canvas-layers');
     this.zoomValue = 1;
-    this.isBackgroundSet = false;
   }
 
   appendCanvas(canvas) {
@@ -33,9 +32,7 @@ class CanvasRenderer {
 
     this.canvasWrapper.style.aspectRatio = width / height;
     this.#setUpElement(canvas.element);
-    if (!this.isBackgroundSet) {
-      this.#setUpBackground(width, height);
-    }
+    CanvasRenderer.#setUpBackground(width, height);
     this.adjustSize();
   }
 
@@ -44,13 +41,11 @@ class CanvasRenderer {
   For optimization we convert background image to BMP format.
   Rendering is done with <div> tag, which doesn't update
    */
-  #setUpBackground(width, height) {
+  static #setUpBackground(width, height) {
     const image = new ImageData(width, height);
     applyImageMixin(image);
     toBasicBackground(image);
-
     CanvasRenderer.#setUpImage('canvas-background', image);
-    this.isBackgroundSet = true;
   }
 
   setOverlay(canvas) {
