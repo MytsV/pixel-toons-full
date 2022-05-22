@@ -7,6 +7,9 @@ import {
 import { BucketFill, Eraser, Pencil, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
 
+const HIDE_DISPLAY = 'none';
+const SHOW_DISPLAY = 'block';
+
 class VariableDependentButtons {
   constructor() {
     this.buttons = new Map();
@@ -39,12 +42,12 @@ class Modal {
   }
 
   show() {
-    this.element.style.display = 'block';
+    this.element.style.display = SHOW_DISPLAY;
     this.#setUpEvents();
   }
 
   hide() {
-    this.element.style.display = 'none';
+    this.element.style.display = HIDE_DISPLAY;
   }
 }
 
@@ -430,33 +433,38 @@ class FrameMenu {
 }
 
 class Preview {
+  #savedFrames;
+
   constructor() {
+    this.#setUpButtons();
+    this.#setUpElements();
+    this.encoder = new BmpEncoder(bmpVersions.bmp32);
+    this.playing = false;
+  }
+
+  #setUpButtons() {
     this.buttons = new VariableDependentButtons();
     this.buttons.addButton('preview-animation', (file) => this.#play(file));
     this.buttons.addButton('stop-animation', () => this.#stop());
+  }
+
+  #setUpElements() {
     this.background = document.getElementById('canvas-background');
     this.container = document.getElementById('preview');
-    this.playing = false;
   }
 
   #play(file) {
     this.#showPreview();
-    const encoder = new BmpEncoder(bmpVersions.bmp32);
     this.playing = true;
+    this.#savedFrames = new Map();
 
     let index = 0;
-    const frameDuration = 100;
     const changeImage = () => {
       if (!this.playing) return;
+
       const frame = file.frames[index];
-      const image = frame.canvas.getJoinedImage();
-      const data = encoder.encode(image);
-      if (encoder.isLastEncodedTransparent()) {
-        this.container.style.backgroundImage = '';
-      } else {
-        setImageUrl(this.container, bytesToUrl(data));
-      }
-      window.setTimeout(changeImage, frameDuration);
+      this.#setImage(this.#getImageUrl(frame));
+      window.setTimeout(changeImage, frame.duration);
       index++;
       if (index >= file.frames.length) {
         index = 0;
@@ -465,19 +473,39 @@ class Preview {
     changeImage();
   }
 
+  #getImageUrl(frame) {
+    let url;
+    if (this.#savedFrames.has(frame.id)) {
+      url = this.#savedFrames.get(frame.id);
+    } else {
+      const image = frame.canvas.getJoinedImage();
+      const data = this.encoder.encode(image);
+      url = this.encoder.isLastEncodedTransparent() ? null : bytesToUrl(data);
+    }
+    return url;
+  }
+
+  #setImage(url) {
+    if (url) {
+      setImageUrl(this.container, url);
+    } else {
+      this.container.style.backgroundImage = '';
+    }
+  }
+
   #stop() {
     this.playing = false;
     this.#hidePreview();
   }
 
   #showPreview() {
-    this.container.style.display = 'block';
+    this.container.style.display = SHOW_DISPLAY;
     const frontIndex = 1;
     this.background.style.zIndex = frontIndex.toString();
   }
 
   #hidePreview() {
-    this.container.style.display = 'none';
+    this.container.style.display = HIDE_DISPLAY;
     const backIndex = 0;
     this.background.style.zIndex = backIndex.toString();
   }
