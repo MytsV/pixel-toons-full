@@ -458,19 +458,24 @@ class Preview {
     this.playing = true;
     this.#savedFrames = new Map();
 
+    const changeImage = this.#getImageChanger(file.frames);
+    changeImage();
+  }
+
+  #getImageChanger(frames) {
     let index = 0;
     const changeImage = () => {
       if (!this.playing) return;
 
-      const frame = file.frames[index];
+      const frame = frames[index];
       this.#setImage(this.#getImageUrl(frame));
       window.setTimeout(changeImage, frame.duration);
       index++;
-      if (index >= file.frames.length) {
+      if (index >= frames.length) {
         index = 0;
       }
     };
-    changeImage();
+    return changeImage;
   }
 
   #getImageUrl(frame) {
