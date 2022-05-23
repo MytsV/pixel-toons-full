@@ -47,10 +47,6 @@ body {
   margin-top: var(--inter-element-spacing);
 }
 
-#footer {
-  height: 35pt;
-}
-
 #canvas-parent {
   width: 100%;
   background-color: var(--border-color);
@@ -269,7 +265,7 @@ body {
 }
 
 .menu-item-frames {
-  padding: 11pt 20pt 10pt 20pt;
+  padding: 7pt 20pt 7pt 20pt;
   margin-top: -2pt;
   width: max-content;
   border-right: var(--border-size) solid #42568b;
@@ -424,8 +420,24 @@ input {
 
 #frame-container {
   height: 100pt;
+  display: none;
+}
+
+#frame-menu {
+  height: 25pt;
 }
 
 #footer {
   height: max-content;
+  /* width: calc(100% - 2 * var(--inter-element-spacing)); */
+  position: relative;
+  /* bottom: var(--inter-element-spacing); */
+}
+
+.button-white {
+  transition: background-color 150ms;
+}
+
+.button-white:hover {
+  background-color: lightgray;
 }

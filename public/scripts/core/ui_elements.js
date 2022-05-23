@@ -420,24 +420,39 @@ class ShortcutsMenu {
 class FrameMenu {
   constructor() {
     this.buttons = new VariableDependentButtons();
+    this.#setUpButtons();
+    this.label = document.getElementById('frame-label');
+  }
+
+  #setUpButtons() {
     this.buttons.addButton('add-frame', (file) => file.appendFrame());
-    this.buttons.addButton('switch-frame', (file) => {
-      const input = document.getElementById('switch-input');
-      file.switchFrame(parseInt(input.value));
-    });
     this.buttons.addButton('duplicate-frame', (file) => {
       file.duplicateFrame(file.currentId);
     });
-    this.buttons.addButton('move-frame-up', (file) => {
-      file.moveFrameUp(file.currentId);
-    });
-    this.buttons.addButton('move-frame-down', (file) => {
-      file.moveFrameDown(file.currentId);
-    });
+    // this.buttons.addButton('move-frame-up', (file) => {
+    //   file.moveFrameUp(file.currentId);
+    // });
+    // this.buttons.addButton('move-frame-down', (file) => {
+    //   file.moveFrameDown(file.currentId);
+    // });
   }
 
   refresh(file) {
     this.buttons.enableButtons(file);
+    this.#refreshLabel(file);
+  }
+
+  #refreshLabel(file) {
+    const baseLabel = 'Frames';
+    const frames = file.frames;
+
+    if (frames.length <= 1) {
+      this.label.innerText = baseLabel;
+      return;
+    }
+
+    const currentPos = frames.getIndex(file.currentId) + 1;
+    this.label.innerText = baseLabel + `(${currentPos}/${frames.length})`;
   }
 }
 
@@ -453,8 +468,7 @@ class Preview {
 
   #setUpButtons() {
     this.buttons = new VariableDependentButtons();
-    this.buttons.addButton('preview-animation', (file) => this.#play(file));
-    this.buttons.addButton('stop-animation', () => this.#stop());
+    this.buttons.addButton('preview-animation', (file) => this.#preview(file));
   }
 
   #setUpElements() {
@@ -462,10 +476,14 @@ class Preview {
     this.container = document.getElementById('preview');
   }
 
+  #preview(file) {
+    if (!this.playing) this.#play(file);
+    else this.#stop();
+  }
+
   #play(file) {
     this.#showPreview();
     this.playing = true;
-    this.#savedFrames = new Map();
 
     const changeImage = this.#getImageChanger(file.frames);
     changeImage();
@@ -473,6 +491,8 @@ class Preview {
 
   #getImageChanger(frames) {
     let index = 0;
+    this.#savedFrames = new Map();
+
     const changeImage = () => {
       if (!this.playing) return;
 
