@@ -1,7 +1,7 @@
 const mixin = {
   byIdentifier,
   getIndex,
-  remove
+  remove,
 };
 
 function IdentifiedList(array = []) {

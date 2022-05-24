@@ -119,6 +119,19 @@ body {
   image-rendering: pixelated;
 }
 
+#canvas-overlay {
+  background-repeat: no-repeat;
+  background-size: contain;
+  image-rendering: pixelated;
+  opacity: 0.2;
+}
+
+#preview {
+  background-repeat: no-repeat;
+  background-size: contain;
+  image-rendering: pixelated;
+}
+
 #layer-container {
   flex-grow: 1;
   height: 1pt;
@@ -154,6 +167,7 @@ body {
   image-rendering: pixelated;
   background-color: white;
   margin-right: 5pt;
+  transition: background-image 1s ease-in-out;
 }
 
 .layer-name {
@@ -165,8 +179,8 @@ body {
   background: url("../images/eye-open.png");
   background-size: cover;
   image-rendering: pixelated;
-  width: 20pt;
-  height: 20pt;
+  width: 17pt;
+  height: 17pt;
   top: 0;
   right: 0;
 }
@@ -393,4 +407,9 @@ input {
   padding: var(--border-size);
   overflow: scroll;
   height: 100%;
+}
+
+#preview {
+  display: none;
+  z-index: 10;
 }

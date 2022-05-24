@@ -1,7 +1,15 @@
 import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
-import { bytesToUrl, downloadLocalUrl } from '../utilities/bytes_conversion.js';
-import { BucketFill, Eraser, Pencil } from './tools.js';
+import {
+  bytesToBase64,
+  bytesToUrl,
+  downloadLocalUrl, setImageBase64,
+  setImageUrl
+} from '../utilities/bytes_conversion.js';
+import { BucketFill, Eraser, Pencil, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
+
+const HIDE_DISPLAY = 'none';
+const SHOW_DISPLAY = 'block';
 
 class VariableDependentButtons {
   constructor() {
@@ -35,12 +43,12 @@ class Modal {
   }
 
   show() {
-    this.element.style.display = 'block';
+    this.element.style.display = SHOW_DISPLAY;
     this.#setUpEvents();
   }
 
   hide() {
-    this.element.style.display = 'none';
+    this.element.style.display = HIDE_DISPLAY;
   }
 }
 
@@ -51,8 +59,8 @@ class StateButtons {
     this.buttons.addButton('redo', (canvas) => canvas.redo());
   }
 
-  refresh(file) {
-    this.buttons.enableButtons(file.canvas);
+  refresh(canvas) {
+    this.buttons.enableButtons(canvas);
   }
 }
 
@@ -70,8 +78,8 @@ class FileMenu {
     FileMenu.#setUpLimit();
   }
 
-  refresh(file) {
-    this.buttons.enableButtons(file.canvas);
+  refresh(canvas) {
+    this.buttons.enableButtons(canvas);
   }
 
   #setUpDependentButtons() {
@@ -134,7 +142,6 @@ class ToolInfo {
 }
 
 class Toolbar {
-  chosen;
   static #activeClass = 'active-tool';
 
   constructor() {
@@ -145,16 +152,14 @@ class Toolbar {
     ];
     this.buttons = new VariableDependentButtons();
     this.container = document.getElementById('tools');
-
     this.#setUpTools();
     this.#setUpColorPicker();
+    this.chosen = this.toolsInfo[0];
   }
 
-  refresh(file) {
-    const canvas = file.canvas;
-    this.#setChosen(this.toolsInfo[0], canvas);
+  refresh(canvas) {
+    this.#setChosen(this.chosen, canvas);
     this.buttons.enableButtons(canvas);
-    this.#refreshColorPicker(canvas);
   }
 
   #setUpTools() {
@@ -176,20 +181,15 @@ class Toolbar {
     this.chosen.element.classList.add(Toolbar.#activeClass);
   }
 
-  #refreshColorPicker(canvas) {
-    //this.colorPicker.value = canvas.state.color.toHex();
-    this.colorPicker.oninput = () => {
-      canvas.state.color = Color.fromHex(this.colorPicker.value);
-    };
-  }
-
   #setUpColorPicker() {
     const colorPicker = document.createElement('input');
     colorPicker.type = 'color';
     colorPicker.id = 'color-picker';
 
     this.container.appendChild(colorPicker);
-    this.colorPicker = colorPicker;
+    colorPicker.oninput = () => {
+      Tool.color = Color.fromHex(colorPicker.value);
+    };
   }
 }
 
@@ -252,7 +252,7 @@ class LayerBox {
 
     const url = this.#getLayerImageUrl();
     LayerBox.#imageCache.set(this.layer, url);
-    image.style.backgroundImage = `url(${url})`;
+    setImageUrl(image, url);
 
     this.element.appendChild(image);
   }
@@ -308,10 +308,10 @@ class LayerMenu {
     });
   }
 
-  refresh(file) {
-    this.buttons.enableButtons(file.canvas);
-    this.#updateLayers(file.canvas);
-    this.#setFixationListener(file.canvas);
+  refresh(canvas) {
+    this.buttons.enableButtons(canvas);
+    this.#updateLayers(canvas);
+    this.#setFixationListener(canvas);
   }
 
   #updateLayers(canvas) {
@@ -417,6 +417,120 @@ class ShortcutsMenu {
   }
 }
 
+
+class FrameMenu {
+  constructor() {
+    this.buttons = new VariableDependentButtons();
+    this.buttons.addButton('add-frame', (file) => file.appendFrame());
+    this.buttons.addButton('switch-frame', (file) => {
+      const input = document.getElementById('switch-input');
+      file.switchFrame(parseInt(input.value));
+    });
+    this.buttons.addButton('duplicate-frame', (file) => {
+      file.duplicateFrame(file.currentId);
+    });
+    this.buttons.addButton('move-frame-up', (file) => {
+      file.moveFrameUp(file.currentId);
+    });
+    this.buttons.addButton('move-frame-down', (file) => {
+      file.moveFrameDown(file.currentId);
+    });
+  }
+
+  refresh(file) {
+    this.buttons.enableButtons(file);
+  }
+}
+
+class Preview {
+  #savedFrames;
+
+  constructor() {
+    this.#setUpButtons();
+    this.#setUpElements();
+    this.encoder = new BmpEncoder(bmpVersions.bmp32);
+    this.playing = false;
+  }
+
+  #setUpButtons() {
+    this.buttons = new VariableDependentButtons();
+    this.buttons.addButton('preview-animation', (file) => this.#play(file));
+    this.buttons.addButton('stop-animation', () => this.#stop());
+  }
+
+  #setUpElements() {
+    this.background = document.getElementById('canvas-background');
+    this.container = document.getElementById('preview');
+  }
+
+  #play(file) {
+    this.#showPreview();
+    this.playing = true;
+    this.#savedFrames = new Map();
+
+    const changeImage = this.#getImageChanger(file.frames);
+    changeImage();
+  }
+
+  #getImageChanger(frames) {
+    let index = 0;
+    const changeImage = () => {
+      if (!this.playing) return;
+
+      const frame = frames[index];
+      this.#setImage(this.#getImageData(frame));
+      window.setTimeout(changeImage, frame.duration);
+      index++;
+      if (index >= frames.length) {
+        index = 0;
+      }
+    };
+    return changeImage;
+  }
+
+  #getImageData(frame) {
+    let data;
+    if (this.#savedFrames.has(frame.id)) {
+      data = this.#savedFrames.get(frame.id);
+    } else {
+      const image = frame.canvas.getJoinedImage();
+      const encoded = this.encoder.encode(image);
+      const isFullyTransparent = this.encoder.isLastEncodedTransparent();
+      data = isFullyTransparent ? null : bytesToBase64(encoded);
+    }
+    return data;
+  }
+
+  #setImage(url) {
+    if (url) {
+      setImageBase64(this.container, url);
+    } else {
+      this.container.style.backgroundImage = '';
+    }
+  }
+
+  #stop() {
+    this.playing = false;
+    this.#hidePreview();
+  }
+
+  #showPreview() {
+    this.container.style.display = SHOW_DISPLAY;
+    const frontIndex = 1;
+    this.background.style.zIndex = frontIndex.toString();
+  }
+
+  #hidePreview() {
+    this.container.style.display = HIDE_DISPLAY;
+    const backIndex = 0;
+    this.background.style.zIndex = backIndex.toString();
+  }
+
+  refresh(file) {
+    this.buttons.enableButtons(file);
+  }
+}
+
 function getTextElement(text) {
   const textElement = document.createElement('span');
   textElement.innerText = text;
@@ -430,5 +544,7 @@ export {
   Toolbar,
   LayerMenu,
   ZoomButtons,
-  ShortcutsMenu
+  ShortcutsMenu,
+  FrameMenu,
+  Preview
 };

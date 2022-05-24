@@ -1,11 +1,15 @@
 import { Coordinates } from '../utilities/coordinates.js';
 import { Color } from '../utilities/color.js';
 
+const DEFAULT_PENCIL_COLOR = '#000000';
+
 /*
 An abstract class which defines drawing operations.
 It is linked with canvas when chosen and must be disabled after the stop of use
  */
 class Tool {
+  static color = Color.fromHex(DEFAULT_PENCIL_COLOR);
+
   constructor() {
     if (new.target === Tool) {
       throw Error('Abstract class cannot be instantiated');
@@ -42,6 +46,7 @@ class Tool {
   }
 
   #iterateListeners(updateEvent) {
+    if (!this.canvas) return;
     const listenersWithElement = [
       [this.listenersDocument, document],
       [this.listenersCanvas, this.canvas.element]
@@ -139,7 +144,7 @@ class Pencil extends Tool {
 
   //Makes the class open to extensions
   getColor() {
-    return this.canvas.state.color;
+    return Tool.color;
   }
 }
 
@@ -276,7 +281,7 @@ class BucketFill extends Tool {
   }
 
   getColor() {
-    return this.canvas.state.color;
+    return Tool.color;
   }
 }
 
@@ -305,4 +310,4 @@ function getRealCoordinates(element, absCoords) {
   return new Coordinates(Math.floor(curr.x), Math.floor(curr.y));
 }
 
-export { Pencil, Eraser, BucketFill };
+export { Tool, Pencil, Eraser, BucketFill };
