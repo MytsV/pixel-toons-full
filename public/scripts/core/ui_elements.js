@@ -435,12 +435,15 @@ class FrameMenu {
       file.duplicateFrame(file.currentId);
     });
     this.buttons.addButton('frame-menu', () => this.#switchContainer());
-    // this.buttons.addButton('move-frame-up', (file) => {
-    //   file.moveFrameUp(file.currentId);
-    // });
-    // this.buttons.addButton('move-frame-down', (file) => {
-    //   file.moveFrameDown(file.currentId);
-    // });
+    this.buttons.addButton('move-frame-up', (file) => {
+      file.moveFrameUp(file.currentId);
+    });
+    this.buttons.addButton('move-frame-down', (file) => {
+      file.moveFrameDown(file.currentId);
+    });
+    this.buttons.addButton('remove-frame', (file) => {
+      file.removeFrame(file.currentId);
+    });
   }
 
   refresh(file) {

@@ -411,7 +411,7 @@ input {
 }
 
 #frame-container {
-  height: 100pt;
+  height: 125pt;
   display: none;
   background-color: #C2D7FF;
 }
@@ -442,8 +442,8 @@ input {
 }
 
 #preview-animation {
-  height: 12pt;
-  width: 12pt;
+  height: 11pt;
+  width: 11pt;
   background-size: cover;
   display: inline-block;
   image-rendering: pixelated;
@@ -460,4 +460,40 @@ input {
 
 .button-white:hover {
   background-color: lightgray;
+}
+
+#frame-button-container {
+  display: flex;
+  gap: 10pt;
+  padding: 10pt;
+}
+
+.frame-button {
+  height: 17pt;
+  width: 17pt;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-size: cover;
+  image-rendering: pixelated;
+  box-sizing: border-box;
+  background-color: var(--main-panel-color);
+  border-bottom: var(--border-size) solid var(--main-panel-color-shadow);
+  border-right: var(--border-size) solid var(--main-panel-color-shadow);
+  border-top: var(--border-size) solid var(--main-panel-color-highlight);
+  outline: var(--border-size) solid var(--border-color);
+}
+
+#move-frame-up img {
+  width: 8pt;
+  height: 8pt;
+}
+
+#move-frame-down img {
+  width: 8pt;
+  height: 8pt;
+}
+
+#remove-frame img {
+  margin-left: 2pt;
 }
