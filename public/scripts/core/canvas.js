@@ -20,13 +20,13 @@ class CanvasState {
     Canvases state is a set of its layers.
     pastLayers contains all the states that have been "shown".
     nextLayers contains all the states that haven't been "shown".
-    Being "shown" means to historically precede or equal the current state.
+    Being "shown" means to historically precede the current state.
      */
     this.pastLayers = [];
     this.nextLayers = [];
     this.currentLayers = null;
 
-    //We keep the reference to the canvas which created "us"
+    //We keep the reference to the canvas which created us
     this.canvas = canvas;
   }
 
@@ -35,25 +35,20 @@ class CanvasState {
       CanvasState.#pushLayers(this.pastLayers, this.currentLayers);
       this.nextLayers = [];
     }
-    this.currentLayers = this.#cloneLayers();
+    this.fixateCurrent();
   }
 
   retrieveState(stackRetrieved) {
     const retrievingPast = stackRetrieved === this.pastLayers;
     const stackSaved = retrievingPast ? this.nextLayers : this.pastLayers;
     if (stackRetrieved.length < 1) throw Error('There is nothing to retrieve');
-
-    //Updating the other stack
     CanvasState.#pushLayers(stackSaved, this.#cloneLayers());
     return stackRetrieved.pop();
   }
 
-  retrieveDrawnLayer() {
-    const layers = this.canvas.layers;
-
-    const lastLayer = layers[layers.length - 1];
+  //The best use of the method is when layers are artificially changed
+  fixateCurrent() {
     this.currentLayers = this.#cloneLayers();
-    return lastLayer;
   }
 
   //Receive an array of new Layer instances
@@ -61,6 +56,7 @@ class CanvasState {
     return deepCloneList(this.canvas.layers);
   }
 
+  //A function that handles adding data to a stack with overflow control
   static #pushLayers(stack, layers) {
     stack.push(layers);
     if (stack.length >= CanvasState.stackLimit) {
@@ -95,12 +91,15 @@ class Layer {
     This is done for optimization and increases performance over other methods.
      */
     this.virtualCanvas = createCanvasElement(width, height);
-    //We save context to avoid retrieving it multiple times
+
+    //We save the context to avoid retrieving it multiple times
     this.context = this.virtualCanvas.getContext('2d');
+
     this.id = id;
-    //Determines whether the layer will be drawn
-    this.visible = true;
     this.name = `Layer ${id}`;
+
+    //Determines whether the layer will be drawn over the main canvas
+    this.visible = true;
   }
 
   //Prototype pattern implementation
@@ -342,9 +341,10 @@ class Canvas {
   //Generalized method for working with undo/redo
   #retrieveImage(stackRetrieved) {
     this.#layers = this.state.retrieveState(stackRetrieved);
-    const drawnLayer = this.state.retrieveDrawnLayer();
+    const lastLayer = this.#layers[this.#layers.length - 1];
+    this.state.fixateCurrent();
 
-    this.#setDrawnLayer(drawnLayer);
+    this.#setDrawnLayer(lastLayer);
     this.redraw();
     this.#fixateChanges();
   }
