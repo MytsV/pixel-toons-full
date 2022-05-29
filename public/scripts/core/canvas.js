@@ -5,6 +5,8 @@ import { IdentifiedList } from '../utilities/intentified_list.js';
 const START_POS = [0, 0];
 //The minimum number of layers for which we perform caching
 const CACHE_MIN_LAYER_COUNT = 4;
+//Id for a layer or frame which is never rendered
+const OFFSCREEN_ID = -1;
 
 /*
 A class which stores canvas parameters that are changed outside of drawing.
@@ -137,31 +139,31 @@ class LayerCache {
     this.#lastChanged = current;
     this.#lastChangedIndex = currentIndex;
 
-    if (!this.#currentStable(current, currentIndex)) return;
+    if (!this.#isCurrentStable(current, currentIndex)) return;
     this.#resetCache();
     for (const [index, layer] of layers.entries()) {
       if (!layer.visible || index === currentIndex) continue;
-      const isLayerBefore = index < currentIndex;
-      const appendedCache = isLayerBefore ? this.beforeCache : this.afterCache;
+      const beforeCurrent = index < currentIndex;
+      const appendedCache = beforeCurrent ? this.beforeCache : this.afterCache;
       appendedCache.context.drawImage(layer.virtualCanvas, ...START_POS);
     }
   }
 
-  #currentStable(current, currentIndex) {
+  //Determines whether the current layer is the only one that must be redrawn
+  #isCurrentStable(current, currentIndex) {
     const idStable = this.#lastChanged.id === current.id;
     const positionStable = this.#lastChangedIndex === currentIndex;
     return idStable && positionStable;
   }
 
   #resetCache() {
-    //IDs are set to -1 as these layers are "off-screen"
-    this.beforeCache = new Layer(-1, this.width, this.height);
-    this.afterCache = new Layer(-1, this.width, this.height);
+    this.beforeCache = new Layer(OFFSCREEN_ID, this.width, this.height);
+    this.afterCache = new Layer(OFFSCREEN_ID, this.width, this.height);
   }
 
   drawFromCache(context) {
     context.drawImage(this.beforeCache.virtualCanvas, ...START_POS);
-    //Handle only the visibility of middle layer
+    //Handling only the visibility of middle layer
     if (this.#lastChanged.visible) {
       context.drawImage(this.#lastChanged.virtualCanvas, ...START_POS);
     }
