@@ -63,15 +63,38 @@
           </div>
         </div>
       </div>
-      <div id="footer" class="white-panel">
-        <button id="add-frame">Add frame</button>
-        <button id="duplicate-frame">Duplicate frame</button>
-        <button id="move-frame-up">Move frame up</button>
-        <button id="move-frame-down">Move frame down</button>
-        <input id="switch-input">
-        <button id="switch-frame">Switch</button>
-        <button id="preview-animation">Preview</button>
-        <button id="stop-animation">Stop</button>
+      <div id="footer">
+        <div id="frame-menu" class="white-panel">
+          <div id="frame-label" class="menu-item-frames text">Frames</div>
+          <div id="add-frame" class="menu-item-frames text">Add</div>
+          <div id="duplicate-frame" class="menu-item-frames text">Copy</div>
+          <div id="preview-menu" class="menu-item-frames text">Preview <div id="preview-animation" class="play"></div></div>
+        </div>
+        <div id="frame-container" class="other-panel">
+          <div id="frame-button-container">
+            <div id="move-frame-down" class="frame-button button"><img src="images/arrow-left.png"></div>
+            <div id="move-frame-up" class="frame-button button"><img src="images/arrow-right.png"></div>
+            <div id="remove-frame" class="frame-button button"><img src="images/remove.png"></div>
+          </div>
+          <div id="frame-list">
+            <div class="frame">
+              <div class="frame-label">
+                <span class="frame-index text">
+                  1
+                </span>
+                <select name="duration" class="frame-duration text">
+                  <option value="100">100ms</option>
+                  <option value="200">200ms</option>
+                  <option value="300">300ms</option>
+                  <option value="500">500ms</option>
+                </select>
+              </div>
+              <div class="frame-image">
+
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
