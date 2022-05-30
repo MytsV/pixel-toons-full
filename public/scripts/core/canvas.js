@@ -5,6 +5,31 @@ import { IdentifiedList } from '../utilities/intentified_list.js';
 const START_POS = [0, 0];
 //The minimum number of layers for which we perform caching
 const CACHE_MIN_LAYER_COUNT = 4;
+//Id for a layer or frame which is never rendered
+const OFFSCREEN_ID = -1;
+//A prefix for a copied layer name
+const COPY_PREFIX = ' copy';
+
+class SimpleStateEmitter {
+  #listeners;
+
+  constructor() {
+    this.#listeners = [];
+  }
+
+
+  /*
+  The implementation of EventEmitter pattern.
+  Allows other entities to know when an entity is getting a fixated state
+ */
+  listenToUpdates(listener) {
+    this.#listeners.push(listener);
+  }
+
+  _fixateState() {
+    this.#listeners.forEach((listener) => listener());
+  }
+}
 
 /*
 A class which stores canvas parameters that are changed outside of drawing.
@@ -20,13 +45,13 @@ class CanvasState {
     Canvases state is a set of its layers.
     pastLayers contains all the states that have been "shown".
     nextLayers contains all the states that haven't been "shown".
-    Being "shown" means to historically precede or equal the current state.
+    Being "shown" means to historically precede the current state.
      */
     this.pastLayers = [];
     this.nextLayers = [];
     this.currentLayers = null;
 
-    //We keep the reference to the canvas which created "us"
+    //We keep the reference to the canvas which created us
     this.canvas = canvas;
   }
 
@@ -35,25 +60,20 @@ class CanvasState {
       CanvasState.#pushLayers(this.pastLayers, this.currentLayers);
       this.nextLayers = [];
     }
-    this.currentLayers = this.#cloneLayers();
+    this.fixateCurrent();
   }
 
   retrieveState(stackRetrieved) {
     const retrievingPast = stackRetrieved === this.pastLayers;
     const stackSaved = retrievingPast ? this.nextLayers : this.pastLayers;
     if (stackRetrieved.length < 1) throw Error('There is nothing to retrieve');
-
-    //Updating the other stack
     CanvasState.#pushLayers(stackSaved, this.#cloneLayers());
     return stackRetrieved.pop();
   }
 
-  retrieveDrawnLayer() {
-    const layers = this.canvas.layers;
-
-    const lastLayer = layers[layers.length - 1];
+  //The best use of the method is when layers are artificially changed
+  fixateCurrent() {
     this.currentLayers = this.#cloneLayers();
-    return lastLayer;
   }
 
   //Receive an array of new Layer instances
@@ -61,6 +81,7 @@ class CanvasState {
     return deepCloneList(this.canvas.layers);
   }
 
+  //A function that handles adding data to a stack with overflow control
   static #pushLayers(stack, layers) {
     stack.push(layers);
     if (stack.length >= CanvasState.stackLimit) {
@@ -95,12 +116,15 @@ class Layer {
     This is done for optimization and increases performance over other methods.
      */
     this.virtualCanvas = createCanvasElement(width, height);
-    //We save context to avoid retrieving it multiple times
+
+    //We save the context to avoid retrieving it multiple times
     this.context = this.virtualCanvas.getContext('2d');
+
     this.id = id;
-    //Determines whether the layer will be drawn
-    this.visible = true;
     this.name = `Layer ${id}`;
+
+    //Determines whether the layer will be drawn over the main canvas
+    this.visible = true;
   }
 
   //Prototype pattern implementation
@@ -138,31 +162,31 @@ class LayerCache {
     this.#lastChanged = current;
     this.#lastChangedIndex = currentIndex;
 
-    if (!this.#currentStable(current, currentIndex)) return;
+    if (!this.#isCurrentStable(current, currentIndex)) return;
     this.#resetCache();
     for (const [index, layer] of layers.entries()) {
       if (!layer.visible || index === currentIndex) continue;
-      const isLayerBefore = index < currentIndex;
-      const appendedCache = isLayerBefore ? this.beforeCache : this.afterCache;
+      const beforeCurrent = index < currentIndex;
+      const appendedCache = beforeCurrent ? this.beforeCache : this.afterCache;
       appendedCache.context.drawImage(layer.virtualCanvas, ...START_POS);
     }
   }
 
-  #currentStable(current, currentIndex) {
+  //Determines whether the current layer is the only one that must be redrawn
+  #isCurrentStable(current, currentIndex) {
     const idStable = this.#lastChanged.id === current.id;
     const positionStable = this.#lastChangedIndex === currentIndex;
     return idStable && positionStable;
   }
 
   #resetCache() {
-    //IDs are set to -1 as these layers are "off-screen"
-    this.beforeCache = new Layer(-1, this.width, this.height);
-    this.afterCache = new Layer(-1, this.width, this.height);
+    this.beforeCache = new Layer(OFFSCREEN_ID, this.width, this.height);
+    this.afterCache = new Layer(OFFSCREEN_ID, this.width, this.height);
   }
 
   drawFromCache(context) {
     context.drawImage(this.beforeCache.virtualCanvas, ...START_POS);
-    //Handle only the visibility of middle layer
+    //Handling only the visibility of middle layer
     if (this.#lastChanged.visible) {
       context.drawImage(this.#lastChanged.virtualCanvas, ...START_POS);
     }
@@ -174,14 +198,14 @@ class LayerCache {
 A class which wraps HTML <canvas> element and adds functionality to it.
 Implements undo/redo actions, layering and listening to changes.
  */
-class Canvas {
+class Canvas extends SimpleStateEmitter {
   #layers; //An ordered array of virtual canvases
-  #listeners; //A variable needed to implement simple EventEmitter
 
   drawnId; //The ID of the currently drawn on layer
   image; //Image associated with the currently drawn on layer
 
   constructor(width, height) {
+    super();
     //Saving width and height for later reuse
     Object.assign(this, { width, height });
 
@@ -192,7 +216,6 @@ class Canvas {
 
     this.state = new CanvasState(this);
     this.#layers = new IdentifiedList();
-    this.#listeners = [];
     this.idGetter = new IdGetter();
 
     this.cache = new LayerCache(width, height);
@@ -241,7 +264,9 @@ class Canvas {
     this.#setDrawnLayer(appended);
     this.#layers.push(appended);
 
-    if (layer) this.redraw();
+    if (layer) {
+      this.redraw();
+    }
     this.save();
   }
 
@@ -258,37 +283,21 @@ class Canvas {
 
   switchLayer(id) {
     const layer = this.#layers.byIdentifier(id);
-    if (!layer) throw Error(`There is no layer with id ${id}`);
     this.#setDrawnLayer(layer);
-    this.#fixateChanges();
+    this._fixateState();
   }
 
   moveLayerUp(id) {
-    const layerPosition = this.#layers.getIndex(id);
-    //There exists such layer and it is not the top one
-    if (layerPosition < 0 || layerPosition === this.#layers.length) {
-      throw Error('Cannot move layer up');
-    }
-    this.#reorderLayer(this.#layers[layerPosition], layerPosition + 1);
+    this.#reorderLayer(id, 1);
   }
 
   moveLayerDown(id) {
-    const layerPosition = this.#layers.getIndex(id);
-    //There exists such layer and it is not the bottom one
-    if (layerPosition < 1) {
-      throw Error('Cannot move layer down');
-    }
-    this.#reorderLayer(this.#layers[layerPosition], layerPosition - 1);
+    this.#reorderLayer(id, -1);
   }
 
-  #reorderLayer(layer, position) {
-    this.#layers = this.#layers.remove(layer.id);
-    if (position >= this.#layers.length) {
-      this.#layers.push(layer);
-    } else {
-      //We insert the layer at certain index, deleting 0 items
-      this.#layers.splice(position, 0, layer);
-    }
+  #reorderLayer(id, delta) {
+    const position = this.#layers.getIndex(id);
+    this.#layers = this.#layers.getReorderedList(id, position + delta);
 
     this.redraw();
     this.save();
@@ -311,22 +320,19 @@ class Canvas {
   }
 
   duplicateLayer(id) {
-    const copyVal = ' copy';
-
     const layer = this.#layers.byIdentifier(id);
     const duplicate = layer.clone();
     duplicate.id = this.idGetter.get();
-    duplicate.name = layer.name.replace(copyVal, '') + copyVal;
+    duplicate.name = layer.name.replace(COPY_PREFIX, '') + COPY_PREFIX;
 
-    this.#setDrawnLayer(duplicate);
-    this.#layers.push(duplicate);
+    this.appendLayer(duplicate);
     this.save();
   }
 
   //Saves the current layers on the canvas for retrieving them later
   save() {
     this.state.save(this.#layers);
-    this.#fixateChanges();
+    this._fixateState();
   }
 
   //Reverts the layers to the previously saved ones
@@ -342,11 +348,12 @@ class Canvas {
   //Generalized method for working with undo/redo
   #retrieveImage(stackRetrieved) {
     this.#layers = this.state.retrieveState(stackRetrieved);
-    const drawnLayer = this.state.retrieveDrawnLayer();
+    const lastLayer = this.#layers[this.#layers.length - 1];
+    this.state.fixateCurrent();
 
-    this.#setDrawnLayer(drawnLayer);
+    this.#setDrawnLayer(lastLayer);
     this.redraw();
-    this.#fixateChanges();
+    this._fixateState();
   }
 
   //Update instance variables with current layer data
@@ -355,18 +362,6 @@ class Canvas {
     const { width, height } = this;
     this.image = layer.context.getImageData(...START_POS, width, height);
     applyImageMixin(this.image);
-  }
-
-  /*
-  The implementation of EventEmitter pattern.
-  Allows other entities to know when the canvas is getting a fixated state
-   */
-  listenToUpdates(listener) {
-    this.#listeners.push(listener);
-  }
-
-  #fixateChanges() {
-    this.#listeners.forEach((listener) => listener());
   }
 
   clone() {
@@ -405,14 +400,16 @@ class Frame {
   }
 }
 
-class AnimationFile {
+class AnimationFile extends SimpleStateEmitter {
   #frames;
-  #listeners;
+
+  currentId; //The id of a frame we drawn on currently
+  overlayId; //The id of a frame which is rendered beneath
 
   constructor(width, height) {
+    super();
     this.idGetter = new IdGetter();
     this.#frames = new IdentifiedList();
-    this.#listeners = [];
     Object.assign(this, { width, height });
     this.appendFrame();
   }
@@ -430,6 +427,15 @@ class AnimationFile {
     this.#setCurrentFrame(frame);
   }
 
+  removeFrame(id) {
+    if (this.#frames.length <= 1) throw Error('Cannot remove the only frame');
+
+    this.#frames = this.#frames.remove(id);
+    const topFrame = this.#frames[this.#frames.length - 1];
+    this.#setCurrentFrame(topFrame);
+    this.#update();
+  }
+
   duplicateFrame(id) {
     const frame = this.#frames.byIdentifier(id);
     const duplicate = frame.clone();
@@ -440,28 +446,16 @@ class AnimationFile {
   }
 
   moveFrameUp(id) {
-    const framePosition = this.#frames.getIndex(id);
-    if (framePosition < 0 || framePosition === this.#frames.length) {
-      throw Error('Cannot move frame up');
-    }
-    this.#reorderFrame(this.#frames[framePosition], framePosition + 1);
+    this.#reorderFrame(id, 1);
   }
 
   moveFrameDown(id) {
-    const framePosition = this.#frames.getIndex(id);
-    if (framePosition < 1) {
-      throw Error('Cannot move frame down');
-    }
-    this.#reorderFrame(this.#frames[framePosition], framePosition - 1);
+    this.#reorderFrame(id, -1);
   }
 
-  #reorderFrame(frame, position) {
-    this.#frames = this.#frames.remove(frame.id);
-    if (position >= this.#frames.length) {
-      this.#frames.push(frame);
-    } else {
-      this.#frames.splice(position, 0, frame);
-    }
+  #reorderFrame(id, delta) {
+    const position = this.#frames.getIndex(id);
+    this.#frames = this.#frames.getReorderedList(id, position + delta);
     this.#update();
   }
 
@@ -470,15 +464,11 @@ class AnimationFile {
     this.#update();
   }
 
-  listenToUpdates(listener) {
-    this.#listeners.push(listener);
-  }
-
   #update() {
     const index = this.#frames.getIndex(this.currentId);
     const overlayFrame = this.#frames[index - 1];
     this.overlayId = overlayFrame ? overlayFrame.id : -1;
-    this.#listeners.forEach((listener) => listener());
+    this._fixateState();
   }
 
   get canvas() {
@@ -486,8 +476,10 @@ class AnimationFile {
   }
 
   get overlay() {
-    const overlay = this.#frames.byIdentifier(this.overlayId);
-    return overlay ? overlay.canvas : null;
+    if (this.overlayId >= 0) {
+      return this.#frames.byIdentifier(this.overlayId).canvas;
+    }
+    return null;
   }
 
   get frames() {
@@ -495,6 +487,7 @@ class AnimationFile {
   }
 }
 
+//Accepts a IdentifiedList with objects that implement clone() method
 function deepCloneList(list) {
   const clonedArray = list.map((value) => value.clone());
   return new IdentifiedList(clonedArray);
