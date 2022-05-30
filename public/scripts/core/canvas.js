@@ -7,6 +7,8 @@ const START_POS = [0, 0];
 const CACHE_MIN_LAYER_COUNT = 4;
 //Id for a layer or frame which is never rendered
 const OFFSCREEN_ID = -1;
+//A prefix for a copied layer name
+const COPY_PREFIX = ' copy';
 
 /*
 A class which stores canvas parameters that are changed outside of drawing.
@@ -242,7 +244,9 @@ class Canvas {
     this.#setDrawnLayer(appended);
     this.#layers.push(appended);
 
-    if (layer) this.redraw();
+    if (layer) {
+      this.redraw();
+    }
     this.save();
   }
 
@@ -259,37 +263,21 @@ class Canvas {
 
   switchLayer(id) {
     const layer = this.#layers.byIdentifier(id);
-    if (!layer) throw Error(`There is no layer with id ${id}`);
     this.#setDrawnLayer(layer);
     this.#fixateChanges();
   }
 
   moveLayerUp(id) {
-    const layerPosition = this.#layers.getIndex(id);
-    //There exists such layer and it is not the top one
-    if (layerPosition < 0 || layerPosition === this.#layers.length) {
-      throw Error('Cannot move layer up');
-    }
-    this.#reorderLayer(this.#layers[layerPosition], layerPosition + 1);
+    this.#reorderLayer(id, 1);
   }
 
   moveLayerDown(id) {
-    const layerPosition = this.#layers.getIndex(id);
-    //There exists such layer and it is not the bottom one
-    if (layerPosition < 1) {
-      throw Error('Cannot move layer down');
-    }
-    this.#reorderLayer(this.#layers[layerPosition], layerPosition - 1);
+    this.#reorderLayer(id, -1);
   }
 
-  #reorderLayer(layer, position) {
-    this.#layers = this.#layers.remove(layer.id);
-    if (position >= this.#layers.length) {
-      this.#layers.push(layer);
-    } else {
-      //We insert the layer at certain index, deleting 0 items
-      this.#layers.splice(position, 0, layer);
-    }
+  #reorderLayer(id, delta) {
+    const position = this.#layers.getIndex(id);
+    this.#layers = this.#layers.getReorderedList(id, position + delta);
 
     this.redraw();
     this.save();
@@ -312,15 +300,12 @@ class Canvas {
   }
 
   duplicateLayer(id) {
-    const copyVal = ' copy';
-
     const layer = this.#layers.byIdentifier(id);
     const duplicate = layer.clone();
     duplicate.id = this.idGetter.get();
-    duplicate.name = layer.name.replace(copyVal, '') + copyVal;
+    duplicate.name = layer.name.replace(COPY_PREFIX, '') + COPY_PREFIX;
 
-    this.#setDrawnLayer(duplicate);
-    this.#layers.push(duplicate);
+    this.appendLayer(duplicate);
     this.save();
   }
 
@@ -451,28 +436,16 @@ class AnimationFile {
   }
 
   moveFrameUp(id) {
-    const framePosition = this.#frames.getIndex(id);
-    if (framePosition < 0 || framePosition === this.#frames.length) {
-      throw Error('Cannot move frame up');
-    }
-    this.#reorderFrame(this.#frames[framePosition], framePosition + 1);
+    this.#reorderFrame(id, 1);
   }
 
   moveFrameDown(id) {
-    const framePosition = this.#frames.getIndex(id);
-    if (framePosition < 1) {
-      throw Error('Cannot move frame down');
-    }
-    this.#reorderFrame(this.#frames[framePosition], framePosition - 1);
+    this.#reorderFrame(id, -1);
   }
 
-  #reorderFrame(frame, position) {
-    this.#frames = this.#frames.remove(frame.id);
-    if (position >= this.#frames.length) {
-      this.#frames.push(frame);
-    } else {
-      this.#frames.splice(position, 0, frame);
-    }
+  #reorderFrame(id, delta) {
+    const position = this.#frames.getIndex(id);
+    this.#frames = this.#frames.getReorderedList(id, position + delta);
     this.#update();
   }
 
@@ -497,8 +470,10 @@ class AnimationFile {
   }
 
   get overlay() {
-    const overlay = this.#frames.byIdentifier(this.overlayId);
-    return overlay ? overlay.canvas : null;
+    if (this.overlayId >= 0) {
+      return this.#frames.byIdentifier(this.overlayId).canvas;
+    }
+    return null;
   }
 
   get frames() {
