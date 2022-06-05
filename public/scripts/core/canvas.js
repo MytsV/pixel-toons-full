@@ -226,7 +226,7 @@ class Canvas extends SimpleStateEmitter {
   //Refresh the visual representation of the canvas with layers
   redraw() {
     //Apply changes to current layer
-    this.getDrawnLayer().context.putImageData(this.image, ...START_POS);
+    this.#getDrawnLayer().context.putImageData(this.image, ...START_POS);
 
     //Reset the image on real canvas to fully transparent
     const transparentImage = new ImageData(this.width, this.height);
@@ -238,7 +238,7 @@ class Canvas extends SimpleStateEmitter {
   //Iterate through virtual canvases and draw them over the main canvas
   #joinLayers() {
     if (this.#layers.length >= CACHE_MIN_LAYER_COUNT) {
-      this.cache.updateCache(this.#layers, this.getDrawnLayer());
+      this.cache.updateCache(this.#layers, this.#getDrawnLayer());
       this.cache.drawFromCache(this.context);
     } else {
       this.#layers.forEach((layer) => {
@@ -248,7 +248,7 @@ class Canvas extends SimpleStateEmitter {
     }
   }
 
-  getDrawnLayer() {
+  #getDrawnLayer() {
     const position = this.#layers.getIndex(this.drawnId);
     return this.#layers[position];
   }
