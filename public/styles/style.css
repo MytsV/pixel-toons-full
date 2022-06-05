@@ -522,11 +522,11 @@ input {
   /*border-right: var(--border-size) solid lightgray;*/
   outline: var(--border-size) solid var(--border-color);
   position: relative;
-  margin: 2pt 2pt;
   display: flex;
   width: 120pt;
-  margin-right: var(--inter-element-spacing);
+  margin: 2pt var(--inter-element-spacing) 2pt 2pt;
   flex-direction: column;
+  flex-shrink: 0;
 }
 
 .frame-label {
