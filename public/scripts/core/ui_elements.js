@@ -51,33 +51,44 @@ class Modal {
   }
 }
 
-export class StateButtons {
+class UiElement {
   constructor() {
+    if (new.target === UiElement) {
+      throw Error('Abstract class cannot be instantiated');
+    }
     this.buttons = new VariableDependentButtons();
+  }
+
+  refresh() {
+  }
+}
+
+export class StateButtons extends UiElement {
+  constructor() {
+    super();
     this.buttons.addButton('undo', (canvas) => canvas.undo());
     this.buttons.addButton('redo', (canvas) => canvas.redo());
   }
 
-  refresh(canvas) {
+  refresh({ canvas }) {
     this.buttons.enableButtons(canvas);
   }
 }
 
 const FILE_SIZE_LIMIT = 250;
 
-export class FileMenu {
+export class FileMenu extends UiElement {
   constructor(createNewFile) {
-    this.createNewFile = createNewFile; //A function passed from the context
-    this.buttons = new VariableDependentButtons();
+    super();
     this.#setUpDependentButtons();
 
-    this.modal = new Modal('file-create-modal');
+    this.createNewFile = createNewFile; //A function passed from the context
     this.#setUpCreateButton();
     this.#setUpCreateFinish();
     FileMenu.#setUpLimit();
   }
 
-  refresh(canvas) {
+  refresh({ canvas }) {
     this.buttons.enableButtons(canvas);
   }
 
@@ -100,6 +111,7 @@ export class FileMenu {
   }
 
   #setUpCreateButton() {
+    this.modal = new Modal('file-create-modal');
     const createButton = document.getElementById('create-file');
     createButton.onclick = () => this.modal.show();
   }
@@ -141,23 +153,24 @@ class ToolInfo {
   }
 }
 
-export class Toolbar {
+export class Toolbar extends UiElement {
   static #activeClass = 'active-tool';
 
   constructor() {
+    super();
+
     this.toolsInfo = [
       new ToolInfo(new Pencil(), 'Pencil'),
       new ToolInfo(new Eraser(), 'Eraser'),
       new ToolInfo(new BucketFill(), 'Bucket Fill')
     ];
-    this.buttons = new VariableDependentButtons();
     this.container = document.getElementById('tools');
     this.#setUpTools();
     this.#setUpColorPicker();
     this.chosen = this.toolsInfo[0];
   }
 
-  refresh(canvas) {
+  refresh({ canvas }) {
     this.#setChosen(this.chosen, canvas);
     this.buttons.enableButtons(canvas);
   }
@@ -280,11 +293,11 @@ class LayerBox {
   }
 }
 
-export class LayerMenu {
+export class LayerMenu extends UiElement {
   constructor() {
-    this.container = document.getElementById('layer-container');
-    this.buttons = new VariableDependentButtons();
+    super();
     this.#setUpButtons();
+    this.container = document.getElementById('layer-container');
   }
 
   #setUpButtons() {
@@ -308,7 +321,7 @@ export class LayerMenu {
     });
   }
 
-  refresh(canvas) {
+  refresh({ canvas }) {
     this.buttons.enableButtons(canvas);
     this.#updateLayers(canvas);
     this.#setFixationListener(canvas);
@@ -360,9 +373,9 @@ export class LayerMenu {
   }
 }
 
-export class ZoomButtons {
+export class ZoomButtonsManager extends UiElement {
   constructor(renderer) {
-    this.buttons = new VariableDependentButtons();
+    super();
     this.buttons.addButton('zoom-in', () => renderer.zoomIn());
     this.buttons.addButton('zoom-out', () => renderer.zoomOut());
   }
@@ -372,8 +385,9 @@ export class ZoomButtons {
   }
 }
 
-export class ShortcutsMenu {
+export class ShortcutsMenu extends UiElement {
   constructor(manager) {
+    super();
     this.manager = manager;
     this.modal = new Modal('shortcuts-modal');
     this.classList = ['white-panel', 'label-panel', 'text-ordinary'];
@@ -411,9 +425,6 @@ export class ShortcutsMenu {
     button.onclick = () => {
       this.modal.show();
     };
-  }
-
-  refresh() {
   }
 }
 
@@ -508,10 +519,11 @@ export class FrameBox {
   }
 }
 
-export class FrameMenu {
+export class FrameMenu extends UiElement {
   constructor() {
-    this.buttons = new VariableDependentButtons();
+    super();
     this.#setUpButtons();
+
     this.label = document.getElementById('frame-label');
     this.container = document.getElementById('frame-container');
     this.footer = document.getElementById('footer');
@@ -596,10 +608,11 @@ export class FrameMenu {
   }
 }
 
-export class Preview {
+export class Preview extends UiElement {
   #savedFrames;
 
   constructor() {
+    super();
     this.#setUpButtons();
     this.#setUpElements();
     this.encoder = new BmpEncoder(bmpVersions.bmp32);
@@ -608,7 +621,6 @@ export class Preview {
   }
 
   #setUpButtons() {
-    this.buttons = new VariableDependentButtons();
     this.buttons.addButton('preview-menu', (file) => this.#preview(file));
   }
 

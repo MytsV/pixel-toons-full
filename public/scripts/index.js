@@ -5,7 +5,7 @@ import {
   LayerMenu,
   StateButtons,
   Toolbar,
-  ZoomButtons,
+  ZoomButtonsManager,
   ShortcutsMenu, FrameMenu, Preview
 } from './core/ui_elements.js';
 import { ShortcutManager } from './core/key_shortcuts.js';
@@ -18,10 +18,10 @@ class Application {
       new FileMenu((width, height) => this.#setNewFile(width, height)),
       new Toolbar(),
       new LayerMenu(),
-      new ZoomButtons(this.canvasRenderer),
+      new ZoomButtonsManager(this.canvasRenderer),
+      new FrameMenu(),
+      new Preview(),
     ];
-    this.frameMenu = new FrameMenu();
-    this.preview = new Preview();
     this.shortcuts = new ShortcutManager();
     this.uiElements.push(new ShortcutsMenu(this.shortcuts));
   }
@@ -37,9 +37,7 @@ class Application {
     this.canvasRenderer.removeCanvases();
     this.canvasRenderer.appendCanvas(file.canvas);
     this.canvasRenderer.setOverlay(file.overlay);
-    this.uiElements.forEach((element) => element.refresh(file.canvas));
-    this.frameMenu.refresh(file);
-    this.preview.refresh(file);
+    this.uiElements.forEach((element) => element.refresh(file));
   }
 
   start() {
