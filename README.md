@@ -40,7 +40,7 @@ User interface is currently extremely raw. It will be improved in the future.
             🟥 Saving your animation to account
         </td>
         <td>
-            Tool settings (thickness, tolerance)
+            🟩 Tool settings (thickness, tolerance)
         </td>
     </tr>
     <tr>
