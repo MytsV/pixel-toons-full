@@ -142,6 +142,7 @@ class ToolInfo {
     this.tool = tool;
     this.name = name;
     this.element = this.#createElement();
+    this.options = [];
   }
 
   #createElement() {
@@ -149,6 +150,32 @@ class ToolInfo {
     element.id = this.name.toLowerCase();
     element.classList.add('single-tool', 'label-panel', 'main-panel');
     element.appendChild(getTextElement(this.name));
+    return element;
+  }
+
+  addOption(option, listener) {
+    option.input.oninput = (event) => listener(event, this.tool);
+    this.options.push(option);
+  }
+}
+
+class ToolOptionRange {
+  constructor(name, min, max, step = 1) {
+    this.input = document.createElement('input');
+    this.input.type = 'range';
+    this.input.min = min;
+    this.input.max = max;
+    this.input.step = step;
+    this.input.value = min;
+
+    this.name = name;
+  }
+
+  getElement() {
+    const element = document.createElement('span');
+    element.classList.add('tool-option');
+    element.appendChild(getTextElement(this.name));
+    element.appendChild(this.input);
     return element;
   }
 }
@@ -166,6 +193,7 @@ export class Toolbar extends UiElement {
     ];
     this.container = document.getElementById('tools');
     this.#setUpTools();
+    this.#setUpOptions();
     this.#setUpColorPicker();
     this.chosen = this.toolsInfo[0];
   }
@@ -184,6 +212,24 @@ export class Toolbar extends UiElement {
     });
   }
 
+  //To be refactored!
+  #setUpOptions() {
+    const thickMin = 1;
+    const thickMax = 10;
+    const pencilOption = new ToolOptionRange('Thickness', thickMin, thickMax);
+    this.toolsInfo[0].addOption(pencilOption, (event, tool) => {
+      tool.thickness = event.target.value;
+    });
+    const eraserOption = new ToolOptionRange('Thickness', thickMin, thickMax);
+    this.toolsInfo[1].addOption(eraserOption, (event, tool) => {
+      tool.thickness = event.target.value;
+    });
+    const bucketOption = new ToolOptionRange('tolerance', 0, 255);
+    this.toolsInfo[2].addOption(bucketOption, (event, tool) => {
+      tool.tolerance = parseFloat(event.target.value);
+    });
+  }
+
   #setChosen(toolInfo, canvas) {
     if (this.chosen) {
       this.chosen.tool.disable();
@@ -192,6 +238,13 @@ export class Toolbar extends UiElement {
     this.chosen = toolInfo;
     this.chosen.tool.link(canvas);
     this.chosen.element.classList.add(Toolbar.#activeClass);
+    this.#enableOptions(toolInfo);
+  }
+
+  #enableOptions(toolInfo) {
+    const container = document.getElementById('tool-options');
+    container.innerHTML = '';
+    toolInfo.options.forEach((option) => container.appendChild(option.getElement()));
   }
 
   #setUpColorPicker() {
@@ -682,9 +735,9 @@ export class Preview extends UiElement {
 
   #stop() {
     this.playing = false;
+    this.#setImage(null);
     this.#hidePreviewElement();
     this.timeouts.forEach((id) => window.clearTimeout(id));
-    this.#setImage(null);
   }
 
   #setImage(url) {
@@ -697,7 +750,7 @@ export class Preview extends UiElement {
 
   #showPreviewElement() {
     this.container.style.display = SHOW_DISPLAY;
-    const frontIndex = 1;
+    const frontIndex = 2;
     this.background.style.zIndex = frontIndex.toString();
     this.playButton.classList.remove('play');
     this.playButton.classList.add('stop');

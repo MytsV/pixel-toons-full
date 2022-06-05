@@ -191,7 +191,7 @@ body {
 .modal {
   display: none;
   position: fixed;
-  z-index: 1;
+  z-index: 30;
   left: 0;
   top: 0;
   width: 100%; /* Full width */
@@ -575,4 +575,12 @@ input {
   padding: 0;
   height: 10pt;
   margin: 0 0 0 10pt;
+}
+
+#tool-options {
+  position: absolute;
+  width: calc(100% - 20pt);
+  margin: var(--inter-element-spacing);
+  z-index: 1;
+  display: none;
 }
