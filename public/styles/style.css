@@ -416,6 +416,7 @@ input {
   background-color: #C2D7FF;
   flex-grow: 1;
   flex-direction: column;
+  width: 100%;
 }
 
 #frame-menu {
@@ -441,6 +442,10 @@ input {
 
 #preview-menu {
   position: relative;
+  float: right;
+  border-right: none;
+  border-left: var(--border-size) solid #42568b;
+  padding: 6pt 14pt 5pt 20pt;
 }
 
 #preview-animation {
@@ -563,4 +568,10 @@ input {
   image-rendering: pixelated;
   background-color: white;
   background-position: center;
+}
+
+#opacity {
+  padding: 0;
+  height: 10pt;
+  margin: 0 0 0 10pt;
 }
