@@ -81,7 +81,7 @@ User interface is currently extremely raw. It will be improved in the future.
         <td>
         </td>
         <td>
-            Opacity
+            🟩 Opacity
         </td>
     </tr>
     <tr>

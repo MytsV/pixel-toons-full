@@ -584,3 +584,8 @@ input {
   z-index: 1;
   display: none;
 }
+
+#layer-opacity {
+  height: 10pt;
+  margin-top: 10pt;
+}
