@@ -629,14 +629,19 @@ export class Preview extends UiElement {
     this.container = document.getElementById('preview');
   }
 
+  refresh(file) {
+    this.buttons.enableButtons(file);
+  }
+
   #preview(file) {
     if (!this.playing) this.#play(file);
     else this.#stop();
   }
 
   #play(file) {
-    this.#showPreview();
+    this.#showPreviewElement();
     this.playing = true;
+    this.timeouts = [];
 
     const changeImage = this.#getImageChanger(file.frames);
     changeImage();
@@ -647,11 +652,13 @@ export class Preview extends UiElement {
     this.#savedFrames = new Map();
 
     const changeImage = () => {
-      if (!this.playing) return;
+      if (!this.playing) {
+        return;
+      }
 
       const frame = frames[index];
       this.#setImage(this.#getImageData(frame));
-      window.setTimeout(changeImage, frame.duration);
+      this.timeouts.push(window.setTimeout(changeImage, frame.duration));
       index++;
       if (index >= frames.length) {
         index = 0;
@@ -673,6 +680,13 @@ export class Preview extends UiElement {
     return data;
   }
 
+  #stop() {
+    this.playing = false;
+    this.#hidePreviewElement();
+    this.timeouts.forEach((id) => window.clearTimeout(id));
+    this.#setImage(null);
+  }
+
   #setImage(url) {
     if (url) {
       conv.setImageBase64(this.container, url);
@@ -681,12 +695,7 @@ export class Preview extends UiElement {
     }
   }
 
-  #stop() {
-    this.playing = false;
-    this.#hidePreview();
-  }
-
-  #showPreview() {
+  #showPreviewElement() {
     this.container.style.display = SHOW_DISPLAY;
     const frontIndex = 1;
     this.background.style.zIndex = frontIndex.toString();
@@ -694,16 +703,12 @@ export class Preview extends UiElement {
     this.playButton.classList.add('stop');
   }
 
-  #hidePreview() {
+  #hidePreviewElement() {
     this.container.style.display = HIDE_DISPLAY;
     const backIndex = 0;
     this.background.style.zIndex = backIndex.toString();
     this.playButton.classList.remove('stop');
     this.playButton.classList.add('play');
-  }
-
-  refresh(file) {
-    this.buttons.enableButtons(file);
   }
 }
 
