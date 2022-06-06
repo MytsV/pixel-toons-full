@@ -589,3 +589,7 @@ input {
   height: 10pt;
   margin-top: 10pt;
 }
+
+#canvas-pointer {
+  pointer-events: none;
+}

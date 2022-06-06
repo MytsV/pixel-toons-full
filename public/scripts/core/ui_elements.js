@@ -1,6 +1,6 @@
 import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
 import * as conv from '../utilities/bytes_conversion.js';
-import { BucketFill, Eraser, Pencil, Tool } from './tools.js';
+import { BucketFill, Eraser, Pencil, Pointer, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
 
 const HIDE_DISPLAY = 'none';
@@ -191,6 +191,8 @@ export class Toolbar extends UiElement {
       new ToolInfo(new Eraser(), 'Eraser'),
       new ToolInfo(new BucketFill(), 'Bucket Fill')
     ];
+    this.pointer = new Pointer();
+
     this.container = document.getElementById('tools');
     this.#setUpTools();
     this.#setUpOptions();
@@ -201,6 +203,7 @@ export class Toolbar extends UiElement {
   refresh({ canvas }) {
     this.#setChosen(this.chosen, canvas);
     this.buttons.enableButtons(canvas);
+    this.#setUpPointer(canvas);
   }
 
   #setUpTools() {
@@ -256,6 +259,10 @@ export class Toolbar extends UiElement {
     colorPicker.oninput = () => {
       Tool.color = Color.fromHex(colorPicker.value);
     };
+  }
+
+  #setUpPointer(canvas) {
+    this.pointer.link(canvas);
   }
 }
 
