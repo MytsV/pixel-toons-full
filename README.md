@@ -101,7 +101,7 @@ User interface is currently extremely raw. It will be improved in the future.
         <td>
         </td>
         <td>
-            Pointer and coordinates
+            🟩 Pointer and coordinates
         </td>
     </tr>
     <tr>
