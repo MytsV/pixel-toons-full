@@ -78,7 +78,9 @@ class Tool {
     bresenhamLine(dest, src, plotPoint);
   }
 
-  _toRealCoords(element, abs) {
+  _toRealCoords(abs) {
+    const { element } = this.canvas;
+
     const rect = element.getBoundingClientRect(); //Allows to retrieve offset
     const rel = new Coordinates(abs.x - rect.left, abs.y - rect.top);
 
@@ -96,7 +98,9 @@ class Tool {
     return new Coordinates(Math.floor(curr.x), Math.floor(curr.y));
   }
 
-  _toAbsCoords(element, real) {
+  _toAbsCoords(real) {
+    const { element } = this.canvas;
+
     const ratio = Tool.#getRatio(element);
     const curr = new Coordinates(real.x / ratio.width, real.y / ratio.height);
     const rect = element.getBoundingClientRect();
@@ -124,8 +128,8 @@ class PointedTool extends Tool {
 
   //Is there enough distance between last and current point of drawing
   _isOffsetValid(event) {
-    const canvasElement = this.canvas.element;
-    let minOffset = canvasElement.offsetWidth / canvasElement.width;
+    const { element } = this.canvas;
+    let minOffset = element.offsetWidth / element.width;
 
     //We decrease minimal offset to make drawing more smooth
     const ERROR = 0.5;
@@ -179,7 +183,7 @@ class Pencil extends PointedTool {
   //When mouse is pressed and release, we draw one pixel
   #onClick(event) {
     const mouseCoords = new Coordinates(event.clientX, event.clientY);
-    const canvasCoords = this._toRealCoords(this.canvas.element, mouseCoords);
+    const canvasCoords = this._toRealCoords(mouseCoords);
     this._drawPoint(this.getColor(), this._center(canvasCoords));
     this.canvas.redraw();
   }
@@ -192,8 +196,8 @@ class Pencil extends PointedTool {
     if (!this._isOffsetValid(event)) return;
 
     const destAbs = new Coordinates(event.clientX, event.clientY);
-    const destReal = this._toRealCoords(this.canvas.element, destAbs);
-    const src = this._toRealCoords(this.canvas.element, this._lastCoords);
+    const destReal = this._toRealCoords(destAbs);
+    const src = this._toRealCoords(this._lastCoords);
 
     this._plotLine(this.getColor(), this._center(src), this._center(destReal));
     this.canvas.redraw();
@@ -221,14 +225,19 @@ class Eraser extends Pencil {
 class Pointer extends PointedTool {
   constructor() {
     super();
-    this.pointerElement = document.getElementById('canvas-pointer');
-    this.cleared = true;
+    this.#setUpContext();
+    this.canvasClean = true;
+  }
+
+  #setUpContext() {
+    this.pointerCanvas = document.getElementById('canvas-pointer');
+    this.context = this.pointerCanvas.getContext('2d');
   }
 
   link(canvas) {
     super.link(canvas);
-    this.pointerElement.width = canvas.width;
-    this.pointerElement.height = canvas.height;
+    this.pointerCanvas.width = canvas.width;
+    this.pointerCanvas.height = canvas.height;
   }
 
   setEvents() {
@@ -239,32 +248,32 @@ class Pointer extends PointedTool {
 
   #onMouseMove(event) {
     if (event.target !== this.canvas.element) {
-      if (!this.cleared) {
-        this.cleared = true;
-        const context = this.pointerElement.getContext('2d');
-        context.fillStyle = '#00000000';
-        context.globalCompositeOperation = 'copy';
-        context.fillRect(0, 0, this.thickness, this.thickness);
+      if (!this.canvasClean) {
+        this.canvasClean = true;
+        this.#highlightPixel(new Coordinates(-1, -1), '#00000000');
       }
       return;
     }
+
     if (this._lastCoords && !this._isOffsetValid(event)) return;
-    this.cleared = false;
+    this.canvasClean = false;
 
     const destAbs = new Coordinates(event.clientX, event.clientY);
-    const destReal = this._toRealCoords(this.pointerElement, destAbs);
+    const destReal = this._toRealCoords(destAbs);
+    this.#highlightPixel(this._center(destReal), this.getColor());
 
-    const context = this.pointerElement.getContext('2d');
-    context.fillStyle = this.getColor().toString();
-    context.globalCompositeOperation = 'copy';
-    const coords = this._center(destReal);
-    context.fillRect(coords.x, coords.y, this.thickness, this.thickness);
+    this._lastCoords = this._toAbsCoords(this._center(destReal));
+  }
 
-    this._lastCoords = this._toAbsCoords(this.canvas.element, this._center(destReal));
+  #highlightPixel(coords, highlightColor) {
+    this.context.fillStyle = highlightColor.toString();
+    //This operation ensures the clearing of the canvas before each drawing
+    this.context.globalCompositeOperation = 'copy';
+    this.context.fillRect(coords.x, coords.y, this.thickness, this.thickness);
   }
 
   getColor() {
-    return new Color(0, 0, 0, 60);
+    return Color.fromHex('#8080807F');
   }
 }
 
@@ -325,7 +334,7 @@ class BucketFill extends Tool {
 
   #onClick(event) {
     const mouseCoords = new Coordinates(event.clientX, event.clientY);
-    const realCoords = this._toRealCoords(this.canvas.element, mouseCoords);
+    const realCoords = this._toRealCoords(mouseCoords);
     this.#floodFill(realCoords);
     this.canvas.redraw();
     this.canvas.save();
