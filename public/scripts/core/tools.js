@@ -232,6 +232,7 @@ class Pointer extends PointedTool {
   #setUpContext() {
     this.pointerCanvas = document.getElementById('canvas-pointer');
     this.context = this.pointerCanvas.getContext('2d');
+    this.coordsElement = document.getElementById('coordinates');
   }
 
   link(canvas) {
@@ -248,10 +249,7 @@ class Pointer extends PointedTool {
 
   #onMouseMove(event) {
     if (event.target !== this.canvas.element) {
-      if (!this.canvasClean) {
-        this.canvasClean = true;
-        this.#highlightPixel(new Coordinates(-1, -1), '#00000000');
-      }
+      this.#cleanCanvas();
       return;
     }
 
@@ -260,9 +258,18 @@ class Pointer extends PointedTool {
 
     const destAbs = new Coordinates(event.clientX, event.clientY);
     const destReal = this._toRealCoords(destAbs);
-    this.#highlightPixel(this._center(destReal), this.getColor());
+    const centered = this._center(destReal);
+    this.#highlightPixel(centered, this.getColor());
+    this.coordsElement.innerText = `x: ${centered.x}, y: ${centered.y}`;
 
-    this._lastCoords = this._toAbsCoords(this._center(destReal));
+    this._lastCoords = this._toAbsCoords(centered);
+  }
+
+  #cleanCanvas() {
+    if (this.canvasClean) return;
+    this.canvasClean = true;
+    this.#highlightPixel(new Coordinates(-1, -1), '#00000000');
+    this.coordsElement.innerText = '';
   }
 
   #highlightPixel(coords, highlightColor) {
