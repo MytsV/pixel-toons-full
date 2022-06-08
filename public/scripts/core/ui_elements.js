@@ -2,6 +2,7 @@ import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
 import * as conv from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil, Pointer, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
+import { encode } from '../utilities/gif_encoder.js';
 
 const HIDE_DISPLAY = 'none';
 const SHOW_DISPLAY = 'block';
@@ -106,8 +107,9 @@ export class FileMenu extends UiElement {
   static #exportImage(canvas) {
     const image = canvas.getJoinedImage();
     const encoder = new BmpEncoder(bmpVersions.bmp32);
-    const data = encoder.encode(image);
-    conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.bmp');
+    //const data = encoder.encode(image);
+    const data = encode();
+    conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.gif');
   }
 
   #setUpCreateButton() {

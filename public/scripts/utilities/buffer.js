@@ -22,6 +22,14 @@ class Buffer {
     this.#writeInteger(32, number, offset);
   }
 
+  write48Integer(number, offset) {
+    this.#writeInteger(48, number, offset);
+  }
+
+  write64Integer(number, offset) {
+    this.#writeInteger(64, number, offset);
+  }
+
   #writeInteger(bits, number, offset) {
     const array = intToByteArray(number, bits / BITS_IN_BYTE);
     this.writeArray(array, offset);

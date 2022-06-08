@@ -12,9 +12,23 @@ This file implements GIF87a version
 
 const encode = (images) => {
   //First we have to convert images, cause another way we don't know the size...
-  const headerSize = 0x11;
-  const logicalDescriptorSize = 0x01;
-  const globalColorTableSize = 0xFF;
+  const headerSize = 0x0D;
   const trailerSize = 0x02;
-  const buffer = new Buffer(headerSize + logicalDescriptorSize + globalColorTableSize + trailerSize);
+  const buffer = new Buffer(headerSize + trailerSize);
+  let offset = 0x00;
+  buffer.writeString('GIF', offset);
+  offset += 3;
+  buffer.writeString('87a', offset);
+  offset += 3;
+  buffer.write16Integer(256, offset);
+  offset += 2;
+  buffer.write16Integer(256, offset);
+  offset += 2;
+  buffer.writeArray([0b00101110], offset);
+  offset += 3;
+  buffer.write16Integer(0x3B, offset);
+
+  return buffer.data;
 };
+
+export { encode };
