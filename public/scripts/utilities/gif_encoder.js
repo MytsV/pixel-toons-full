@@ -39,6 +39,9 @@ class GifEncoder {
     buffer.writeString('GIF89a');
     GifEncoder.#setLogicalScreenDescriptor(buffer);
     this.#appendBuffer(buffer);
+    const bufferTwo = new Buffer(8);
+    bufferTwo.writeArray([0x21, 0xF9, 0x04, 0x00, 0x32, 0x00, 0x00, 0x00], 0x00);
+    this.#appendBuffer(bufferTwo);
   }
 
   static #setLogicalScreenDescriptor(buffer) {
