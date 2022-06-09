@@ -1,6 +1,7 @@
 import { Buffer } from './buffer.js';
 
 const BITS_IN_BYTE = 8;
+const TEMP_SIZE = 10;
 
 /*
 GIF (Graphics Interchange Format) is used to store
@@ -24,29 +25,24 @@ class GifEncoder {
   encode(frames) {
     this.fileBuffer = new Buffer();
     this.#setHeader();
-    frames.forEach((frame) => this.#setFrame(frame));
+    frames.forEach((frame) => this.#setFrameData(frame));
     this.#setTerminator();
     return this.fileBuffer.data;
   }
 
   #setHeader() {
     const buffer = new Buffer(GifEncoder.#headerSize);
-    //Signature | 3 bytes | 0x00 | 'GIF'
-    buffer.writeString('GIF', 0x00);
-    //Version | 3 bytes | 0x03 | The version we use is 89a
-    buffer.writeString('89a', 0x03);
+    //Signature and version | 6 bytes | 0x00 | 'GIF89a'
+    buffer.writeString('GIF89a');
     GifEncoder.#setLogicalScreenDescriptor(buffer);
     this.#appendBuffer(buffer);
-    // const bufferTwo = new Buffer(8);
-    // bufferTwo.writeArray([0x21, 0xF9, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00], 0x00);
-    // this.#appendBuffer(bufferTwo);
   }
 
   static #setLogicalScreenDescriptor(buffer) {
     //Logical Screen Width | 2 bytes | 0x06 | Width of any frame
-    buffer.write16Integer(10, 0x06);
+    buffer.write16Integer(TEMP_SIZE);
     //Logical Screen Height | 2 bytes | 0x08 | Height of any frame
-    buffer.write16Integer(10, 0x08);
+    buffer.write16Integer(TEMP_SIZE);
     /*
     Packed fields | 1 byte | 0x0A | Contains following subfields of data:
     Bit 7 - Global Color Table Flag - 0, not used
@@ -55,7 +51,7 @@ class GifEncoder {
     Bit 0-2 - Size of the Global Color Table - Not used
      */
     const fields = 0b00000000;
-    buffer.writeInteger(BITS_IN_BYTE, fields, 0x0A);
+    buffer.writeInteger(BITS_IN_BYTE, fields);
 
     //Background Color | 1 byte | 0x0B | Skipped, not used
     //Aspect Ratio | 1 byte | 0x0C | Skipped, not used
@@ -64,7 +60,7 @@ class GifEncoder {
   #setTerminator() {
     const buffer = new Buffer(GifEncoder.#trailerSize);
     //Terminator | 2 bytes | 0x00 | Special value 3Bh
-    buffer.writeInteger(BITS_IN_BYTE, 0x3B, 0x00);
+    buffer.writeInteger(BITS_IN_BYTE, 0x3B);
     this.#appendBuffer(buffer);
   }
 
@@ -73,7 +69,7 @@ class GifEncoder {
     this.fileBuffer = new Buffer(new Uint8Array(newArray));
   }
 
-  #setFrame(imageData) {
+  #setFrameData(imageData) {
     this.#setLocalImageDescriptor(imageData);
     this.#setLocalColorTable(imageData);
     this.#setImage(imageData);
@@ -81,16 +77,18 @@ class GifEncoder {
 
   #setLocalImageDescriptor(imageData) {
     const buffer = new Buffer(GifEncoder.#localImageDescriptorSize);
+
     //Separator | 1 byte | 0x00 | Special value 2Ch
-    buffer.writeInteger(BITS_IN_BYTE, 0x2C, 0x00);
-    //Left | 2 byte | 0x01 | X position
-    buffer.write16Integer(0x00, 0x01);
-    //Top | 2 byte | 0x03 | Y position
-    buffer.write16Integer(0x00, 0x03);
+    buffer.writeInteger(BITS_IN_BYTE, 0x2C);
+
+    //Left | 2 byte | 0x01 | X position, skipped
+    //Top | 2 byte | 0x03 | Y position, skipped
+
     //Width | 2 byte | 0x05 | Width of the image in pixels
-    buffer.write16Integer(10, 0x05);
+    buffer.write16Integer(TEMP_SIZE, 0x05);
     //Height | 2 byte | 0x07 | Height of the image in pixels
-    buffer.write16Integer(10, 0x07);
+    buffer.write16Integer(TEMP_SIZE);
+
     /*
     Packed fields | 1 byte | 0x0A | Contains following subfields of data:
     Bit 7 - Local Color Table Flag - 1, always used
@@ -100,20 +98,19 @@ class GifEncoder {
     Bit 0-2 - Size of Local Color Table Entry - Number of bits per entry
      */
     const fields = 0b10000001;
-    buffer.writeInteger(BITS_IN_BYTE, fields, 0x09);
+    buffer.writeInteger(BITS_IN_BYTE, fields);
     this.#appendBuffer(buffer);
   }
 
-  //Temporary implementation
+  //Temporary
   #setLocalColorTable(imageData) {
     const colorLength = 3;
     const size = 4;
     const buffer = new Buffer(colorLength * size);
-    //Only black and white color
-    buffer.writeInteger(colorLength * BITS_IN_BYTE, 0xFFFFFF, 0x00);
-    buffer.writeInteger(colorLength * BITS_IN_BYTE, 0xFF0000, 0x03);
-    buffer.writeInteger(colorLength * BITS_IN_BYTE, 0x0000FF, 0x06);
-    buffer.writeInteger(colorLength * BITS_IN_BYTE, 0x000000, 0x09);
+    buffer.writeInteger(colorLength * BITS_IN_BYTE, 0xFFFFFF);
+    buffer.writeInteger(colorLength * BITS_IN_BYTE, 0xFF0000);
+    buffer.writeInteger(colorLength * BITS_IN_BYTE, 0x0000FF);
+    buffer.writeInteger(colorLength * BITS_IN_BYTE, 0x000000);
     this.#appendBuffer(buffer);
   }
 

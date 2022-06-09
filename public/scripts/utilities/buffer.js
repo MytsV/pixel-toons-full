@@ -4,8 +4,12 @@ const BITS_IN_BYTE = 8;
 A class that represents a writable array of bytes.
 Created for easier work with byte size and different types of written values.
 Has similar interface to the Node.js Buffer class.
+Remembers the last written position. Offset should be set only if the position
+has to be changed.
  */
 class Buffer {
+  #pointer = 0x00;
+
   constructor(size) {
     this.data = new Uint8Array(size);
   }
@@ -27,8 +31,9 @@ class Buffer {
     this.writeArray(array, offset);
   }
 
-  writeArray(array, offset) {
+  writeArray(array, offset = this.#pointer) {
     this.data.set(array, offset);
+    this.#pointer = offset + array.length;
   }
 }
 
