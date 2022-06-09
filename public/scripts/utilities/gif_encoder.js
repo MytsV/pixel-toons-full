@@ -1,4 +1,5 @@
 import { Buffer } from './buffer.js';
+import { LZWCompressor } from './lzw_compression.js';
 
 const BITS_IN_BYTE = 8;
 const TEMP_SIZE = 10;
@@ -122,7 +123,9 @@ class GifEncoder {
   }
 
   #setImage(imageData) {
-    console.log(GifEncoder.#pixelsToIndices(imageData));
+    const indices = GifEncoder.#pixelsToIndices(imageData);
+    const compressor = new LZWCompressor(2);
+    console.log(compressor.compress(indices));
     const buffer = new Buffer(25);
     buffer.writeArray([0x02, 0x16, 0x8C, 0x2D, 0x99, 0x87, 0x2A, 0x1C, 0xDC, 0x33, 0xA0, 0x02, 0x75, 0xEC, 0x95, 0xFA, 0xA8, 0xDE, 0x60, 0x8C, 0x04, 0x91, 0x4C, 0x01, 0x00], 0x00);
     this.#appendBuffer(buffer);
