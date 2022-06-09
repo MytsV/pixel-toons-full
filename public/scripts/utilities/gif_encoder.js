@@ -2,7 +2,6 @@ import { Buffer } from './buffer.js';
 import { LZWCompressor } from './lzw_compression.js';
 
 const BITS_IN_BYTE = 8;
-const TEMP_SIZE = 10;
 const MIN_COLOR_PARAMETERS = 3;
 const MAX_COLOR_PARAMETERS = 4;
 
@@ -27,26 +26,26 @@ class GifEncoder {
    */
   encode(frames) {
     this.fileBuffer = new Buffer();
-    this.#setHeader();
+    this.#setHeader(frames[0]);
     this.#setNetscape();
     frames.forEach((frame) => this.#setFrameData(frame));
     this.#setTerminator();
     return this.fileBuffer.data;
   }
 
-  #setHeader() {
+  #setHeader(frame) {
     const buffer = new Buffer(GifEncoder.#headerSize);
     //Signature and version | 6 bytes | 0x00 | 'GIF89a'
     buffer.writeString('GIF89a');
-    GifEncoder.#setLogicalScreenDescriptor(buffer);
+    this.#setLogicalScreenDescriptor(buffer, frame);
     this.#appendBuffer(buffer);
   }
 
-  static #setLogicalScreenDescriptor(buffer) {
+  #setLogicalScreenDescriptor(buffer, frame) {
     //Logical Screen Width | 2 bytes | 0x06 | Width of any frame
-    buffer.write16Integer(TEMP_SIZE);
+    buffer.write16Integer(frame.width);
     //Logical Screen Height | 2 bytes | 0x08 | Height of any frame
-    buffer.write16Integer(TEMP_SIZE);
+    buffer.write16Integer(frame.height);
     /*
     Packed fields | 1 byte | 0x0A | Contains following subfields of data:
     Bit 7 - Global Color Table Flag - 0, not used
@@ -97,9 +96,9 @@ class GifEncoder {
     //Top | 2 byte | 0x03 | Y position, skipped
 
     //Width | 2 byte | 0x05 | Width of the image in pixels
-    buffer.write16Integer(TEMP_SIZE, 0x05);
+    buffer.write16Integer(imageData.width, 0x05);
     //Height | 2 byte | 0x07 | Height of the image in pixels
-    buffer.write16Integer(TEMP_SIZE);
+    buffer.write16Integer(imageData.height);
 
     /*
     Packed fields | 1 byte | 0x0A | Contains following subfields of data:

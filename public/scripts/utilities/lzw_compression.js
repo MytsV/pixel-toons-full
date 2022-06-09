@@ -1,6 +1,7 @@
 const MAX_BLOCK_SIZE = 255;
 const SPECIAL_CODE_COUNT = 2;
 const BITS_IN_BYTE = 8;
+const MAX_CODE_SIZE = 12;
 
 /*
 Lempel–Ziv–Welch (LZW) is a universal lossless data compression algorithm
@@ -10,6 +11,7 @@ https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Welch
  */
 class LZWCompressor {
   constructor(codeSize) {
+    this.minCodeSize = codeSize;
     this.codeSize = codeSize;
     this.accumulant = '';
     this.blocks = [];
@@ -31,6 +33,9 @@ class LZWCompressor {
         this.table.set(appended, this.tableIndex);
         if (this.tableIndex > (2 ** this.codeSize - 1)) {
           this.codeSize++;
+          if (this.codeSize >= MAX_CODE_SIZE) {
+            this.#clearTable();
+          }
         }
         this.tableIndex++;
         previous = current;
@@ -38,6 +43,7 @@ class LZWCompressor {
     }
     this.#output(this.table.get(previous));
     this.#addEOFCode();
+    console.log(this.blocks);
     return this.blocks;
   }
 
@@ -47,10 +53,13 @@ class LZWCompressor {
       this.accumulant = string.charAt(i) + this.accumulant;
       if (this.accumulant.length >= BITS_IN_BYTE) {
         this.currentBlock.push(parseInt(this.accumulant, 2));
+        if (this.currentBlock.length >= MAX_BLOCK_SIZE) {
+          this.blocks.push(this.currentBlock);
+          this.currentBlock = [];
+        }
         this.accumulant = '';
       }
     }
-    console.log(byte + ' | ' + string + ' | ' + this.accumulant);
 
     if (this.currentBlock.length >= MAX_BLOCK_SIZE) {
       this.blocks.push(this.currentBlock);
@@ -72,7 +81,7 @@ class LZWCompressor {
 
   #clearTable() {
     this.table = new Map();
-    this.initialSize = 2 ** this.codeSize;
+    this.initialSize = 2 ** this.minCodeSize;
     for (let i = 0; i < this.initialSize; i++) {
       this.table.set(i.toString(), i);
     }
