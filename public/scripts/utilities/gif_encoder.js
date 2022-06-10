@@ -44,15 +44,13 @@ class GifEncoder {
     return this.#mainBuffer.data;
   }
 
-  //Required part of every GIF file
+  //Required. Tells the decoder it's a GIF file
   #setHeader() {
     //Signature and version | 6 bytes | Special value GIF89a
     this.#mainBuffer.writeString('GIF89a');
   }
 
-  /*
-  Required part. Tells the decoder how much space the image takes
-   */
+  //Required. Tells the decoder how much space the image takes
   #setLogicalScreenDescriptor({ width, height }) {
     //Logical Screen Width | 2 bytes | Width of any frame
     this.#mainBuffer.write16Integer(width);
@@ -75,13 +73,14 @@ class GifEncoder {
   }
 
   static #getImageSize(frames) {
-    const firstFrame = frames[0];
+    const firstFrame = frames[0].imageData;
     return {
       width: firstFrame.width,
       height: firstFrame.height
     };
   }
 
+  //Optional. Is in need to implement infinite looping
   #setApplicationExtension() {
     //Extension introducer | 1 byte | Special value 21h
     this.#mainBuffer.writeByte(0x21);
@@ -106,14 +105,13 @@ class GifEncoder {
   }
 
   #setFrameData({ imageData, duration }) {
-    console.log(imageData);
-    console.log(duration);
     this.#setGraphicControlExtension(duration);
     this.#setLocalImageDescriptor(imageData);
     this.#setLocalColorTable(imageData);
     this.#setImage(imageData);
   }
 
+  //Required. Tells the decoder how much space one frame takes
   #setLocalImageDescriptor(imageData) {
     //Separator | 1 byte | Special value 2Ch
     this.#mainBuffer.writeByte(0x2C);
@@ -140,7 +138,8 @@ class GifEncoder {
     this.#mainBuffer.writeByte(fields);
   }
 
-  #setGraphicControlExtension() {
+  //Optional. Controls normal animation execution
+  #setGraphicControlExtension(duration) {
     //Extension introducer | 1 byte | Special value 21h
     this.#mainBuffer.writeByte(0x21);
     //Graphic Control Label | 1 byte | Special value 0xF9
@@ -154,10 +153,11 @@ class GifEncoder {
     Bit 1 - User Input Flag - Don't wait for input
     Bit 0 - Transparent Color Flag - Don't specify transparent color
      */
-    const fields = 0b10000001;
+    const fields = 0b00000000;
     this.#mainBuffer.writeByte(fields);
     //Delay time | 2 bytes | Time in 1/100 of seconds
-    this.#mainBuffer.write16Integer(0x0a);
+    const delay = duration / 10; //From milliseconds to centiseconds
+    this.#mainBuffer.write16Integer(delay);
 
     //Transparent color index | 1 byte | Not used
     this.#mainBuffer.writeByte(EMPTY_VALUE);
