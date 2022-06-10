@@ -5,9 +5,21 @@ const EMPTY_VALUE = 0x00;
 const COLOR_PARAMETERS = 3;
 const MAX_COLOR_PARAMETERS = 4;
 
+class GifFrame {
+  constructor(imageData, duration) {
+    this.imageData = imageData;
+    this.duration = duration;
+  }
+
+  static from(canvasFrame) {
+    const image = canvasFrame.canvas.getJoinedImage();
+    return new GifFrame(image, canvasFrame.duration);
+  }
+}
+
 /*
 GIF (Graphics Interchange Format) is used to store
-multiple bitmap images in a single file
+multiple bitmap images in a single file.
 Please refer to this link for specification source:
 https://www.w3.org/Graphics/GIF/spec-gif89a.txt
  */
@@ -32,11 +44,15 @@ class GifEncoder {
     return this.#mainBuffer.data;
   }
 
+  //Required part of every GIF file
   #setHeader() {
-    //Signature and version | 6 bytes | GIF89a
+    //Signature and version | 6 bytes | Special value GIF89a
     this.#mainBuffer.writeString('GIF89a');
   }
 
+  /*
+  Required part. Tells the decoder how much space the image takes
+   */
   #setLogicalScreenDescriptor({ width, height }) {
     //Logical Screen Width | 2 bytes | Width of any frame
     this.#mainBuffer.write16Integer(width);
@@ -71,13 +87,13 @@ class GifEncoder {
     this.#mainBuffer.writeByte(0x21);
     //Application Extension Label | 1 byte | Special value 0xFF
     this.#mainBuffer.writeByte(0xFF);
-    //Byte size of block | 1 byte | Special value - 11 bytes
+    //Byte size of block | 1 byte | Special value of 11 bytes
     this.#mainBuffer.writeByte(0x0B);
-    //Special label | 11 bytes | NETSCAPE2.0
+    //Special label | 11 bytes | Special value NETSCAPE2.0
     this.#mainBuffer.writeString('NETSCAPE2.0');
-    //Length of data sub-block | 1 byte | Special value - 3 bytes
+    //Length of data sub-block | 1 byte | Special value of 3 bytes
     this.#mainBuffer.writeByte(0x03);
-    //Data block values | 3 bytes | Special values
+    //Data block values | 3 bytes | First byte is always 0x01. Don't set others
     this.#mainBuffer.writeArray([0x01, 0x00, 0x00]);
 
     //Block terminator | 1 byte | Special value 00h
@@ -89,8 +105,10 @@ class GifEncoder {
     this.#mainBuffer.writeByte(0x3B);
   }
 
-  #setFrameData(imageData) {
-    this.#setGraphicControlExtension();
+  #setFrameData({ imageData, duration }) {
+    console.log(imageData);
+    console.log(duration);
+    this.#setGraphicControlExtension(duration);
     this.#setLocalImageDescriptor(imageData);
     this.#setLocalColorTable(imageData);
     this.#setImage(imageData);
@@ -106,7 +124,7 @@ class GifEncoder {
     this.#mainBuffer.write16Integer(EMPTY_VALUE);
 
     //Width | 2 byte | Width of the image in pixels
-    this.#mainBuffer.write16Integer(imageData.width, 0x05);
+    this.#mainBuffer.write16Integer(imageData.width);
     //Height | 2 byte | Height of the image in pixels
     this.#mainBuffer.write16Integer(imageData.height);
 
@@ -192,4 +210,4 @@ class GifEncoder {
 
 
 
-export { GifEncoder };
+export { GifFrame, GifEncoder };
