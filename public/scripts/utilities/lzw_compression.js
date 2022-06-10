@@ -29,20 +29,18 @@ class LZWCompressor {
       } else {
         const previousCode = this.table.get(previous);
         this.#output(previousCode);
-        this.table.set(appended, this.tableIndex);
-        if (this.tableIndex > (2 ** this.codeSize - 1)) {
-          this.codeSize++;
+        if (this.tableIndex < 1 << MAX_CODE_SIZE) {
+          this.table.set(appended, this.tableIndex);
+          if (this.tableIndex > (2 ** this.codeSize - 1)) {
+            this.codeSize++;
+          }
+          this.tableIndex++;
         }
-        this.tableIndex++;
         previous = current;
-        if (this.tableIndex >= (1 << MAX_CODE_SIZE)) {
-          this.#clearTable();
-        }
       }
     }
     this.#output(this.table.get(previous));
     this.#addEOFCode();
-    console.log(this.blocks);
     return this.blocks;
   }
 
@@ -59,7 +57,6 @@ class LZWCompressor {
         this.accumulant = '';
       }
     }
-    console.log(byte + ' | ' + string + ' | ' + this.accumulant);
 
     if (this.currentBlock.length >= MAX_BLOCK_SIZE) {
       this.blocks.push(this.currentBlock);
