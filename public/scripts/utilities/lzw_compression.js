@@ -12,7 +12,6 @@ https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Welch
 class LZWCompressor {
   constructor(codeSize) {
     this.minCodeSize = codeSize;
-    this.codeSize = codeSize;
     this.accumulant = '';
     this.blocks = [];
     this.currentBlock = [];
@@ -33,12 +32,12 @@ class LZWCompressor {
         this.table.set(appended, this.tableIndex);
         if (this.tableIndex > (2 ** this.codeSize - 1)) {
           this.codeSize++;
-          if (this.codeSize >= MAX_CODE_SIZE) {
-            this.#clearTable();
-          }
         }
         this.tableIndex++;
         previous = current;
+        if (this.tableIndex >= (1 << MAX_CODE_SIZE)) {
+          this.#clearTable();
+        }
       }
     }
     this.#output(this.table.get(previous));
@@ -60,6 +59,7 @@ class LZWCompressor {
         this.accumulant = '';
       }
     }
+    console.log(byte + ' | ' + string + ' | ' + this.accumulant);
 
     if (this.currentBlock.length >= MAX_BLOCK_SIZE) {
       this.blocks.push(this.currentBlock);
@@ -86,7 +86,7 @@ class LZWCompressor {
       this.table.set(i.toString(), i);
     }
     this.tableIndex = this.initialSize + SPECIAL_CODE_COUNT;
-    this.codeSize++;
+    this.codeSize = this.minCodeSize + 1;
     this.#addClearCode();
   }
 
