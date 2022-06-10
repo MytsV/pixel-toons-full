@@ -3,37 +3,47 @@ const BITS_IN_BYTE = 8;
 /*
 A class that represents a writable array of bytes.
 Created for easier work with byte size and different types of written values.
-Has similar interface to the Node.js Buffer class.
-Remembers the last written position. Offset should be set only if the position
-has to be changed.
+Has similar interface to the Node.js Buffer class, but doesn't require offset.
+This Buffer is more like a simple "disguised" Stack.
  */
 class Buffer {
-  #pointer = 0x00;
+  #data;
 
-  constructor(size) {
-    this.data = new Uint8Array(size);
+  constructor() {
+    this.#data = [];
   }
 
-  writeString(string, offset) {
-    this.writeArray(stringToByteArray(string), offset);
+  writeString(string) {
+    this.writeArray(stringToByteArray(string));
   }
 
-  write16Integer(number, offset) {
-    this.writeInteger(16, number, offset);
+  write16Integer(number) {
+    this.writeInteger(16 / BITS_IN_BYTE, number);
   }
 
-  write32Integer(number, offset) {
-    this.writeInteger(32, number, offset);
+  write32Integer(number) {
+    this.writeInteger(32 / BITS_IN_BYTE, number);
   }
 
-  writeInteger(bits, number, offset) {
-    const array = intToByteArray(number, bits / BITS_IN_BYTE);
-    this.writeArray(array, offset);
+  writeInteger(bytes, number) {
+    const array = intToByteArray(number, bytes);
+    this.writeArray(array);
   }
 
-  writeArray(array, offset = this.#pointer) {
-    this.data.set(array, offset);
-    this.#pointer = offset + array.length;
+  writeByte(byte) {
+    this.#data.push(byte);
+  }
+
+  writeArray(array) {
+    this.#data.push(...array);
+  }
+
+  get data() {
+    return Uint8Array.from(this.#data);
+  }
+
+  get length() {
+    return this.#data.length;
   }
 }
 
