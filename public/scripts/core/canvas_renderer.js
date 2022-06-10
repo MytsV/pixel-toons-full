@@ -2,7 +2,7 @@
 Set of functions which define how canvas is rendered into HTML.
  */
 import { Color } from '../utilities/color.js';
-import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
+import { BmpEncoder, BmpVersions } from '../utilities/bmp_encoder.js';
 import { applyImageMixin } from '../utilities/image.js';
 import { bytesToBase64, setImageBase64 } from '../utilities/bytes_conversion.js';
 
@@ -64,7 +64,7 @@ class CanvasRenderer {
       return;
     }
 
-    const encoder = new BmpEncoder(bmpVersions.bmp32);
+    const encoder = new BmpEncoder(BmpVersions.BMP_32);
     const data = bytesToBase64(encoder.encode(image));
     if (encoder.isLastEncodedTransparent()) {
       clearImage();
