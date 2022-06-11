@@ -10,17 +10,24 @@ class CodeTable {
     this.#clear();
   }
 
+  #clear() {
+    this.codeIndices = new Map();
+    this.nextUnused = this.endCode + 1;
+    this.codeSize = this.colorBits + 1;
+  }
+
   getNewCode(previous, current) {
-    const appended = CodeTable.#getHash(previous, current);
-    const hasCode = this.table.has(appended);
-    return hasCode ? this.table.get(appended) : null;
+    const hash = CodeTable.#getHash(previous, current);
+    const hasCode = this.codeIndices.has(hash);
+    return hasCode ? this.codeIndices.get(hash) : null;
   }
 
   set(previous, current) {
     //Stop populating the table when its size exceeds limit
     if (this.nextUnused >= MAX_TABLE_SIZE) return;
 
-    this.table.set(CodeTable.#getHash(previous, current), this.nextUnused++);
+    const hash = CodeTable.#getHash(previous, current);
+    this.codeIndices.set(hash, this.nextUnused++);
 
     const size = 1 << this.codeSize;
     /*
@@ -35,11 +42,62 @@ class CodeTable {
   static #getHash(previous, current) {
     return (previous << 8) | current;
   }
+}
 
-  #clear() {
-    this.table = new Map();
-    this.nextUnused = this.endCode + 1;
-    this.codeSize = this.colorBits + 1;
+class LZWOutput {
+  constructor(codeTable) {
+    this.table = codeTable;
+    this.accumulator = 0;
+    this.accumulatorLength = 0;
+    this.bytes = [];
+  }
+
+  write(byte) {
+    this.accumulator |= byte << this.accumulatorLength;
+    this.accumulatorLength += this.table.codeSize;
+    while (this.accumulatorLength >= BITS_IN_BYTE) {
+      this.bytes.push(this.#cropAccumulator());
+      this.accumulator >>= BITS_IN_BYTE;
+      this.accumulatorLength -= BITS_IN_BYTE;
+    }
+  }
+  writeClearCode() {
+    this.write(this.table.clearCode);
+  }
+
+  writeEndCode() {
+    this.write(this.table.endCode);
+  }
+
+  get() {
+    if (this.accumulatorLength > 0) {
+      this.bytes.push(this.#cropAccumulator());
+    }
+
+    const data = [];
+    data.push(this.table.colorBits);
+
+    const addBlock = (start, length) => {
+      data.push(length);
+      data.push(...this.bytes.slice(start, start + length));
+    };
+
+    const { length } = this.bytes;
+    for (let i = 0; i < this.bytes.length; /* Don't perform any operation */) {
+      if (length - i >= MAX_BLOCK_SIZE) {
+        addBlock(i, MAX_BLOCK_SIZE);
+        i += MAX_BLOCK_SIZE;
+      } else {
+        addBlock(i, length - i);
+        break;
+      }
+    }
+
+    return data;
+  }
+
+  #cropAccumulator() {
+    return this.accumulator & 0xFF;
   }
 }
 
@@ -52,13 +110,11 @@ https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Welch
 class LZWCompressor {
   constructor(codeSize) {
     this.table = new CodeTable(codeSize);
-    this.accumulant = '';
-    this.blocks = [];
-    this.currentBlock = [];
+    this.output = new LZWOutput(this.table);
   }
 
   compress(input) {
-    this.#addClearCode();
+    this.output.writeClearCode();
 
     let previous = input[0];
     for (const current of input.slice(1)) {
@@ -66,56 +122,15 @@ class LZWCompressor {
       if (newCode !== null) {
         previous = newCode;
       } else {
-        this.#output(previous);
+        this.output.write(previous);
         this.table.set(previous, current);
         previous = current;
       }
     }
 
-    this.#output(previous);
-    this.#addEndCode();
-    return this.blocks;
-  }
-
-  #output(byte) {
-    const string = this.#byteToString(byte);
-    for (let i = string.length - 1; i >= 0; i--) {
-      this.accumulant = string.charAt(i) + this.accumulant;
-      if (this.accumulant.length >= BITS_IN_BYTE) {
-        this.currentBlock.push(parseInt(this.accumulant, 2));
-        if (this.currentBlock.length >= MAX_BLOCK_SIZE) {
-          this.blocks.push(this.currentBlock);
-          this.currentBlock = [];
-        }
-        this.accumulant = '';
-      }
-    }
-    if (this.currentBlock.length >= MAX_BLOCK_SIZE) {
-      this.blocks.push(this.currentBlock);
-      this.currentBlock = [];
-    }
-  }
-
-  #byteToString(byte) {
-    let string = byte.toString(2);
-    while (string.length < this.table.codeSize) {
-      string = '0' + string;
-    }
-    return string;
-  }
-
-  #addClearCode() {
-    this.#output(this.table.clearCode);
-  }
-
-  #addEndCode() {
-    this.#output(this.table.endCode);
-    if (this.currentBlock.length !== 0) {
-      if (this.accumulant) {
-        this.currentBlock.push(parseInt(this.accumulant, 2));
-      }
-      this.blocks.push(this.currentBlock);
-    }
+    this.output.write(previous);
+    this.output.writeEndCode();
+    return this.output.get();
   }
 }
 

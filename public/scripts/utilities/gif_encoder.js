@@ -117,10 +117,7 @@ class GifImageEncoder {
     const codeSize = Math.log2(this.table.length);
     const compressor = new LZWCompressor(codeSize);
     const compressed = compressor.compress(this.indices);
-    this.#buffer.writeByte(codeSize);
-    compressed.forEach((block) => {
-      this.#buffer.writeArray([block.length, ...block]);
-    });
+    this.#buffer.writeArray(compressed);
     this.#buffer.writeByte(EMPTY_VALUE);
     return this.#buffer.data;
   }
