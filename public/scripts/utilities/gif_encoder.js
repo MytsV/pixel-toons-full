@@ -2,9 +2,14 @@ import { Buffer } from './buffer.js';
 import { LZWCompressor } from './lzw_compression.js';
 
 const EMPTY_VALUE = 0x00;
+const MAX_COLORS = 256;
+
 const COLOR_PARAMETERS = 3;
 const MAX_COLOR_PARAMETERS = 4;
 
+/*
+A wrapper which can be created from Frame defined in canvas.js
+ */
 class GifFrame {
   constructor(imageData, duration) {
     this.imageData = imageData;
@@ -20,38 +25,105 @@ class GifFrame {
 class GifImageEncoder {
   #buffer;
 
-  constructor(imageData, colorTable) {
+  constructor(imageData) {
     this.imageData = imageData;
-    this.colorTable = colorTable;
+    this.table = [];
     this.#buffer = new Buffer();
+    this.#initTable();
+  }
+
+  #initTable() {
+    const { width, height, data } = this.imageData;
+    const resolution = width * height;
+    if (resolution >= MAX_COLORS) throw Error('Quantization is not ready yet');
+    this.indices = new Uint8Array(resolution);
+    for (let i = 0; i < height; i++) {
+      for (let j = width - 1; j >= 0; j--) {
+        const pos = i * width + j;
+        const dataPos = pos * MAX_COLOR_PARAMETERS;
+        const color = data.slice(dataPos, dataPos + COLOR_PARAMETERS);
+        const colorConverted = GifImageEncoder.#colorToNumber(color);
+        if (!this.table.includes(colorConverted)) {
+          this.table.push(colorConverted);
+        }
+        this.indices.set([this.table.indexOf(colorConverted)], pos);
+      }
+    }
+    const isPowerOfTwo = (x) => x && !(x & (x - 1));
+    while (!isPowerOfTwo(this.table.length)) {
+      this.table.push(EMPTY_VALUE);
+    }
+    console.log(this.table);
+  }
+
+  /*
+ The number is in reversed BGR order.
+ Each color value represents two hexadecimal "digits"
+  */
+  static #colorToNumber([ r, g, b ]) {
+    const blueShift = 16;
+    const greenShift = 8;
+    const values = [
+      b !== 0 ? b << blueShift : b,
+      g !== 0 ? g << greenShift : g,
+      r
+    ];
+    return values.reduce((prev, curr) => prev + curr);
   }
 
   encode() {
-    const indices = this.#pixelsToIndices(this.imageData);
-    const codeSize = 2;
+    this.#setLocalImageDescriptor();
+    this.#setLocalColorTable();
+    this.#setPixelData();
+    return this.#buffer.data;
+  }
+
+  //Required. Tells the decoder how much space one frame takes
+  #setLocalImageDescriptor() {
+    const { width, height } = this.imageData;
+
+    //Separator | 1 byte | Special value 2Ch
+    this.#buffer.writeByte(0x2C);
+
+    //Left | 2 byte | X position, skipped
+    this.#buffer.write16Integer(EMPTY_VALUE);
+    //Top | 2 byte | Y position, skipped
+    this.#buffer.write16Integer(EMPTY_VALUE);
+
+    //Width | 2 byte | Width of the image in pixels
+    this.#buffer.write16Integer(width);
+    //Height | 2 byte | Height of the image in pixels
+    this.#buffer.write16Integer(height);
+
+    /*
+    Packed fields | 1 byte | Contains following subfields of data:
+    Bit 7 - Local Color Table Flag - 1, always used
+    Bit 6 - Interlace Flag - 0, not interlaced
+    Bit 5 - Sort Flag - 0, not sorted
+    Bit 3-4 - Reserved
+    Bit 0-2 - Size of Local Color Table Entry - Number of bits per entry
+     */
+    const entrySize = Math.log2(this.table.length / 2);
+    const fields = 0b10000000 + entrySize;
+    this.#buffer.writeByte(fields);
+  }
+
+  #setLocalColorTable() {
+    this.table.forEach((color) => {
+      this.#buffer.writeInteger(COLOR_PARAMETERS, color);
+    });
+  }
+
+  #setPixelData() {
+    const codeSize = Math.log2(this.table.length);
     const compressor = new LZWCompressor(codeSize);
-    const compressed = compressor.compress(indices);
+    const compressed = compressor.compress(this.indices);
     this.#buffer.writeByte(codeSize);
     compressed.forEach((block) => {
       this.#buffer.writeArray([block.length, ...block]);
     });
     this.#buffer.writeByte(EMPTY_VALUE);
     return this.#buffer.data;
-  }
-
-  #pixelsToIndices(imageData) {
-    const indices = new Uint8Array(imageData.height * imageData.width);
-    const table = this.colorTable;
-    for (let i = 0; i < imageData.height; i++) {
-      for (let j = imageData.width - 1; j >= 0; j--) {
-        const dataPos = (i * imageData.width + j) * MAX_COLOR_PARAMETERS;
-        const color = imageData.data.slice(dataPos, dataPos + COLOR_PARAMETERS);
-        const colorConverted = (color[2] !== 0 ? color[2] << 16 : color[2]) + (color[1] !== 0 ? color[1] << 8 : color[1]) + color[0];
-        const index = table.indexOf(colorConverted);
-        indices.set([index], i * imageData.width + j);
-      }
-    }
-    return indices;
   }
 }
 
@@ -63,9 +135,6 @@ https://www.w3.org/Graphics/GIF/spec-gif89a.txt
  */
 class GifEncoder {
   #mainBuffer;
-
-  constructor() {
-  }
 
   /*
   Creates a byte array which represents a file of GIF89a format.
@@ -144,36 +213,7 @@ class GifEncoder {
 
   #setFrameData({ imageData, duration }) {
     this.#setGraphicControlExtension(duration);
-    this.#setLocalImageDescriptor(imageData);
-    this.#setLocalColorTable(imageData);
     this.#setImage(imageData);
-  }
-
-  //Required. Tells the decoder how much space one frame takes
-  #setLocalImageDescriptor(imageData) {
-    //Separator | 1 byte | Special value 2Ch
-    this.#mainBuffer.writeByte(0x2C);
-
-    //Left | 2 byte | X position, skipped
-    this.#mainBuffer.write16Integer(EMPTY_VALUE);
-    //Top | 2 byte | Y position, skipped
-    this.#mainBuffer.write16Integer(EMPTY_VALUE);
-
-    //Width | 2 byte | Width of the image in pixels
-    this.#mainBuffer.write16Integer(imageData.width);
-    //Height | 2 byte | Height of the image in pixels
-    this.#mainBuffer.write16Integer(imageData.height);
-
-    /*
-    Packed fields | 1 byte | Contains following subfields of data:
-    Bit 7 - Local Color Table Flag - 1, always used
-    Bit 6 - Interlace Flag - 0, not interlaced
-    Bit 5 - Sort Flag - 0, not sorted
-    Bit 3-4 - Reserved
-    Bit 0-2 - Size of Local Color Table Entry - Number of bits per entry
-     */
-    const fields = 0b10000001;
-    this.#mainBuffer.writeByte(fields);
   }
 
   //Optional. Controls normal animation execution
@@ -203,31 +243,13 @@ class GifEncoder {
     this.#mainBuffer.writeByte(EMPTY_VALUE);
   }
 
-  //Temporary
-  #setLocalColorTable(imageData) {
-    const table = GifEncoder.#getLocalColorTable(imageData);
-    table.forEach((color) => this.#mainBuffer.writeInteger(COLOR_PARAMETERS, color));
-  }
-
-  static #getLocalColorTable(imageData) {
-    return [
-      0xFFFFFF,
-      0xFF0000,
-      0x0000FF,
-      0x000000
-    ];
-  }
-
   #setImage(imageData) {
-    const encoder = new GifImageEncoder(imageData, GifEncoder.#getLocalColorTable(imageData));
+    const encoder = new GifImageEncoder(imageData);
     this.#mainBuffer.writeArray(encoder.encode());
   }
 }
 
-const MAX_COLORS = 256;
-
 const quantize = (imageData) => {
-  const resolution = imageData.width * imageData.height;
   const regionSize = MAX_COLORS / 8;
   const regionSizeGreen = MAX_COLORS / 4;
   const quantized = new ImageData(imageData.width, imageData.height);
