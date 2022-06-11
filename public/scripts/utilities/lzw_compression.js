@@ -19,16 +19,14 @@ class LZWCompressor {
 
   compress(input) {
     this.#clearTable();
-
-    let previous = input[0].toString();
+    let previous = input[0];
     for (let pos = 1; pos < input.length; pos++) {
-      const current = input[pos].toString();
-      const appended = previous.toString() + current.toString();
+      const current = input[pos];
+      const appended = (previous << 8) | current;
       if (this.table.has(appended)) {
-        previous = appended;
+        previous = this.table.get(appended);
       } else {
-        const previousCode = this.table.get(previous);
-        this.#output(previousCode);
+        this.#output(previous);
         if (this.tableIndex < 1 << MAX_CODE_SIZE) {
           this.table.set(appended, this.tableIndex);
           if (this.tableIndex > (2 ** this.codeSize - 1)) {
@@ -39,7 +37,7 @@ class LZWCompressor {
         previous = current;
       }
     }
-    this.#output(this.table.get(previous));
+    this.#output(previous);
     this.#addEOFCode();
     return this.blocks;
   }
@@ -57,7 +55,6 @@ class LZWCompressor {
         this.accumulant = '';
       }
     }
-
     if (this.currentBlock.length >= MAX_BLOCK_SIZE) {
       this.blocks.push(this.currentBlock);
       this.currentBlock = [];
@@ -79,9 +76,6 @@ class LZWCompressor {
   #clearTable() {
     this.table = new Map();
     this.initialSize = 2 ** this.minCodeSize;
-    for (let i = 0; i < this.initialSize; i++) {
-      this.table.set(i.toString(), i);
-    }
     this.tableIndex = this.initialSize + SPECIAL_CODE_COUNT;
     this.codeSize = this.minCodeSize + 1;
     this.#addClearCode();
