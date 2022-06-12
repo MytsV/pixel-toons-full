@@ -1,7 +1,11 @@
 const MAX_BLOCK_SIZE = 255;
 const BITS_IN_BYTE = 8;
-const MAX_TABLE_SIZE = 1 << /* Max code size */ 12;
+const MAX_TABLE_SIZE = (1 << /* Max code size */ 12) - 1;
 
+/*
+A class that represents a mapping of pixel indices combinations to codes.
+The codes are just positions at which entries were inserted.
+ */
 class CodeTable {
   constructor(codeSize) {
     this.colorBits = codeSize;
@@ -11,15 +15,15 @@ class CodeTable {
   }
 
   #clear() {
-    this.codeIndices = new Map();
+    this.codes = new Map();
     this.nextUnused = this.endCode + 1;
     this.codeSize = this.colorBits + 1;
   }
 
   getNewCode(previous, current) {
     const hash = CodeTable.#getHash(previous, current);
-    const hasCode = this.codeIndices.has(hash);
-    return hasCode ? this.codeIndices.get(hash) : null;
+    const hasCode = this.codes.has(hash);
+    return hasCode ? this.codes.get(hash) : null;
   }
 
   set(previous, current) {
@@ -27,7 +31,7 @@ class CodeTable {
     if (this.nextUnused >= MAX_TABLE_SIZE) return;
 
     const hash = CodeTable.#getHash(previous, current);
-    this.codeIndices.set(hash, this.nextUnused++);
+    this.codes.set(hash, this.nextUnused++);
 
     const size = 1 << this.codeSize;
     /*
@@ -44,6 +48,13 @@ class CodeTable {
   }
 }
 
+/*
+A class that represents a writable buffer of bytes.
+For additional compression, the code bits are packed into bytes.
+They are stacked from the left:
+001 -> 110 results in 001110
+If there is overflow of BITS_IN_BYTE value, we add redundant bits to a new byte.
+ */
 class LZWOutput {
   constructor(codeTable) {
     this.table = codeTable;
@@ -52,8 +63,9 @@ class LZWOutput {
     this.bytes = [];
   }
 
-  write(byte) {
-    this.accumulator |= byte << this.accumulatorLength;
+  write(code) {
+    //Pack [codeSize] bits into a byte
+    this.accumulator |= code << this.accumulatorLength;
     this.accumulatorLength += this.table.codeSize;
     while (this.accumulatorLength >= BITS_IN_BYTE) {
       this.bytes.push(this.#cropAccumulator());
@@ -61,22 +73,28 @@ class LZWOutput {
       this.accumulatorLength -= BITS_IN_BYTE;
     }
   }
+
+  //Append the code which means table reinitialising
   writeClearCode() {
     this.write(this.table.clearCode);
   }
 
+  //Append the code which means the end of pixel data
   writeEndCode() {
     this.write(this.table.endCode);
   }
 
   get() {
+    //If there is something left in accumulator, dump it into a byte
     if (this.accumulatorLength > 0) {
       this.bytes.push(this.#cropAccumulator());
     }
 
     const data = [];
+    //Before pixel data we output minimal code size
     data.push(this.table.colorBits);
 
+    //Each block starts with its length and is followed by [length] bytes
     const addBlock = (start, length) => {
       data.push(length);
       data.push(...this.bytes.slice(start, start + length));
