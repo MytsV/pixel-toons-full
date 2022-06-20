@@ -1,7 +1,8 @@
-import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
+import { BmpEncoder, BmpVersions } from '../utilities/bmp_encoder.js';
 import * as conv from '../utilities/bytes_conversion.js';
-import { BucketFill, Eraser, Pencil, Tool } from './tools.js';
+import { BucketFill, Eraser, Pencil, Pointer, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
+import { GifEncoder } from '../utilities/gif_encoder.js';
 
 const HIDE_DISPLAY = 'none';
 const SHOW_DISPLAY = 'block';
@@ -51,33 +52,44 @@ class Modal {
   }
 }
 
-export class StateButtons {
+class UiElement {
   constructor() {
+    if (new.target === UiElement) {
+      throw Error('Abstract class cannot be instantiated');
+    }
     this.buttons = new VariableDependentButtons();
+  }
+
+  refresh() {
+  }
+}
+
+export class StateButtons extends UiElement {
+  constructor() {
+    super();
     this.buttons.addButton('undo', (canvas) => canvas.undo());
     this.buttons.addButton('redo', (canvas) => canvas.redo());
   }
 
-  refresh(canvas) {
+  refresh({ canvas }) {
     this.buttons.enableButtons(canvas);
   }
 }
 
 const FILE_SIZE_LIMIT = 250;
 
-export class FileMenu {
+export class FileMenu extends UiElement {
   constructor(createNewFile) {
-    this.createNewFile = createNewFile; //A function passed from the context
-    this.buttons = new VariableDependentButtons();
+    super();
     this.#setUpDependentButtons();
 
-    this.modal = new Modal('file-create-modal');
+    this.createNewFile = createNewFile; //A function passed from the context
     this.#setUpCreateButton();
     this.#setUpCreateFinish();
     FileMenu.#setUpLimit();
   }
 
-  refresh(canvas) {
+  refresh({ canvas }) {
     this.buttons.enableButtons(canvas);
   }
 
@@ -94,12 +106,13 @@ export class FileMenu {
 
   static #exportImage(canvas) {
     const image = canvas.getJoinedImage();
-    const encoder = new BmpEncoder(bmpVersions.bmp32);
+    const encoder = new BmpEncoder(BmpVersions.BMP_32);
     const data = encoder.encode(image);
     conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.bmp');
   }
 
   #setUpCreateButton() {
+    this.modal = new Modal('file-create-modal');
     const createButton = document.getElementById('create-file');
     createButton.onclick = () => this.modal.show();
   }
@@ -130,6 +143,7 @@ class ToolInfo {
     this.tool = tool;
     this.name = name;
     this.element = this.#createElement();
+    this.options = [];
   }
 
   #createElement() {
@@ -139,27 +153,58 @@ class ToolInfo {
     element.appendChild(getTextElement(this.name));
     return element;
   }
+
+  addOption(option, listener) {
+    option.input.oninput = (event) => listener(event, this.tool);
+    this.options.push(option);
+  }
 }
 
-export class Toolbar {
+class ToolOptionRange {
+  constructor(name, min, max, step = 1) {
+    this.input = document.createElement('input');
+    this.input.type = 'range';
+    this.input.min = min;
+    this.input.max = max;
+    this.input.step = step;
+    this.input.value = min;
+
+    this.name = name;
+  }
+
+  getElement() {
+    const element = document.createElement('span');
+    element.classList.add('tool-option');
+    element.appendChild(getTextElement(this.name));
+    element.appendChild(this.input);
+    return element;
+  }
+}
+
+export class Toolbar extends UiElement {
   static #activeClass = 'active-tool';
 
   constructor() {
+    super();
+
     this.toolsInfo = [
       new ToolInfo(new Pencil(), 'Pencil'),
       new ToolInfo(new Eraser(), 'Eraser'),
       new ToolInfo(new BucketFill(), 'Bucket Fill')
     ];
-    this.buttons = new VariableDependentButtons();
+    this.pointer = new Pointer();
+
     this.container = document.getElementById('tools');
     this.#setUpTools();
+    this.#setUpOptions();
     this.#setUpColorPicker();
     this.chosen = this.toolsInfo[0];
   }
 
-  refresh(canvas) {
+  refresh({ canvas }) {
     this.#setChosen(this.chosen, canvas);
     this.buttons.enableButtons(canvas);
+    this.#setUpPointer(canvas);
   }
 
   #setUpTools() {
@@ -171,6 +216,24 @@ export class Toolbar {
     });
   }
 
+  //To be refactored!
+  #setUpOptions() {
+    const thickMin = 1;
+    const thickMax = 10;
+    const pencilOption = new ToolOptionRange('Thickness', thickMin, thickMax);
+    this.toolsInfo[0].addOption(pencilOption, (event, tool) => {
+      tool.thickness = event.target.value;
+    });
+    const eraserOption = new ToolOptionRange('Thickness', thickMin, thickMax);
+    this.toolsInfo[1].addOption(eraserOption, (event, tool) => {
+      tool.thickness = event.target.value;
+    });
+    const bucketOption = new ToolOptionRange('tolerance', 0, 255);
+    this.toolsInfo[2].addOption(bucketOption, (event, tool) => {
+      tool.tolerance = parseFloat(event.target.value);
+    });
+  }
+
   #setChosen(toolInfo, canvas) {
     if (this.chosen) {
       this.chosen.tool.disable();
@@ -179,6 +242,13 @@ export class Toolbar {
     this.chosen = toolInfo;
     this.chosen.tool.link(canvas);
     this.chosen.element.classList.add(Toolbar.#activeClass);
+    this.#enableOptions(toolInfo);
+  }
+
+  #enableOptions(toolInfo) {
+    const container = document.getElementById('tool-options');
+    container.innerHTML = '';
+    toolInfo.options.forEach((option) => container.appendChild(option.getElement()));
   }
 
   #setUpColorPicker() {
@@ -190,6 +260,10 @@ export class Toolbar {
     colorPicker.oninput = () => {
       Tool.color = Color.fromHex(colorPicker.value);
     };
+  }
+
+  #setUpPointer(canvas) {
+    this.pointer.link(canvas);
   }
 }
 
@@ -274,17 +348,17 @@ class LayerBox {
     const image = layer.context.getImageData(...imagePosition, width, height);
 
     //Render image with transparency
-    const encoder = new BmpEncoder(bmpVersions.bmp32);
+    const encoder = new BmpEncoder(BmpVersions.BMP_32);
     const data = encoder.encode(image);
     return encoder.isLastEncodedTransparent() ? '' : conv.bytesToUrl(data);
   }
 }
 
-export class LayerMenu {
+export class LayerMenu extends UiElement {
   constructor() {
-    this.container = document.getElementById('layer-container');
-    this.buttons = new VariableDependentButtons();
+    super();
     this.#setUpButtons();
+    this.container = document.getElementById('layer-container');
   }
 
   #setUpButtons() {
@@ -308,10 +382,21 @@ export class LayerMenu {
     });
   }
 
-  refresh(canvas) {
+  refresh({ canvas }) {
     this.buttons.enableButtons(canvas);
     this.#updateLayers(canvas);
     this.#setFixationListener(canvas);
+    this.#enableOpacity(canvas);
+  }
+
+  #enableOpacity(canvas) {
+    this.input = document.getElementById('layer-opacity');
+    this.input.oninput = (event) => {
+      const id = canvas.drawnId;
+      const layer = canvas.layers.byIdentifier(id);
+      layer.opacity = parseFloat(event.target.value);
+      canvas.redraw();
+    };
   }
 
   #updateLayers(canvas) {
@@ -360,9 +445,9 @@ export class LayerMenu {
   }
 }
 
-export class ZoomButtons {
+export class ZoomButtonsManager extends UiElement {
   constructor(renderer) {
-    this.buttons = new VariableDependentButtons();
+    super();
     this.buttons.addButton('zoom-in', () => renderer.zoomIn());
     this.buttons.addButton('zoom-out', () => renderer.zoomOut());
   }
@@ -372,8 +457,9 @@ export class ZoomButtons {
   }
 }
 
-export class ShortcutsMenu {
+export class ShortcutsMenu extends UiElement {
   constructor(manager) {
+    super();
     this.manager = manager;
     this.modal = new Modal('shortcuts-modal');
     this.classList = ['white-panel', 'label-panel', 'text-ordinary'];
@@ -411,9 +497,6 @@ export class ShortcutsMenu {
     button.onclick = () => {
       this.modal.show();
     };
-  }
-
-  refresh() {
   }
 }
 
@@ -502,19 +585,22 @@ export class FrameBox {
   #getFrameImageUrl() {
     const image = this.frame.canvas.getJoinedImage();
     //Render image with transparency
-    const encoder = new BmpEncoder(bmpVersions.bmp32);
+    const encoder = new BmpEncoder(BmpVersions.BMP_32);
     const data = encoder.encode(image);
     return encoder.isLastEncodedTransparent() ? '' : conv.bytesToUrl(data);
   }
 }
 
-export class FrameMenu {
+export class FrameMenu extends UiElement {
   constructor() {
-    this.buttons = new VariableDependentButtons();
+    super();
     this.#setUpButtons();
+
     this.label = document.getElementById('frame-label');
     this.container = document.getElementById('frame-container');
     this.footer = document.getElementById('footer');
+    this.opacity = document.getElementById('opacity');
+    this.#setUpOpacity();
   }
 
   #setUpButtons() {
@@ -532,6 +618,16 @@ export class FrameMenu {
     this.buttons.addButton('remove-frame', (file) => {
       file.removeFrame(file.currentId);
     });
+  }
+
+  #setUpOpacity() {
+    this.overlayElement = document.getElementById('canvas-overlay');
+    this.opacity.onclick = (event) => {
+      event.stopPropagation();
+    };
+    this.opacity.oninput = () => {
+      this.overlayElement.style.opacity = this.opacity.value;
+    };
   }
 
   refresh(file) {
@@ -584,19 +680,19 @@ export class FrameMenu {
   }
 }
 
-export class Preview {
+export class Preview extends UiElement {
   #savedFrames;
 
   constructor() {
+    super();
     this.#setUpButtons();
     this.#setUpElements();
-    this.encoder = new BmpEncoder(bmpVersions.bmp32);
+    this.encoder = new BmpEncoder(BmpVersions.BMP_32);
     this.playing = false;
     this.playButton = document.getElementById('preview-animation');
   }
 
   #setUpButtons() {
-    this.buttons = new VariableDependentButtons();
     this.buttons.addButton('preview-menu', (file) => this.#preview(file));
   }
 
@@ -605,14 +701,19 @@ export class Preview {
     this.container = document.getElementById('preview');
   }
 
+  refresh(file) {
+    this.buttons.enableButtons(file);
+  }
+
   #preview(file) {
     if (!this.playing) this.#play(file);
     else this.#stop();
   }
 
   #play(file) {
-    this.#showPreview();
+    this.#showPreviewElement();
     this.playing = true;
+    this.timeouts = [];
 
     const changeImage = this.#getImageChanger(file.frames);
     changeImage();
@@ -623,11 +724,13 @@ export class Preview {
     this.#savedFrames = new Map();
 
     const changeImage = () => {
-      if (!this.playing) return;
+      if (!this.playing) {
+        return;
+      }
 
       const frame = frames[index];
       this.#setImage(this.#getImageData(frame));
-      window.setTimeout(changeImage, frame.duration);
+      this.timeouts.push(window.setTimeout(changeImage, frame.duration));
       index++;
       if (index >= frames.length) {
         index = 0;
@@ -649,6 +752,13 @@ export class Preview {
     return data;
   }
 
+  #stop() {
+    this.playing = false;
+    this.#setImage(null);
+    this.#hidePreviewElement();
+    this.timeouts.forEach((id) => window.clearTimeout(id));
+  }
+
   #setImage(url) {
     if (url) {
       conv.setImageBase64(this.container, url);
@@ -657,29 +767,20 @@ export class Preview {
     }
   }
 
-  #stop() {
-    this.playing = false;
-    this.#hidePreview();
-  }
-
-  #showPreview() {
+  #showPreviewElement() {
     this.container.style.display = SHOW_DISPLAY;
-    const frontIndex = 1;
+    const frontIndex = 2;
     this.background.style.zIndex = frontIndex.toString();
     this.playButton.classList.remove('play');
     this.playButton.classList.add('stop');
   }
 
-  #hidePreview() {
+  #hidePreviewElement() {
     this.container.style.display = HIDE_DISPLAY;
     const backIndex = 0;
     this.background.style.zIndex = backIndex.toString();
     this.playButton.classList.remove('stop');
     this.playButton.classList.add('play');
-  }
-
-  refresh(file) {
-    this.buttons.enableButtons(file);
   }
 }
 

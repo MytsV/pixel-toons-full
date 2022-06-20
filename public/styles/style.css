@@ -191,7 +191,7 @@ body {
 .modal {
   display: none;
   position: fixed;
-  z-index: 1;
+  z-index: 30;
   left: 0;
   top: 0;
   width: 100%; /* Full width */
@@ -416,6 +416,7 @@ input {
   background-color: #C2D7FF;
   flex-grow: 1;
   flex-direction: column;
+  width: 100%;
 }
 
 #frame-menu {
@@ -425,6 +426,7 @@ input {
 #footer {
   height: max-content;
   position: relative;
+  z-index: 20;
 }
 
 .menu-item-frames {
@@ -441,6 +443,10 @@ input {
 
 #preview-menu {
   position: relative;
+  float: right;
+  border-right: none;
+  border-left: var(--border-size) solid #42568b;
+  padding: 6pt 14pt 5pt 20pt;
 }
 
 #preview-animation {
@@ -517,11 +523,11 @@ input {
   /*border-right: var(--border-size) solid lightgray;*/
   outline: var(--border-size) solid var(--border-color);
   position: relative;
-  margin: 2pt 2pt;
   display: flex;
   width: 120pt;
-  margin-right: var(--inter-element-spacing);
+  margin: 2pt var(--inter-element-spacing) 2pt 2pt;
   flex-direction: column;
+  flex-shrink: 0;
 }
 
 .frame-label {
@@ -563,4 +569,35 @@ input {
   image-rendering: pixelated;
   background-color: white;
   background-position: center;
+}
+
+#opacity {
+  padding: 0;
+  height: 10pt;
+  margin: 0 0 0 10pt;
+}
+
+#tool-options {
+  position: absolute;
+  width: calc(100% - 20pt);
+  margin: var(--inter-element-spacing);
+  z-index: 1;
+  display: none;
+}
+
+#layer-opacity {
+  height: 10pt;
+  margin-top: 10pt;
+}
+
+#canvas-pointer {
+  pointer-events: none;
+}
+
+#coordinates {
+  font-family: 'Pixelite', serif;
+  color: white;
+  font-size: 13pt;
+  margin: 10pt;
+  position: absolute;
 }

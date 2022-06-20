@@ -5,10 +5,22 @@ import {
   LayerMenu,
   StateButtons,
   Toolbar,
-  ZoomButtons,
+  ZoomButtonsManager,
   ShortcutsMenu, FrameMenu, Preview
 } from './core/ui_elements.js';
 import { ShortcutManager } from './core/key_shortcuts.js';
+import { GifEncoder, GifFrame } from './utilities/gif_encoder.js';
+import * as conv from './utilities/bytes_conversion.js';
+
+const setUpGifExporter = (file) => {
+  const button = document.getElementById('gif-export');
+  button.onclick = () => {
+    const encoder = new GifEncoder();
+    const frames = file.frames.map((frame) => GifFrame.from(frame));
+    const data = encoder.encode(frames);
+    conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.gif');
+  };
+};
 
 class Application {
   constructor() {
@@ -18,10 +30,10 @@ class Application {
       new FileMenu((width, height) => this.#setNewFile(width, height)),
       new Toolbar(),
       new LayerMenu(),
-      new ZoomButtons(this.canvasRenderer),
+      new ZoomButtonsManager(this.canvasRenderer),
+      new FrameMenu(),
+      new Preview(),
     ];
-    this.frameMenu = new FrameMenu();
-    this.preview = new Preview();
     this.shortcuts = new ShortcutManager();
     this.uiElements.push(new ShortcutsMenu(this.shortcuts));
   }
@@ -30,6 +42,7 @@ class Application {
     const file = new AnimationFile(width, height);
     const refresh = () => this.#refreshRenderer(file);
     file.listenToUpdates(refresh);
+    setUpGifExporter(file);
     refresh();
   }
 
@@ -37,9 +50,7 @@ class Application {
     this.canvasRenderer.removeCanvases();
     this.canvasRenderer.appendCanvas(file.canvas);
     this.canvasRenderer.setOverlay(file.overlay);
-    this.uiElements.forEach((element) => element.refresh(file.canvas));
-    this.frameMenu.refresh(file);
-    this.preview.refresh(file);
+    this.uiElements.forEach((element) => element.refresh(file));
   }
 
   start() {

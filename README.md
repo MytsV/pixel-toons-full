@@ -40,7 +40,7 @@ User interface is currently extremely raw. It will be improved in the future.
             🟥 Saving your animation to account
         </td>
         <td>
-            Tool settings (thickness, tolerance)
+            🟩 Tool settings (thickness, tolerance)
         </td>
     </tr>
     <tr>
@@ -81,7 +81,7 @@ User interface is currently extremely raw. It will be improved in the future.
         <td>
         </td>
         <td>
-            Opacity
+            🟩 Opacity
         </td>
     </tr>
     <tr>
@@ -101,7 +101,7 @@ User interface is currently extremely raw. It will be improved in the future.
         <td>
         </td>
         <td>
-            Pointer and coordinates
+            🟩 Pointer and coordinates
         </td>
     </tr>
     <tr>
