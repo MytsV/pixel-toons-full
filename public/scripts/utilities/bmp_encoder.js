@@ -1,3 +1,5 @@
+import { Buffer } from './buffer.js';
+
 /*
 There is a native implementation of canvas BMP conversion,
 but it is not supported by all browsers.
@@ -6,56 +8,7 @@ And, after all, why not have fun?
 
 const BITS_IN_BYTE = 8;
 const MAX_COLOR_PARAMETERS = 4; //In RGBA format
-
-/*
-A class that represents a writable array of bytes.
-Created for easier work with byte size and different types of written values.
-Has similar interface to the Node.js Buffer class.
- */
-class Buffer {
-  constructor(size) {
-    this.data = new Uint8Array(size);
-  }
-
-  writeString(string, offset) {
-    this.writeArray(stringToByteArray(string), offset);
-  }
-
-  write16Integer(number, offset) {
-    this.#writeInteger(16, number, offset);
-  }
-
-  write32Integer(number, offset) {
-    this.#writeInteger(32, number, offset);
-  }
-
-  #writeInteger(bits, number, offset) {
-    const array = intToByteArray(number, bits / BITS_IN_BYTE);
-    this.writeArray(array, offset);
-  }
-
-  writeArray(array, offset) {
-    this.data.set(array, offset);
-  }
-}
-
-//Converts a string to ASCII code characters array
-function stringToByteArray(string) {
-  const array = new Uint8Array(string.length);
-  for (let i = 0; i < string.length; i++) {
-    array[i] = string[i].charCodeAt(0);
-  }
-  return array;
-}
-
-//Converts an unsigned integer into a byte array depending on integer size
-function intToByteArray(number, size) {
-  const array = new Uint8Array(size);
-  for (let i = 0; i < size; i++) {
-    array[i] = number >> BITS_IN_BYTE * i;
-  }
-  return array;
-}
+const EMPTY_VALUE = 0x00;
 
 class BmpVersion {
   constructor(perPixel, infoHeaderSize) {
@@ -68,11 +21,11 @@ class BmpVersion {
 Refer to this link to know more about versions:
 https://en.wikipedia.org/wiki/BMP_file_format
  */
-const bmpVersions = Object.freeze({
+const BmpVersions = Object.freeze({
   //BMP24 format uses BITMAPINFOHEADER
-  bmp24: new BmpVersion(24, 0x28),
+  BMP_24: new BmpVersion(24, 0x28),
   //BMP32 format uses BITMAPV4HEADER
-  bmp32: new BmpVersion(32, 0x6C),
+  BMP_32: new BmpVersion(32, 0x6C),
 });
 
 /*
@@ -84,8 +37,9 @@ class BmpEncoder {
   #perPixel;
 
   #buffer;
+  #lastTransparent;
 
-  constructor(version = bmpVersions.bmp24) {
+  constructor(version = BmpVersions.BMP_24) {
     this.#perPixel = version.bitCount / BITS_IN_BYTE;
     this.#infoHeaderSize = version.infoHeaderSize;
     this.dataOffset = BmpEncoder.#headerSize + this.#infoHeaderSize;
@@ -98,56 +52,49 @@ class BmpEncoder {
   The comment lines represent structures of format in a format:
   Name | Size | Offset | Description
    */
-  encode(image) {
-    this.#setUpEncoding(image);
+  encode(imageData) {
+    this.#buffer = new Buffer();
+    this.#setUpEncoding(imageData);
     this.#setHeader();
-    this.#setInfoHeader(image);
+    this.#setInfoHeader(imageData);
     this.#setExtendedInfoHeader();
-    this.#setPixelData(image);
+    this.#offsetImage();
+    this.#setPixelData(imageData);
     return this.#buffer.data;
   }
 
-  //Determines if the last encoded image was fully transparent
-  isLastEncodedTransparent() {
-    return this.lastTransp;
-  }
-
-  #setUpEncoding(image) {
-    this.padding = this.#is32() ? 0 : image.width % MAX_COLOR_PARAMETERS;
-    const rowLength = this.#perPixel * image.width + this.padding;
-    this.bitmapSize = rowLength * image.height;
+  #setUpEncoding({ width, height }) {
+    this.padding = this.#is32() ? 0 : width % MAX_COLOR_PARAMETERS;
+    const rowLength = this.#perPixel * width + this.padding;
+    this.bitmapSize = rowLength * height;
     this.fileSize = this.dataOffset + this.bitmapSize;
-
-    this.#buffer = new Buffer(this.fileSize);
-    this.lastTransp = true;
   }
 
   #setHeader() {
-    //Signature | 2 bytes | 0x00 | 'BM'
-    this.#buffer.writeString('BM', 0x00);
+    //Signature | 2 bytes | 0x00 | Special value BM
+    this.#buffer.writeString('BM');
     //FileSize | 4 bytes | 0x02 | File size in bytes
-    this.#buffer.write32Integer(this.fileSize, 0x02);
-
-    //Reserved | 4 bytes | 0x06 | Left filled with 0 bytes
-
+    this.#buffer.write32Integer(this.fileSize);
+    //Reserved | 4 bytes | 0x06 | Filled with 0 bytes
+    this.#buffer.write32Integer(EMPTY_VALUE);
     //DataOffset | 4 bytes | 0x0A | From file start to bitmap data start
-    this.#buffer.write32Integer(this.dataOffset, 0x0A);
+    this.#buffer.write32Integer(this.dataOffset);
   }
 
-  #setInfoHeader(image) {
+  #setInfoHeader({ width, height }) {
     //Size | 4 bytes | 0x0E | Size of InfoHeader
-    this.#buffer.write32Integer(this.#infoHeaderSize, 0x0E);
+    this.#buffer.write32Integer(this.#infoHeaderSize);
     //Width | 4 bytes | 0x12 | Horizontal width in pixels
-    this.#buffer.write32Integer(image.width, 0x12);
+    this.#buffer.write32Integer(width);
     //Height | 4 bytes | 0x16 | Vertical height in pixels
-    this.#buffer.write32Integer(image.height, 0x16);
+    this.#buffer.write32Integer(height);
     //Planes | 2 bytes | 0x1A | Number of planes = 1
-    this.#buffer.write16Integer(1, 0x1A);
+    this.#buffer.write16Integer(1);
     //Bits Per Pixel | 2 bytes | 0x1C | 24 or 32, depending on format
-    this.#buffer.write16Integer(this.#perPixel * BITS_IN_BYTE, 0x1C);
+    this.#buffer.write16Integer(this.#perPixel * BITS_IN_BYTE);
     this.#setCompression();
     //ImageSize | 4 bytes | 0x22 | Size of the raw bitmap data
-    this.#buffer.write32Integer(this.bitmapSize, 0x22);
+    this.#buffer.write32Integer(this.bitmapSize);
 
     /*
     The following structures are always filled with 0 bytes:
@@ -156,18 +103,20 @@ class BmpEncoder {
     Colors Used | 4 bytes | 0x2E | Number of actually used colors
     Important Colors | 4 bytes | 0x32 | Number of important colors
      */
+    const skippedByteCount = 16;
+    this.#buffer.writeInteger(skippedByteCount, EMPTY_VALUE);
   }
 
   #setCompression() {
     /*
-      We use BI_BITFIELDS compression only for BMP32 format
-      BI_RGB in BMP24 instead
+    We use BI_BITFIELDS compression only for BMP32 format
+    BI_RGB in BMP24 instead
     */
     const BI_BITFIELDS = 0x03;
     const BI_RGB = 0x00;
     const compressionType = this.#is32() ? BI_BITFIELDS : BI_RGB;
     //Compression | 4 bytes | 0x1E | 0x00 for BI_RGB, 0x03 for BI_BITFIELDS
-    this.#buffer.write32Integer(compressionType, 0x1E);
+    this.#buffer.write32Integer(compressionType);
   }
 
   #setExtendedInfoHeader() {
@@ -177,56 +126,71 @@ class BmpEncoder {
     //Masks are defined by little endian byte order and RGBA format
 
     //Red channel bitmask | 4 bytes | 0x36 | 0x000000FF
-    this.#buffer.write32Integer(0x000000FF, 0x36);
+    this.#buffer.write32Integer(0x000000FF);
     //Green channel bitmask | 4 bytes | 0x3A | 0x0000FF00
-    this.#buffer.write32Integer(0x0000FF00, 0x3A);
+    this.#buffer.write32Integer(0x0000FF00);
     //Blue channel bitmask | 4 bytes | 0x3E | 0x00FF0000
-    this.#buffer.write32Integer(0x00FF0000, 0x3E);
+    this.#buffer.write32Integer(0x00FF0000);
     //Alpha channel bitmask | 4 bytes | 0x42 | 0xFF000000
-    this.#buffer.write32Integer(0xFF000000, 0x42);
+    this.#buffer.write32Integer(0xFF000000);
   }
 
-  #setPixelData(image) {
-    let position = this.#infoHeaderSize + BmpEncoder.#headerSize;
-    for (let i = image.height - 1; i >= 0; i--) {
-      for (let j = 0; j < image.width; j++) {
-        const dataPos = (i * image.width + j) * MAX_COLOR_PARAMETERS;
-        const color = image.data.slice(dataPos, dataPos + this.#perPixel);
+  //Fill buffer with empty bytes
+  #offsetImage() {
+    const skippedByteCount = this.dataOffset - this.#buffer.length;
+    this.#buffer.writeInteger(skippedByteCount, EMPTY_VALUE);
+  }
+
+  #setPixelData({ width, height, data }) {
+    const bytes = new Uint8Array(this.bitmapSize);
+    let position = 0x00;
+    this.#lastTransparent = true;
+    for (let i = height - 1; i >= 0; i--) {
+      for (let j = 0; j < width; j++) {
+        const dataPos = (i * width + j) * MAX_COLOR_PARAMETERS;
+        const color = data.slice(dataPos, dataPos + this.#perPixel);
         this.#handleTransparency(color);
         this.#transformColorArray(color);
-        this.#buffer.writeArray(color, position);
+        bytes.set(color, position);
         position += this.#perPixel;
       }
       position += this.padding;
     }
+    this.#buffer.writeArray(bytes);
   }
 
   #handleTransparency(color) {
-    const alphaPosition = 3;
-    if (color[alphaPosition] > 0) {
-      this.lastTransp = false;
+    const alphaPos = 3;
+    if (color[alphaPos] > 0) {
+      this.#lastTransparent = false;
     }
   }
 
   //Initially it is in RGBA format
-  #transformColorArray(colors) {
+  #transformColorArray(color) {
     if (this.#is32()) {
       //Color is stored in RGBA order, so we don't change anything
     } else {
-      //Color is stored in reversed BGR order.
-      swap(colors, 0, 2); //Swapping parameter R with B
+      const rPos = 0;
+      const bPos = 2;
+      /* Color is stored in reversed BGR order.
+        Swapping parameter R with B */
+      [color[rPos], color[bPos]] = [color[bPos], color[rPos]];
     }
   }
 
   #is32() {
     return this.#perPixel === MAX_COLOR_PARAMETERS;
   }
+
+  /*
+  Determines if the last encoded image was fully transparent
+  May be beneficial for web applications,
+  as there is a bug with viewing transparent images in some browsers.
+   */
+  isLastEncodedTransparent() {
+    return this.#lastTransparent;
+  }
 }
 
-function swap(array, i, j) {
-  const temp = array[i];
-  array[i] = array[j];
-  array[j] = temp;
-}
-
-export { BmpEncoder, bmpVersions };
+export { BmpEncoder, BmpVersions };
