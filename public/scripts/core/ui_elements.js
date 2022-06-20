@@ -2,7 +2,6 @@ import { BmpEncoder, BmpVersions } from '../utilities/bmp_encoder.js';
 import * as conv from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil, Pointer, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
-import { GifEncoder } from '../utilities/gif_encoder.js';
 
 const HIDE_DISPLAY = 'none';
 const SHOW_DISPLAY = 'block';
@@ -166,7 +165,7 @@ class ToolOptionRange {
     this.input.type = 'range';
     this.input.min = min;
     this.input.max = max;
-    this.input.step = step;
+    this.input.step = step.toString();
     this.input.value = min;
 
     this.name = name;
@@ -400,13 +399,16 @@ export class LayerMenu extends UiElement {
   }
 
   #updateLayers(canvas) {
-    this.container.innerHTML = '';
-
+    const layerBoxes = [];
     //Iterate the list in reversed order
     for (let i = canvas.layers.length - 1; i >= 0; i--) {
       const layerBox = new LayerBox(canvas, i);
-      this.container.appendChild(layerBox.element);
+      layerBoxes.push(layerBox.element);
     }
+
+    this.container.innerHTML = '';
+
+    layerBoxes.forEach((box) => this.container.appendChild(box));
   }
 
   #setFixationListener(canvas) {
@@ -633,6 +635,7 @@ export class FrameMenu extends UiElement {
   refresh(file) {
     this.buttons.enableButtons(file);
     FrameMenu.#updateFrames(file);
+    file.canvas.listenToUpdates(() => FrameMenu.#updateFrames(file));
     this.#refreshLabel(file);
   }
 
