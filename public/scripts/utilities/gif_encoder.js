@@ -2,10 +2,63 @@ import { Buffer } from './buffer.js';
 import { LZWCompressor } from './lzw_compression.js';
 
 const EMPTY_VALUE = 0x00;
-const MAX_COLORS = 256;
+const COLOR_RANGE = 256;
+
+const RED_REGIONS = 2;
+//Green color quantization will be less accurate
+const GREEN_REGIONS = 2;
+const BLUE_REGIONS = 2;
+const MAX_COLORS = RED_REGIONS * GREEN_REGIONS * BLUE_REGIONS;
 
 const COLOR_PARAMETERS = 3;
 const MAX_COLOR_PARAMETERS = 4;
+
+/*
+A class to handle the quantization of colors => their such mapping to values,
+which leaves us with less or equal to [MAX_COLORS] different ones.
+Will be rarely needed because of application specifics, but why not have fun?
+Uses uniform quantization algorithm. To learn more please refer to the link:
+https://muthu.co/reduce-the-number-of-colors-of-an-image-using-uniform-quantization/
+ */
+class UniformQuantizer {
+  #quantized;
+
+  constructor(imageData) {
+    this.imageData = imageData;
+    //With each color quantization we change the cloned image
+    this.#quantized = new ImageData(imageData.width, imageData.height);
+  }
+
+  quantize(dataPos) {
+    const { data } = this.imageData;
+    const [r, g, b, a] = data.slice(dataPos, dataPos + COLOR_PARAMETERS);
+
+    /*
+    The idea behind the algorithm is to split color value range (0, 255) into
+    a few regions of same size. We determine the interval at which the value
+    lies and take the MIDDLE value of the region.
+     */
+    const quantize = (value, regions) => {
+      const regionSize = COLOR_RANGE / regions;
+      const regionNum = value / regionSize | 0;
+      return regionSize / 2 + regionNum * regionSize;
+    };
+
+    const colorQuantized = [
+      quantize(r, RED_REGIONS),
+      quantize(g, GREEN_REGIONS),
+      quantize(b, BLUE_REGIONS),
+      a
+    ];
+
+    this.#quantized.data.set(colorQuantized, dataPos);
+    return colorQuantized;
+  }
+
+  get quantizedImage() {
+    return this.#quantized;
+  }
+}
 
 /*
 A wrapper which can be created from Frame defined in canvas.js
@@ -33,10 +86,13 @@ class GifImageEncoder {
   }
 
   #initTable() {
+    const quantizer = new UniformQuantizer(this.imageData);
+    const quantizedTable = [];
     const { width, height, data } = this.imageData;
     const resolution = width * height;
-    if (resolution >= MAX_COLORS) throw Error('Quantization is not ready yet');
+
     this.indices = new Uint8Array(resolution);
+    const quantizedIncides = new Uint8Array(resolution);
     for (let i = 0; i < height; i++) {
       for (let j = width - 1; j >= 0; j--) {
         const pos = i * width + j;
@@ -47,8 +103,22 @@ class GifImageEncoder {
           this.table.push(colorConverted);
         }
         this.indices.set([this.table.indexOf(colorConverted)], pos);
+
+        const colorQuantized = quantizer.quantize(dataPos);
+        const colorConvQuant = GifImageEncoder.#colorToNumber(colorQuantized);
+        if (!quantizedTable.includes(colorConvQuant)) {
+          quantizedTable.push(colorConvQuant);
+        }
+        quantizedIncides.set([quantizedTable.indexOf(colorConvQuant)], pos);
       }
     }
+
+    if (this.table.length > MAX_COLORS) {
+      this.table = quantizedTable;
+      this.imageData = quantizer.quantizedImage;
+      this.indices = quantizedIncides;
+    }
+
     this.#offsetTable();
   }
 
@@ -256,24 +326,4 @@ class GifEncoder {
   }
 }
 
-const quantize = (imageData) => {
-  const regionSize = MAX_COLORS / 8;
-  const regionSizeGreen = MAX_COLORS / 4;
-  const quantized = new ImageData(imageData.width, imageData.height);
-  for (let i = 0; i < imageData.height; i++) {
-    for (let j = imageData.width - 1; j >= 0; j--) {
-      const dataPos = (i * imageData.width + j) * MAX_COLOR_PARAMETERS;
-      const color = imageData.data.slice(dataPos, dataPos + MAX_COLOR_PARAMETERS);
-      const colorQuantized = [
-        regionSize / 2 + (color[0] / regionSize | 0) * regionSize,
-        regionSize / 2 + (color[1] / regionSize | 0) * regionSize,
-        regionSizeGreen / 2 + (color[2] / regionSizeGreen | 0) * regionSizeGreen,
-        color[3]
-      ];
-      quantized.data.set(colorQuantized, dataPos);
-    }
-  }
-  return quantized;
-};
-
-export { GifFrame, GifEncoder, quantize };
+export { GifFrame, GifEncoder };
