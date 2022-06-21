@@ -123,13 +123,40 @@ class ImageData {
   }
 }
 
+class QoiTable {
+  #table;
+
+  constructor() {
+    this.#table = new Array(TABLE_SIZE);
+  }
+
+  inTable(pixel, pos) {
+    pos = pos ?? this.getPos(pixel);
+    const value = this.#table[pos];
+    return value !== undefined && pixel.equals(value);
+  }
+
+  set(pixel, pos) {
+    pos = pos ?? this.getPos(pixel);
+    this.#table[pos] = pixel;
+  }
+
+  getPos(pixel) {
+    return QoiTable.#getColorHash(pixel) % TABLE_SIZE;
+  }
+
+  static #getColorHash(color) {
+    return color.r * 3 + color.g * 5 + color.b * 7 + color.a * 11;
+  }
+}
+
 class QoiCompressor {
   constructor() {
   }
 
   compress({ data }) {
     const output = [];
-    const colorTable = new Uint8Array(TABLE_SIZE);
+    const colorTable = new QoiTable();
 
     let previousPix = getDefaultPixel();
     let currentPix = previousPix.clone();
@@ -146,17 +173,16 @@ class QoiCompressor {
           runLength = 0;
         }
       } else {
-        const indexPos = hashColor(currentPix) % TABLE_SIZE;
-
         if (runLength > 0) {
           output.push(TAG_RUN | (runLength - 1));
           runLength = 0;
         }
+        const tablePos = colorTable.getPos(currentPix);
 
-        if (currentPix.equals(colorTable[indexPos])) {
-          output.push(TAG_INDEX | indexPos);
+        if (colorTable.inTable(currentPix, tablePos)) {
+          output.push(TAG_INDEX | tablePos);
         } else {
-          colorTable[indexPos] = currentPix;
+          colorTable.set(currentPix, tablePos);
 
           if (currentPix.a === previousPix.a) {
             const vr = currentPix.r - previousPix.r;
@@ -205,7 +231,7 @@ class QoiCompressor {
 
 function decompress(bytes, width, height) {
   const pixels = new ImageData(width, height);
-  const index = new Uint8Array(TABLE_SIZE);
+  const index = new QoiTable();
   const pxLen = width * height * CHANNEL_COUNT;
 
   let px = getDefaultPixel();
@@ -245,7 +271,7 @@ function decompress(bytes, width, height) {
         run = b1 & 0x3f;
       }
 
-      index[hashColor(px) % TABLE_SIZE] = px;
+      index.set(px);
     }
 
     pixels.data[pxPos] = px.r;
@@ -262,10 +288,6 @@ function getDefaultPixel() {
 }
 
 const imageData = new ImageData(50, 50);
-imageData.data.set([255,65,43,24,245,24,235,4], 0);
-const compressed = (new QoiCompressor()).compress(imageData);
+imageData.data.set([255, 65, 43, 24, 245, 24, 235, 4], 0);
+const compressed = new QoiCompressor().compress(imageData);
 console.log(decompress(compressed, 50, 50));
-
-function hashColor(color) {
-  return color.r * 3 + color.g * 5 + color.b * 7 + color.a * 11;
-}
