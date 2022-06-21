@@ -112,6 +112,10 @@ class Pixel {
     const { r, g, b, a } = this;
     return new Pixel(r, g, b, a);
   }
+
+  toArray() {
+    return [this.r, this.g, this.b, this.a];
+  }
 }
 
 //Stub class with interface identical to real ImageData
@@ -130,102 +134,123 @@ class QoiTable {
     this.#table = new Array(TABLE_SIZE);
   }
 
-  inTable(pixel, pos) {
-    pos = pos ?? this.getPos(pixel);
-    const value = this.#table[pos];
+  inTable(pixel) {
+    const value = this.#table[this.getPos(pixel)];
     return value !== undefined && pixel.equals(value);
   }
 
-  set(pixel, pos) {
-    pos = pos ?? this.getPos(pixel);
-    this.#table[pos] = pixel;
+  set(pixel) {
+    this.#table[this.getPos(pixel)] = pixel;
   }
 
   getPos(pixel) {
     return QoiTable.#getColorHash(pixel) % TABLE_SIZE;
   }
 
+  //Prime numbers hashing (simple and efficient)
   static #getColorHash(color) {
     return color.r * 3 + color.g * 5 + color.b * 7 + color.a * 11;
   }
 }
 
 class QoiCompressor {
+  //Number of pixels read in succession
+  #run;
+
   constructor() {
   }
 
   compress({ data }) {
-    const output = [];
-    const colorTable = new QoiTable();
+    this.#initCompressing();
+    const { output, colorTable } = this;
 
     let previousPix = getDefaultPixel();
     let currentPix = previousPix.clone();
-    let runLength = 0;
 
     for (let pxPos = 0; pxPos < data.length; pxPos += CHANNEL_COUNT) {
       const colorArray = data.slice(pxPos, pxPos + CHANNEL_COUNT);
       currentPix = new Pixel(...colorArray);
 
       if (currentPix.equals(previousPix)) {
-        runLength++;
-        if (runLength === MAX_RUN_LENGTH || pxPos === data.length - CHANNEL_COUNT) {
-          output.push(TAG_RUN | (runLength - 1));
-          runLength = 0;
-        }
-      } else {
-        if (runLength > 0) {
-          output.push(TAG_RUN | (runLength - 1));
-          runLength = 0;
-        }
-        const tablePos = colorTable.getPos(currentPix);
-
-        if (colorTable.inTable(currentPix, tablePos)) {
-          output.push(TAG_INDEX | tablePos);
-        } else {
-          colorTable.set(currentPix, tablePos);
-
-          if (currentPix.a === previousPix.a) {
-            const vr = currentPix.r - previousPix.r;
-            const vg = currentPix.g - previousPix.g;
-            const vb = currentPix.b - previousPix.b;
-
-            const vgR = vr - vg;
-            const vgB = vb - vg;
-
-            if (
-              vr >= DIFF_RANGE && vr < DIFF_RANGE &&
-              vg >= DIFF_RANGE && vg < DIFF_RANGE &&
-              vb >= DIFF_RANGE && vb < DIFF_RANGE
-            ) {
-              output.push(TAG_DIFF | (vr + DIFF_RANGE) << 4 | (vg + DIFF_RANGE) << 2 | (vb + DIFF_RANGE));
-            } else if (
-              vgR >= LUMA_MISC_RANGE && vgR < LUMA_MISC_RANGE &&
-              vg >= LUMA_GREEN_RANGE && vg < LUMA_GREEN_RANGE &&
-              vgB >= LUMA_MISC_RANGE && vgB < LUMA_MISC_RANGE
-            ) {
-              output.push(TAG_LUMA | (vg + LUMA_GREEN_RANGE));
-              output.push((vgR + LUMA_MISC_RANGE) << 4 | (vgB + LUMA_MISC_RANGE));
-            } else {
-              output.push(TAG_RGB);
-              output.push(currentPix.r);
-              output.push(currentPix.g);
-              output.push(currentPix.b);
-            }
-          } else {
-            output.push(TAG_RGBA);
-            output.push(currentPix.r);
-            output.push(currentPix.g);
-            output.push(currentPix.b);
-            output.push(currentPix.a);
-          }
-        }
+        this.#increaseRun(pxPos, data.length); break;
       }
+
+      //Try dumping ran pixels
+      if (this.#run > 0) this.#outputRun();
+
+      if (colorTable.inTable(currentPix)) {
+        this.#outputIndex(currentPix); break;
+      } else { colorTable.set(currentPix); }
+
+      if (currentPix.a === previousPix.a) {
+        this.#outputDifference(currentPix, previousPix);
+      } else {
+        this.#outputRgba(currentPix);
+      }
+
       previousPix = currentPix.clone();
     }
 
     output.push(...PADDING);
 
     return output;
+  }
+
+  #initCompressing() {
+    this.output = [];
+    this.colorTable = new QoiTable();
+    this.#run = 0;
+  }
+
+  #increaseRun(pxPos, length) {
+    this.#run++;
+    const limitReached = pxPos === (length - CHANNEL_COUNT);
+    if (this.#run === MAX_RUN_LENGTH || limitReached) {
+      this.#outputRun();
+    }
+  }
+
+  #outputRun() {
+    this.output.push(TAG_RUN | (this.#run - 1));
+    this.#run = 0;
+  }
+
+  #outputIndex(pixel) {
+    this.output.push(TAG_INDEX | this.colorTable.getPos(pixel));
+  }
+
+  #outputDifference(currentPix, previousPix) {
+    const vr = currentPix.r - previousPix.r;
+    const vg = currentPix.g - previousPix.g;
+    const vb = currentPix.b - previousPix.b;
+
+    const vgR = vr - vg;
+    const vgB = vb - vg;
+
+    if (
+      vr >= DIFF_RANGE && vr < DIFF_RANGE &&
+      vg >= DIFF_RANGE && vg < DIFF_RANGE &&
+      vb >= DIFF_RANGE && vb < DIFF_RANGE
+    ) {
+      output.push(TAG_DIFF | (vr + DIFF_RANGE) << 4 | (vg + DIFF_RANGE) << 2 | (vb + DIFF_RANGE));
+    } else if (
+      vgR >= LUMA_MISC_RANGE && vgR < LUMA_MISC_RANGE &&
+      vg >= LUMA_GREEN_RANGE && vg < LUMA_GREEN_RANGE &&
+      vgB >= LUMA_MISC_RANGE && vgB < LUMA_MISC_RANGE
+    ) {
+      output.push(TAG_LUMA | (vg + LUMA_GREEN_RANGE));
+      output.push((vgR + LUMA_MISC_RANGE) << 4 | (vgB + LUMA_MISC_RANGE));
+    } else {
+      output.push(TAG_RGB);
+      output.push(currentPix.r);
+      output.push(currentPix.g);
+      output.push(currentPix.b);
+    }
+  }
+
+  #outputRgba(pixel) {
+    this.output.push(TAG_RGBA);
+    this.output.push(...pixel.toArray());
   }
 }
 
