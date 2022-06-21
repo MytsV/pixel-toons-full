@@ -1,15 +1,8 @@
 import { applyImageMixin } from '../utilities/image.js';
 import { IdentifiedList } from '../utilities/intentified_list.js';
 
-//Array of x and y coordinates of image start
-const START_POS = [0, 0];
 //The minimum number of layers for which we perform caching
 const CACHE_MIN_LAYER_COUNT = 4;
-//Id for a layer or frame which is never rendered
-const OFFSCREEN_ID = -1;
-//A prefix for a copied layer name
-const COPY_PREFIX = ' copy';
-const DEFAULT_OPACITY = 1;
 
 class SimpleStateEmitter {
   #listeners;
@@ -105,6 +98,10 @@ function IdGetter() {
   };
 }
 
+//Array of x and y coordinates of image start
+const START_POS = [0, 0];
+const DEFAULT_OPACITY = 1;
+
 /*
 A set of virtual canvas and its visibility, marked with a unique identifier.
  */
@@ -152,6 +149,9 @@ class Layer {
     this.context.putImageData(imageData, ...START_POS);
   }
 }
+
+//Id for a layer or frame which is never rendered
+const OFFSCREEN_ID = -1;
 
 /*
 A class implemented for faster update of canvas with many layers.
@@ -202,6 +202,9 @@ class LayerCache {
     context.drawImage(this.afterCache.virtualCanvas, ...START_POS);
   }
 }
+
+//A prefix for a copied layer name
+const COPY_PREFIX = ' copy';
 
 /*
 A class which wraps HTML <canvas> element and adds functionality to it.
