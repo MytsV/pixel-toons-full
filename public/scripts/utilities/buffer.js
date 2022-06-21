@@ -65,4 +65,35 @@ function intToByteArray(number, size) {
   return array;
 }
 
-export { Buffer };
+class ByteReader {
+  #data;
+
+  constructor(data) {
+    this.#data = data;
+    this.pos = 0;
+  }
+
+  readByte() {
+    return this.#data[this.pos++];
+  }
+
+  readString(length) {
+    const array = this.#data.slice(this.pos, this.pos + length);
+    this.pos += length;
+    return String.fromCharCode(...array);
+  }
+
+  readInteger(length) {
+    const array = this.#data.slice(this.pos, this.pos + length);
+    this.pos += length;
+    let result = 0;
+    let shifter = 0;
+    for (let i = array.length - 1; i >= 0; i--) {
+      result += array[i] * (2 ** shifter);
+      shifter += 8;
+    }
+    return result;
+  }
+}
+
+export { Buffer, ByteReader };

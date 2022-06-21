@@ -2,8 +2,8 @@
 PXT is my own file format.
  */
 
-import { Buffer } from './buffer';
-import { QoiCompressor } from './quite_ok';
+import { Buffer, ByteReader } from './buffer.js';
+import { QoiCompressor } from './quite_ok.js';
 
 const VERSION = 1;
 
@@ -96,3 +96,12 @@ class PxtEncoder {
     this.#mainBuffer.writeArray(compressed);
   }
 }
+
+class PxtDecoder {
+  decode(bytes) {
+    const reader = new ByteReader(bytes);
+    console.log(reader.readString(3));
+  }
+}
+
+export { PxtEncoder, PxtDecoder };

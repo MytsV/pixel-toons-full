@@ -11,6 +11,7 @@ import {
 import { ShortcutManager } from './core/key_shortcuts.js';
 import { GifEncoder, GifFrame } from './utilities/gif_encoder.js';
 import * as conv from './utilities/bytes_conversion.js';
+import { PxtDecoder, PxtEncoder } from './utilities/pxt.js';
 
 const setUpGifExporter = (file) => {
   const button = document.getElementById('gif-export');
@@ -19,6 +20,17 @@ const setUpGifExporter = (file) => {
     const frames = file.frames.map((frame) => GifFrame.from(frame));
     const data = encoder.encode(frames);
     conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.gif');
+  };
+};
+
+const setUpSaver = (file) => {
+  const button = document.getElementById('file-save');
+  button.onclick = () => {
+    const encoder = new PxtEncoder();
+    const data = encoder.encode(file);
+    const decoder = new PxtDecoder();
+    decoder.decode(data);
+    conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.pxt');
   };
 };
 
@@ -43,6 +55,7 @@ class Application {
     const refresh = () => this.#refreshRenderer(file);
     file.listenToUpdates(refresh);
     setUpGifExporter(file);
+    setUpSaver(file);
     refresh();
   }
 
