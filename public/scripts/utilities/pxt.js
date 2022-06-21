@@ -3,9 +3,13 @@ PXT is my own file format.
  */
 
 import { Buffer, ByteReader } from './buffer.js';
-import { QoiCompressor } from './quite_ok.js';
+import { QoiCompressor, QoiDecompressor } from './quite_ok.js';
+import { AnimationFile, Canvas, Frame, Layer } from '../core/canvas.js';
 
+const EXTENSION = 'PXT';
 const VERSION = 1;
+
+const FRAME_NAME_TEMP = 'Frame';
 
 class PxtEncoder {
   #mainBuffer;
@@ -26,7 +30,7 @@ class PxtEncoder {
   //Required. Tells the decoder it's a PXT file
   #setHeader() {
     //Signature | 3 bytes | Special value PXT
-    this.#mainBuffer.writeString('PXT');
+    this.#mainBuffer.writeString(EXTENSION);
     //Version code | 1 byte | Currently - 1
     this.#mainBuffer.writeByte(VERSION);
   }
@@ -39,10 +43,10 @@ class PxtEncoder {
     this.#mainBuffer.write16Integer(file.height);
     //Frame count | 1 byte | Number of frames
     this.#mainBuffer.writeByte(file.frames.length);
-    //Current ID | 1 byte | ID of currently selected frame
-    this.#mainBuffer.writeByte(file.currentId);
-    //Overlay ID | 1 byte | ID of currently rendered beneath frame
-    this.#mainBuffer.writeByte(file.currentId);
+    //Current ID | 2 bytes | ID of currently selected frame
+    this.#mainBuffer.write16Integer(file.currentId);
+    //Overlay ID | 2 bytes | ID of currently rendered beneath frame
+    this.#mainBuffer.write16Integer(file.overlayId);
   }
 
   #setFrameData(frame) {
@@ -54,9 +58,9 @@ class PxtEncoder {
     //ID | 2 bytes | Unique identifier of the frame
     this.#mainBuffer.write16Integer(frame.id);
     //Frame name length | 1 byte | Length of frame's name
-    this.#mainBuffer.writeByte(1);
+    this.#mainBuffer.writeByte(FRAME_NAME_TEMP.length);
     //Frame name | [Frame name length] bytes | Name string
-    this.#mainBuffer.writeString('w');
+    this.#mainBuffer.writeString(FRAME_NAME_TEMP);
     //Frame duration | 2 bytes | Duration in milliseconds
     this.#mainBuffer.write16Integer(frame.duration);
   }
@@ -86,7 +90,7 @@ class PxtEncoder {
     //Name | [Name length] bytes | Name string
     this.#mainBuffer.writeString(layer.name);
     //Opacity | 1 byte | In range 0..255
-    this.#mainBuffer.writeByte(layer.opacity);
+    this.#mainBuffer.writeByte(layer.opacity * 255 | 0);
   }
 
   #setImageData(imageData) {
@@ -100,7 +104,51 @@ class PxtEncoder {
 class PxtDecoder {
   decode(bytes) {
     const reader = new ByteReader(bytes);
-    console.log(reader.readString(3));
+    const signature = reader.readString(EXTENSION.length);
+    if (signature !== EXTENSION) throw Error('Extension is not valid');
+    const version = reader.readByte();
+    if (version !== VERSION) throw Error('Version is not valid');
+    const width = reader.readInteger(2);
+    const height = reader.readInteger(2);
+    const frameCount = reader.readByte();
+    const currentId = reader.readInteger(2);
+    const overlayId = reader.readInteger(2);
+    const file = new AnimationFile(width, height);
+    const frames = [];
+    for (let i = 0; i < frameCount; i++) {
+      const frameId = reader.readInteger(2);
+      const frameNameLength = reader.readByte();
+      const frameName = reader.readString(frameNameLength);
+      const duration = reader.readInteger(2);
+
+      const drawnId = reader.readInteger(2);
+      const layerCount = reader.readByte();
+      const layers = [];
+      for (let j = 0; j < layerCount; j++) {
+        const layerId = reader.readInteger(2);
+        const layerNameLength = reader.readByte();
+        const layerName = reader.readString(layerNameLength);
+        const opacity = reader.readByte();
+        const length = reader.readInteger(4);
+        const data = reader.readArray(length);
+
+        const layer = new Layer(layerId, width, height);
+        layer.name = layerName;
+        layer.opacity = opacity;
+        const decompressed = new QoiDecompressor().decompress(data, width, height);
+        layer.setData(decompressed);
+        layers.push(layer);
+      }
+      const canvas = new Canvas(width, height);
+      layers.forEach((layer) => canvas.appendLayer(layer));
+      canvas.switchLayer(drawnId);
+
+      const frame = new Frame(frameId, canvas, duration);
+      frames.push(frame);
+    }
+    frames.forEach((frame) => file.appendFrame(frame));
+    file.switchFrame(currentId);
+    return file;
   }
 }
 

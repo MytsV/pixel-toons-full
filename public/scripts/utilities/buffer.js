@@ -88,11 +88,17 @@ class ByteReader {
     this.pos += length;
     let result = 0;
     let shifter = 0;
-    for (let i = array.length - 1; i >= 0; i--) {
+    for (let i = 0; i < array.length; i++) {
       result += array[i] * (2 ** shifter);
       shifter += 8;
     }
     return result;
+  }
+
+  readArray(length) {
+    const array = this.#data.slice(this.pos, this.pos + length);
+    this.pos += length;
+    return array;
   }
 }
 
