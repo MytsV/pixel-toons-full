@@ -125,7 +125,7 @@ created by Abraham Lempel, Jacob Ziv, and Terry Welch.
 Pleaser refer to this link for details:
 https://en.wikipedia.org/wiki/Lempel%E2%80%93Ziv%E2%80%93Welch
  */
-class LZWCompressor {
+class LzwCompressor {
   constructor(colorBits) {
     this.table = new CodeTable(colorBits);
     this.output = new LZWOutput(this.table);
@@ -152,4 +152,4 @@ class LZWCompressor {
   }
 }
 
-export { LZWCompressor };
+export { LzwCompressor };

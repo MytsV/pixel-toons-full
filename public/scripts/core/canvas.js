@@ -132,18 +132,24 @@ class Layer {
   //Prototype pattern implementation
   clone() {
     const cloned = new Layer(this.id, this.width, this.height);
-    const imageData = this.#getImageData(this.width, this.height);
+    const imageData = this.getImageData(this.width, this.height);
     //We clone the ImageData object to avoid changing pixel data by reference
     cloned.context.putImageData(imageData.clone(), ...START_POS);
     cloned.opacity = this.opacity;
     return cloned;
   }
 
-  #getImageData(width, height) {
+  getImageData(width, height) {
     const imageData = this.context.getImageData(...START_POS, width, height);
     //We apply mixin to be able to use clone() function
     applyImageMixin(imageData);
     return imageData;
+  }
+
+  setData(data) {
+    const imageData = new ImageData(this.width, this.height);
+    imageData.data.set(data);
+    this.context.putImageData(imageData, ...START_POS);
   }
 }
 
@@ -417,11 +423,11 @@ class AnimationFile extends SimpleStateEmitter {
     this.appendFrame();
   }
 
-  appendFrame() {
+  appendFrame(frame) {
     const canvas = new Canvas(this.width, this.height);
-    const frame = new Frame(this.idGetter.get(), canvas);
-    this.#frames.push(frame);
-    this.#setCurrentFrame(frame);
+    const appended = frame ?? new Frame(this.idGetter.get(), canvas);
+    this.#frames.push(appended);
+    this.#setCurrentFrame(appended);
   }
 
   switchFrame(id) {
@@ -502,4 +508,4 @@ function drawLayer(context, layer) {
   context.globalAlpha = DEFAULT_OPACITY;
 }
 
-export { Canvas, AnimationFile };
+export { Canvas, AnimationFile, Frame, Layer };

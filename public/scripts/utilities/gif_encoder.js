@@ -1,8 +1,9 @@
 import { Buffer } from './buffer.js';
-import { LZWCompressor } from './lzw_compression.js';
+import { LzwCompressor } from './lzw_compression.js';
 import { scale } from './image.js';
 
-const EMPTY_VALUE = 0x00;
+const COLOR_PARAMETERS = 3;
+const MAX_COLOR_PARAMETERS = 4;
 const COLOR_RANGE = 256;
 
 const RED_REGIONS = 8;
@@ -10,9 +11,6 @@ const RED_REGIONS = 8;
 const GREEN_REGIONS = 4;
 const BLUE_REGIONS = 8;
 const MAX_COLORS = RED_REGIONS * GREEN_REGIONS * BLUE_REGIONS;
-
-const COLOR_PARAMETERS = 3;
-const MAX_COLOR_PARAMETERS = 4;
 
 /*
 A class to handle the quantization of colors => their such mapping to values,
@@ -77,6 +75,8 @@ class GifFrame {
     return new GifFrame(scale(image, IMAGE_SCALE), canvasFrame.duration);
   }
 }
+
+const EMPTY_VALUE = 0x00;
 
 class GifImageEncoder {
   #buffer;
@@ -193,7 +193,7 @@ class GifImageEncoder {
 
   #setPixelData() {
     const colorBits = this.#getColorsBits();
-    const compressor = new LZWCompressor(colorBits);
+    const compressor = new LzwCompressor(colorBits);
     const compressed = compressor.compress(this.indices);
     this.#buffer.writeArray(compressed);
     this.#buffer.writeByte(EMPTY_VALUE);
