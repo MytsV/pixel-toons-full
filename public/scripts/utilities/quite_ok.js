@@ -157,54 +157,53 @@ class QoiCompressor {
   //Number of pixels read in succession
   #run;
 
-  constructor() {
-  }
-
   compress({ data }) {
-    this.#initCompressing();
-    const { output, colorTable } = this;
-
+    this.#initCompressing(data);
     let previousPix = getDefaultPixel();
     let currentPix = previousPix.clone();
 
     for (let pxPos = 0; pxPos < data.length; pxPos += CHANNEL_COUNT) {
       const colorArray = data.slice(pxPos, pxPos + CHANNEL_COUNT);
       currentPix = new Pixel(...colorArray);
+      this.#writeValues(currentPix, previousPix, pxPos);
+      previousPix = currentPix.clone();
+    }
 
-      if (currentPix.equals(previousPix)) {
-        this.#increaseRun(pxPos, data.length); break;
-      }
+    this.output.push(...PADDING);
+    return this.output;
+  }
 
-      //Try dumping ran pixels
-      if (this.#run > 0) this.#outputRun();
+  #initCompressing(data) {
+    this.output = [];
+    this.colorTable = new QoiTable();
+    this.#run = 0;
+    this.length = data.length;
+  }
 
-      if (colorTable.inTable(currentPix)) {
-        this.#outputIndex(currentPix); break;
-      } else { colorTable.set(currentPix); }
+  #writeValues(currentPix, previousPix, pxPos) {
+    if (currentPix.equals(previousPix)) {
+      this.#increaseRun(pxPos);
+      return;
+    }
 
+    //Try dumping ran pixels
+    if (this.#run > 0) this.#outputRun();
+
+    if (this.colorTable.inTable(currentPix)) {
+      this.#outputIndex(currentPix);
+    } else {
+      this.colorTable.set(currentPix);
       if (currentPix.a === previousPix.a) {
         this.#outputDifference(currentPix, previousPix);
       } else {
         this.#outputRgba(currentPix);
       }
-
-      previousPix = currentPix.clone();
     }
-
-    output.push(...PADDING);
-
-    return output;
   }
 
-  #initCompressing() {
-    this.output = [];
-    this.colorTable = new QoiTable();
-    this.#run = 0;
-  }
-
-  #increaseRun(pxPos, length) {
+  #increaseRun(pxPos) {
     this.#run++;
-    const limitReached = pxPos === (length - CHANNEL_COUNT);
+    const limitReached = pxPos === (this.length - CHANNEL_COUNT);
     if (this.#run === MAX_RUN_LENGTH || limitReached) {
       this.#outputRun();
     }
@@ -232,19 +231,19 @@ class QoiCompressor {
       vg >= DIFF_RANGE && vg < DIFF_RANGE &&
       vb >= DIFF_RANGE && vb < DIFF_RANGE
     ) {
-      output.push(TAG_DIFF | (vr + DIFF_RANGE) << 4 | (vg + DIFF_RANGE) << 2 | (vb + DIFF_RANGE));
+      this.output.push(TAG_DIFF | (vr + DIFF_RANGE) << 4 | (vg + DIFF_RANGE) << 2 | (vb + DIFF_RANGE));
     } else if (
       vgR >= LUMA_MISC_RANGE && vgR < LUMA_MISC_RANGE &&
       vg >= LUMA_GREEN_RANGE && vg < LUMA_GREEN_RANGE &&
       vgB >= LUMA_MISC_RANGE && vgB < LUMA_MISC_RANGE
     ) {
-      output.push(TAG_LUMA | (vg + LUMA_GREEN_RANGE));
-      output.push((vgR + LUMA_MISC_RANGE) << 4 | (vgB + LUMA_MISC_RANGE));
+      this.output.push(TAG_LUMA | (vg + LUMA_GREEN_RANGE));
+      this.output.push((vgR + LUMA_MISC_RANGE) << 4 | (vgB + LUMA_MISC_RANGE));
     } else {
-      output.push(TAG_RGB);
-      output.push(currentPix.r);
-      output.push(currentPix.g);
-      output.push(currentPix.b);
+      this.output.push(TAG_RGB);
+      this.output.push(currentPix.r);
+      this.output.push(currentPix.g);
+      this.output.push(currentPix.b);
     }
   }
 
@@ -313,6 +312,6 @@ function getDefaultPixel() {
 }
 
 const imageData = new ImageData(50, 50);
-imageData.data.set([255, 65, 43, 24, 245, 24, 235, 4], 0);
+imageData.data.set([255, 65, 43, 24, 245, 24, 235, 4, 24, 235, 4], 0);
 const compressed = new QoiCompressor().compress(imageData);
 console.log(decompress(compressed, 50, 50));
