@@ -158,7 +158,7 @@ class QoiTable {
 }
 
 class QoiCompressor {
-  //Number of pixels read in succession
+  //Number of identical pixels read in succession
   #run;
 
   compress({ data }) {
@@ -273,67 +273,67 @@ class QoiCompressor {
   }
 }
 
-function decompress(bytes, width, height) {
-  const data = new Uint8Array(width * height * CHANNEL_COUNT);
-  const index = new QoiTable();
-  const pxLen = width * height * CHANNEL_COUNT;
+class QoiDecompressor {
+  //Number of identical pixels read in succession
+  #run;
 
-  let px = getDefaultPixel();
+  decompress(bytes, width, height) {
+    const data = new Uint8Array(width * height * CHANNEL_COUNT);
+    const table = new QoiTable();
+    const length = width * height * CHANNEL_COUNT;
 
-  const chunksLen = bytes.length - PADDING.length;
-  let run = 0;
-  let p = 0;
+    let pixel = getDefaultPixel();
 
-  for (let pxPos = 0; pxPos < pxLen; pxPos += CHANNEL_COUNT) {
-    if (run > 0) {
-      run--;
-    } else if (p < chunksLen) {
-      const b1 = bytes[p++];
+    this.#run = 0;
+    let bytesPos = 0;
 
-      if (b1 === TAG_RGB) {
-        px.r = bytes[p++];
-        px.g = bytes[p++];
-        px.b = bytes[p++];
-      } else if (b1 === TAG_RGBA) {
-        px.r = bytes[p++];
-        px.g = bytes[p++];
-        px.b = bytes[p++];
-        px.a = bytes[p++];
-      } else if ((b1 & TWO_BIT_MASK) === TAG_INDEX) {
-        px = index.get(b1);
-      } else if ((b1 & TWO_BIT_MASK) === TAG_DIFF) {
-        px.r += ((b1 >> 4) & 0x03) - 2;
-        px.rg += ((b1 >> 2) & 0x03) - 2;
-        px.b += (b1 & 0x03) - 2;
-      } else if ((b1 & TWO_BIT_MASK) === TAG_LUMA) {
-        const b2 = bytes[p++];
-        const vg = (b1 & 0x3f) - 32;
-        px.r += vg - 8 + ((b2 >> 4) & 0x0f);
-        px.g += vg;
-        px.b += vg - 8 + (b2 & 0x0f);
-      } else if ((b1 & TWO_BIT_MASK) === TAG_RUN) {
-        run = b1 & 0x3f;
+    for (let pxPos = 0; pxPos < length; pxPos += CHANNEL_COUNT) {
+      if (this.#run > 0) {
+        this.#run--;
+      } else if (bytesPos < (bytes.length - PADDING.length)) {
+        const byte = bytes[bytesPos++];
+
+        if (byte === TAG_RGB) {
+          pixel.r = bytes[bytesPos++];
+          pixel.g = bytes[bytesPos++];
+          pixel.b = bytes[bytesPos++];
+        } else if (byte === TAG_RGBA) {
+          pixel.r = bytes[bytesPos++];
+          pixel.g = bytes[bytesPos++];
+          pixel.b = bytes[bytesPos++];
+          pixel.a = bytes[bytesPos++];
+        } else if ((byte & TWO_BIT_MASK) === TAG_INDEX) {
+          pixel = table.get(byte);
+        } else if ((byte & TWO_BIT_MASK) === TAG_DIFF) {
+          pixel.r += ((byte >> 4) & 0x03) - 2;
+          pixel.g += ((byte >> 2) & 0x03) - 2;
+          pixel.b += (byte & 0x03) - 2;
+        } else if ((byte & TWO_BIT_MASK) === TAG_LUMA) {
+          const b2 = bytes[bytesPos++];
+          const vg = (byte & 0x3f) - 32;
+          pixel.r += vg - 8 + ((b2 >> 4) & 0x0f);
+          pixel.g += vg;
+          pixel.b += vg - 8 + (b2 & 0x0f);
+        } else if ((byte & TWO_BIT_MASK) === TAG_RUN) {
+          this.#run = byte & 0x3f;
+        }
+
+        table.set(pixel);
       }
 
-      index.set(px);
+      data.set(pixel.toArray(), pxPos);
     }
 
-    data[pxPos] = px.r;
-    data[pxPos + 1] = px.g;
-    data[pxPos + 2] = px.b;
-    data[pxPos + 3] = px.a;
+    return data;
   }
 
-  return data;
+  // #initDecompressing(data) {
+  //
+  // }
 }
 
 function getDefaultPixel() {
   return new Pixel(0, 0, 0);
 }
 
-// const imageData = new ImageData(50, 50);
-// imageData.data.set([255, 65, 43, 24, 245, 24, 235, 4, 24, 235, 4, 43, 24, 54, 24, 34, 12, 24, 33, 33, 33, 32, 33, 34, 32, 33, 34, 31, 54, 23, 43, 25, 24, 21, 43, 54, 13, 32, 43], 0);
-// const compressed = new QoiCompressor().compress(imageData);
-// console.log(decompress(compressed, 50, 50));
-
-export { QoiCompressor, decompress };
+export { QoiCompressor, QoiDecompressor };
