@@ -278,38 +278,33 @@ class QoiDecompressor {
   #run;
 
   decompress(bytes, width, height) {
-    const data = new Uint8Array(width * height * CHANNEL_COUNT);
-    const table = new QoiTable();
-    const length = width * height * CHANNEL_COUNT;
-
+    this.#initDecompressing(width, height);
+    const reader = getByteReader(bytes, bytes.length - PADDING.length);
     let pixel = getDefaultPixel();
-
     this.#run = 0;
-    let bytesPos = 0;
 
-    for (let pxPos = 0; pxPos < length; pxPos += CHANNEL_COUNT) {
+    for (let pxPos = 0; pxPos < this.length; pxPos += CHANNEL_COUNT) {
       if (this.#run > 0) {
         this.#run--;
-      } else if (bytesPos < (bytes.length - PADDING.length)) {
-        const byte = bytes[bytesPos++];
-
+      } else if (reader.canRead()) {
+        const byte = reader.next();
         if (byte === TAG_RGB) {
-          pixel.r = bytes[bytesPos++];
-          pixel.g = bytes[bytesPos++];
-          pixel.b = bytes[bytesPos++];
+          pixel.r = reader.next();
+          pixel.g = reader.next();
+          pixel.b = reader.next();
         } else if (byte === TAG_RGBA) {
-          pixel.r = bytes[bytesPos++];
-          pixel.g = bytes[bytesPos++];
-          pixel.b = bytes[bytesPos++];
-          pixel.a = bytes[bytesPos++];
+          pixel.r = reader.next();
+          pixel.g = reader.next();
+          pixel.b = reader.next();
+          pixel.a = reader.next();
         } else if ((byte & TWO_BIT_MASK) === TAG_INDEX) {
-          pixel = table.get(byte);
+          pixel = this.colorTable.get(byte);
         } else if ((byte & TWO_BIT_MASK) === TAG_DIFF) {
           pixel.r += ((byte >> 4) & 0x03) - 2;
           pixel.g += ((byte >> 2) & 0x03) - 2;
           pixel.b += (byte & 0x03) - 2;
         } else if ((byte & TWO_BIT_MASK) === TAG_LUMA) {
-          const b2 = bytes[bytesPos++];
+          const b2 = reader.next();
           const vg = (byte & 0x3f) - 32;
           pixel.r += vg - 8 + ((b2 >> 4) & 0x0f);
           pixel.g += vg;
@@ -317,23 +312,31 @@ class QoiDecompressor {
         } else if ((byte & TWO_BIT_MASK) === TAG_RUN) {
           this.#run = byte & 0x3f;
         }
-
-        table.set(pixel);
+        this.colorTable.set(pixel);
       }
-
-      data.set(pixel.toArray(), pxPos);
+      this.output.set(pixel.toArray(), pxPos);
     }
 
-    return data;
+    return this.output;
   }
 
-  // #initDecompressing(data) {
-  //
-  // }
+  #initDecompressing(width, height) {
+    this.output = new Uint8Array(width * height * CHANNEL_COUNT);
+    this.colorTable = new QoiTable();
+    this.length = width * height * CHANNEL_COUNT;
+  }
 }
 
 function getDefaultPixel() {
   return new Pixel(0, 0, 0);
+}
+
+function getByteReader(bytes, limit) {
+  let pos = 0;
+  return {
+    next: () => bytes[pos++],
+    canRead: () => pos < limit
+  };
 }
 
 export { QoiCompressor, QoiDecompressor };
