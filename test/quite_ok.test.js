@@ -9,7 +9,7 @@ describe('QuiteOk compressor', () => {
 const COLOR_MAX = 255;
 
 async function testRandom() {
-  const imageSize = 100;
+  const imageSize = 250;
   const parameterCount = 4;
   const colorRange =  Math.floor(Math.random() * COLOR_MAX);
 
@@ -19,6 +19,7 @@ async function testRandom() {
   }
   const compressed = new QoiCompressor().compress({ data });
   const decompressed = new QoiDecompressor().decompress(compressed, imageSize, imageSize);
+
   for (let i = 0; i < data.length; i++) {
     expect(decompressed[i]).to.equal(data[i]);
   }

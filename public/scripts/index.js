@@ -34,6 +34,21 @@ const setUpSaver = (file) => {
   };
 };
 
+const setUpOpener = (openFile) => {
+  const button = document.getElementById('file-open');
+  button.oninput = () => {
+    const reader = new FileReader();
+    reader.onload = function() {
+      const arrayBuffer = this.result;
+      const array = new Uint8Array(arrayBuffer);
+
+      const file = new PxtDecoder().decode(array);
+      openFile(file);
+    };
+    reader.readAsArrayBuffer(button.files[0]);
+  };
+};
+
 class Application {
   constructor() {
     this.canvasRenderer = new CanvasRenderer();
@@ -48,10 +63,19 @@ class Application {
     ];
     this.shortcuts = new ShortcutManager();
     this.uiElements.push(new ShortcutsMenu(this.shortcuts));
+    setUpOpener((file) => this.#openFile(file));
   }
 
   #setNewFile(width, height) {
     const file = new AnimationFile(width, height);
+    const refresh = () => this.#refreshRenderer(file);
+    file.listenToUpdates(refresh);
+    setUpGifExporter(file);
+    setUpSaver(file);
+    refresh();
+  }
+
+  #openFile(file) {
     const refresh = () => this.#refreshRenderer(file);
     file.listenToUpdates(refresh);
     setUpGifExporter(file);
