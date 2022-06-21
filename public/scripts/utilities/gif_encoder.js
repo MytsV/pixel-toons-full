@@ -1,5 +1,5 @@
 import { Buffer } from './buffer.js';
-import { LZWCompressor } from './lzw_compression.js';
+import { LzwCompressor } from './lzw_compression.js';
 import { scale } from './image.js';
 
 const COLOR_PARAMETERS = 3;
@@ -193,7 +193,7 @@ class GifImageEncoder {
 
   #setPixelData() {
     const colorBits = this.#getColorsBits();
-    const compressor = new LZWCompressor(colorBits);
+    const compressor = new LzwCompressor(colorBits);
     const compressed = compressor.compress(this.indices);
     this.#buffer.writeArray(compressed);
     this.#buffer.writeByte(EMPTY_VALUE);
