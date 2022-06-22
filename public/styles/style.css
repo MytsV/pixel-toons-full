@@ -149,27 +149,20 @@ body {
   border-top: none;
 }
 
-.layer {
+.entity {
   box-sizing: border-box;
-  background-color: white;
-  border-top: var(--border-size) solid white;
-  border-bottom: var(--border-size) solid lightgray;
-  border-right: var(--border-size) solid lightgray;
-  outline: var(--border-size) solid var(--border-color);
+  border-bottom: var(--border-size) solid black;
   position: relative;
-  margin: 6pt 5pt;
   display: flex;
   align-items: center;
 }
 
-.layer-selected {
-  background-color: var(--main-panel-color);
-  border-bottom: var(--border-size) solid var(--main-panel-color-shadow);
-  border-right: var(--border-size) solid var(--main-panel-color-shadow);
-  border-top: var(--border-size) solid var(--main-panel-color-highlight);
+.entity-selected {
+  background: linear-gradient(90deg, red, #FF9A02, #2EFD2A, #00C2FF, #9E00FF);
+  border-bottom: var(--border-size) solid black;
 }
 
-.layer-image {
+.entity-image {
   width: 40pt;
   height: 40pt;
   background-repeat: no-repeat;
@@ -179,7 +172,7 @@ body {
   margin-right: 5pt;
 }
 
-.layer-name {
+.entity-name {
   margin-right: 15pt;
 }
 
@@ -188,10 +181,10 @@ body {
   background: url("../images/eye-open.png");
   background-size: cover;
   image-rendering: pixelated;
-  width: 17pt;
-  height: 17pt;
-  top: 0;
-  right: 0;
+  width: 15pt;
+  height: 15pt;
+  top: 12pt;
+  right: 5pt;
 }
 
 .visibility-button-inactive {
@@ -224,7 +217,7 @@ body {
   background-color: white;
   border-bottom: var(--border-size) solid lightgray;
   border-right: var(--border-size) solid lightgray;
-  outline: var(--border-size) solid var(--border-color);
+  outline: var(--border-size) solid black;
 }
 
 .main-panel {
@@ -707,4 +700,33 @@ input {
   background-image: url("../images/copy.png");
   width: 18pt;
   height: 19pt;
+}
+
+.frame-duration {
+  position: absolute;
+  top: 12pt;
+  right: -8pt;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.frame-duration div {
+  color: black;
+  font-size: 4pt;
+  font-family: 'Pixelite', serif;
+  margin-top: 1pt;
+}
+
+.frame-duration img {
+  width: 13pt;
+  height: 13pt;
+  background-image: url("../images/duration.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  image-rendering: pixelated;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  outline: 0;
 }

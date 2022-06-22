@@ -351,12 +351,12 @@ export class FrameBox {
     this.frameIndex = frameIndex;
     this.element = this.#createElement();
     this.#setUpElementClasses();
-    this.#appendFrameLabel();
     this.#appendFrameImage();
+    this.#appendFrameLabel();
   }
 
   #createElement() {
-    const element =  document.createElement('div');
+    const element = document.createElement('div');
     element.onclick = () => {
       this.file.switchFrame(this.frame.id);
     };
@@ -364,36 +364,41 @@ export class FrameBox {
   }
 
   #setUpElementClasses() {
-    this.element.classList.add('frame');
-    if (this.frame.id === this.frame.drawnId) {
-      this.element.classList.add('frame-selected');
+    this.element.classList.add('entity');
+    if (this.frame.id === this.file.currentId) {
+      this.element.classList.add('entity-selected');
     }
   }
 
   #appendFrameLabel() {
     const container = document.createElement('div');
-
-    container.classList.add('frame-label');
-    const name = getTextElement(this.frameIndex + 1);
-    name.classList.add('frame-index');
-
+    container.classList.add('entity-label');
+    const name = getTextElement('Frame ' + this.frame.id);
     container.appendChild(name);
     container.appendChild(this.#getDurationElement());
     this.element.appendChild(container);
   }
 
   #getDurationElement() {
-    const duration = document.createElement('select');
-    duration.classList.add('frame-duration', 'text');
-    const options = this.#getOptions();
-    options.forEach((option) => duration.appendChild(option));
-    duration.onclick = (event) => {
-      event.stopPropagation();
-    };
-    duration.onchange = (event) => {
-      this.frame.duration = parseInt(event.target.value);
-    };
+    const duration = document.createElement('div');
+    duration.classList.add('frame-duration');
+    const image = document.createElement('img');
+    const text = document.createElement('div');
+    text.innerText = `${this.frame.duration}ms`;
+    duration.appendChild(image);
+    duration.appendChild(text);
     return duration;
+    // const duration = document.createElement('select');
+    // duration.classList.add('frame-duration', 'text');
+    // const options = this.#getOptions();
+    // options.forEach((option) => duration.appendChild(option));
+    // duration.onclick = (event) => {
+    //   event.stopPropagation();
+    // };
+    // duration.onchange = (event) => {
+    //   this.frame.duration = parseInt(event.target.value);
+    // };
+    // return duration;
   }
 
   #getOptions() {
@@ -410,7 +415,7 @@ export class FrameBox {
 
   #appendFrameImage() {
     const image = document.createElement('div');
-    image.classList.add('frame-image');
+    image.classList.add('entity-image');
 
     const url = this.#getFrameImageUrl();
     conv.setImageUrl(image, url);
@@ -480,7 +485,7 @@ class FrameMenu extends UiElement {
     list.innerHTML = '';
 
     //Iterate the list in reversed order
-    for (let i = 0; i < file.frames.length; i++) {
+    for (let i = file.frames.length - 1; i >= 0; i--) {
       const frameBox = new FrameBox(file, i);
       list.appendChild(frameBox.element);
     }
@@ -522,15 +527,15 @@ class LayerBox {
   }
 
   #setUpElementClasses() {
-    this.element.classList.add('layer');
+    this.element.classList.add('entity');
     if (this.layer.id === this.canvas.drawnId) {
-      this.element.classList.add('layer-selected');
+      this.element.classList.add('entity-selected');
     }
   }
 
   #appendLayerName() {
     const name = getTextElement(this.layer.name);
-    name.classList.add('layer-name');
+    name.classList.add('entity-name');
     this.element.appendChild(name);
   }
 
@@ -555,7 +560,7 @@ class LayerBox {
 
   #appendLayerImage() {
     const image = document.createElement('div');
-    image.classList.add('layer-image');
+    image.classList.add('entity-image');
 
     const url = this.#getLayerImageUrl();
     LayerBox.#imageCache.set(this.layer, url);
