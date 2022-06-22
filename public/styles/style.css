@@ -336,13 +336,13 @@ input[type=color]::-moz-color-swatch {
 
 /* Handle */
 #canvas-parent::-webkit-scrollbar-thumb {
-  background: #C2D7FF;
-  border: var(--border-size) solid var(--border-color);
+  background: white;
+  border: var(--border-size) solid black;
 }
 
 /* Handle on hover */
 #canvas-parent::-webkit-scrollbar-thumb:hover {
-  background: var(--main-panel-color);
+  background: lightgray;
 }
 
 #layer-actions {
@@ -611,8 +611,14 @@ input {
 
 #coordinates {
   font-family: 'Pixelite', serif;
-  color: white;
-  font-size: 13pt;
-  margin: 10pt;
+  color: black;
+  font-size: 8pt;
   position: absolute;
+  bottom: 0;
+  background-color: white;
+  border: var(--border-size) solid black;
+  width: 120pt;
+  padding-top: 7pt;
+  padding-left: 10pt;
+  height: 25pt;
 }
