@@ -148,9 +148,26 @@ class ToolInfo {
   #createElement() {
     const element = document.createElement('div');
     element.id = this.name.toLowerCase();
-    element.classList.add('single-tool', 'label-panel', 'main-panel');
-    element.appendChild(getTextElement(this.name));
+    element.classList.add('single-tool');
+    this.#setImage();
+    element.appendChild(this.image);
     return element;
+  }
+
+  #setImage() {
+    this.image = document.createElement('img');
+    this.image.classList.add('tool-image');
+    this.disable();
+  }
+
+  enable() {
+    const imageName = this.name.toLowerCase();
+    this.image.src = `./images/${imageName}-active.png`;
+  }
+
+  disable() {
+    const imageName = this.name.toLowerCase();
+    this.image.src = `./images/${imageName}.png`;
   }
 
   addOption(option, listener) {
@@ -181,8 +198,6 @@ class ToolOptionRange {
 }
 
 export class Toolbar extends UiElement {
-  static #activeClass = 'active-tool';
-
   constructor() {
     super();
 
@@ -236,11 +251,11 @@ export class Toolbar extends UiElement {
   #setChosen(toolInfo, canvas) {
     if (this.chosen) {
       this.chosen.tool.disable();
-      this.chosen.element.classList.remove(Toolbar.#activeClass);
+      this.chosen.disable();
     }
     this.chosen = toolInfo;
     this.chosen.tool.link(canvas);
-    this.chosen.element.classList.add(Toolbar.#activeClass);
+    this.chosen.enable();
     this.#enableOptions(toolInfo);
   }
 
