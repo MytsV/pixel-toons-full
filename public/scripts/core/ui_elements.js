@@ -211,7 +211,7 @@ export class Toolbar extends UiElement {
     this.container = document.getElementById('tools');
     this.#setUpTools();
     this.#setUpOptions();
-    this.#setUpColorPicker();
+    //this.#setUpColorPicker();
     this.chosen = this.toolsInfo[0];
   }
 
@@ -256,7 +256,7 @@ export class Toolbar extends UiElement {
     this.chosen = toolInfo;
     this.chosen.tool.link(canvas);
     this.chosen.enable();
-    this.#enableOptions(toolInfo);
+    //this.#enableOptions(toolInfo);
   }
 
   #enableOptions(toolInfo) {

@@ -11,7 +11,7 @@ body {
   --main-panel-color-shadow: #6092f1;
   --border-color: #42568b;
   --border-size: 1.8pt;
-  --inter-element-spacing: 4pt;
+  --inter-element-spacing: 3pt;
   --panel-height: 25pt;
   --panel-width: 100pt;
   margin: 0;
@@ -31,6 +31,12 @@ body {
   margin: var(--inter-element-spacing);
 }
 
+#menu {
+  border-right: none;
+  border-top: none;
+  border-left: none;
+}
+
 #toolbar {
   width: 50pt;
   display: flex;
@@ -48,7 +54,7 @@ body {
 
 #canvas-parent {
   width: 100%;
-  background-color: var(--border-color);
+  background-color: black;
   display: block;
   overflow: auto;
   position: relative;
@@ -100,8 +106,8 @@ body {
 }
 
 .state-button {
-  width: 25pt;
-  height: 25pt;
+  width: 18pt;
+  height: 18pt;
   background-repeat: no-repeat;
   background-size: cover;
   image-rendering: pixelated;
@@ -254,7 +260,7 @@ body {
 }
 
 .menu-item {
-  padding: 6pt 12pt 0 12pt;
+  padding: 8pt 12pt 0 12pt;
   width: max-content;
   display: inline-block;
 }
@@ -269,13 +275,21 @@ body {
 }
 
 #state-button-container {
+  background-color: white;
+  width: max-content;
   margin-top: var(--inter-element-spacing);
   margin-bottom: var(--inter-element-spacing);
-  padding: 5pt;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6pt;
+}
+
+.tool-option-container {
+  padding-left: 10pt;
+  padding-right: 10pt;
+  margin-left: 10pt;
+  height: 20pt;
 }
 
 *{
@@ -574,10 +588,16 @@ input {
 
 #tool-options {
   position: absolute;
-  width: calc(100% - 20pt);
-  margin: var(--inter-element-spacing);
+  width: 100%;
   z-index: 1;
-  display: none;
+  display: block;
+  height: 40pt;
+  background: url('../images/modular-background.png');
+  background-repeat: repeat-x;
+  background-size: contain;
+  image-rendering: pixelated;
+  background-color: white;
+  padding-top: 5pt;
 }
 
 #layer-opacity {
