@@ -63,7 +63,7 @@ body {
 }
 
 #sidebar {
-  width: 200pt;
+  width: 250pt;
   overflow: auto;
   display: flex;
   flex-direction: column;
@@ -146,6 +146,7 @@ body {
   height: 1pt;
   overflow: auto;
   margin-top: var(--inter-element-spacing);
+  border-top: none;
 }
 
 .layer {
@@ -263,7 +264,7 @@ body {
 }
 
 .label-panel {
-  padding-top: 3pt;
+  padding-top: 6pt;
   padding-left: 8pt;
 }
 
@@ -346,18 +347,21 @@ input[type=color]::-moz-color-swatch {
   margin-top: var(--inter-element-spacing);
   display: grid;
   grid-template-rows: auto;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+  justify-items: center;
 }
 
 #zoom-container {
   display: flex;
   margin-bottom: var(--inter-element-spacing);
   justify-content: space-between;
+  padding: 5pt;
+  border-bottom: var(--border-size) solid black;
 }
 
 .zoom-button {
-  height: 20pt;
-  width: 20pt;
+  height: 17pt;
+  width: 17pt;
   display: inline-block;
   background-repeat: no-repeat;
   background-size: contain;
@@ -622,4 +626,85 @@ input {
   padding-top: 7pt;
   padding-left: 10pt;
   height: 25pt;
+}
+
+#color-picker {
+  height: 80pt;
+}
+
+#palette {
+  margin-top: 6pt;
+  height: 35pt;
+}
+
+#navigation {
+  margin-top: 6pt;
+  height: 100pt;
+}
+
+#element-choice {
+  display: flex;
+  justify-content: space-between;
+  padding: 10pt;
+  border: var(--border-size) solid black;
+  border-bottom: none;
+  margin: -1.5pt;
+  margin-top: 6pt;
+}
+
+.element-chosen {
+  background-image: linear-gradient(90deg, red, #FF9A02, #2EFD2A, #00C2FF, #9E00FF);
+}
+
+#element-container {
+  margin-top: 6pt;
+  flex-grow: 1;
+  height: 1pt;
+}
+
+#layer-actions {
+  margin-top: 6pt;
+  padding: 5pt;
+}
+
+#add-layer {
+  background-image: url("../images/add.png");
+  width: 18pt;
+  height: 18pt;
+}
+
+.layer-action {
+  background-repeat: no-repeat;
+  background-size: contain;
+  image-rendering: pixelated;
+}
+
+#remove-layer {
+  background-image: url("../images/remove.png");
+  width: 18pt;
+  height: 18pt;
+}
+
+#move-layer-up {
+  background-image: url("../images/up.png");
+  width: 15pt;
+  height: 15pt;
+}
+
+#move-layer-down {
+  background-image: url("../images/down.png");
+  width: 15pt;
+  height: 15pt;
+}
+
+#merge-layers {
+  background-image: url("../images/merge.png");
+  width: 18pt;
+  height: 19pt;
+}
+
+#duplicate-layer {
+  background-image: url("../images/copy.png");
+  width: 18pt;
+  height: 19pt;
 }
