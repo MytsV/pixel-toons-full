@@ -336,13 +336,63 @@ export class ShortcutsMenu extends UiElement {
   }
 }
 
-const frameDurations = [
-  100,
-  200,
-  300,
-  500,
-  1000
-];
+//option refactoring
+class RangePopup {
+  constructor(min, max, setValue, name, initial) {
+    this.setValue = setValue;
+    this.name = name;
+    this.initial = initial;
+    this.#setUpElement();
+    this.#setUpInput(min, max);
+  }
+
+  #setUpInput(min, max) {
+    this.input = document.createElement('input');
+    this.input.type = 'range';
+    this.input.min = min;
+    this.input.max = max;
+    this.input.value = this.initial;
+    this.input.oninput = () => {
+      const value = this.input.value;
+      this.nameElement.innerText = this.#getText(value);
+      this.setValue(value);
+    };
+    this.element.appendChild(this.input);
+  }
+
+  #setUpElement() {
+    const popup = document.createElement('div');
+    popup.classList.add('range-popup');
+    this.nameElement = getTextElement(this.#getText(this.initial));
+    popup.appendChild(this.nameElement);
+    document.body.appendChild(popup);
+    this.element = popup;
+  }
+
+  enable(x, y) {
+    const offset = 15;
+    const rect = this.element.getBoundingClientRect();
+    const left = x - rect.width + offset;
+    const top = y - rect.height + offset;
+    this.element.style.display = SHOW_DISPLAY;
+    this.element.style.position = 'absolute';
+    this.element.style.left = left + 'px';
+    this.element.style.top = top + 'px';
+    this.element.onmouseleave = () => this.disable();
+  }
+
+  disable() {
+    this.element.style.display = HIDE_DISPLAY;
+    this.element.onmouseout = undefined;
+  }
+
+  #getText(value) {
+    return `${this.name}: ${value}`;
+  }
+}
+
+const MIN_DURATION = 100;
+const MAX_DURATION = 1000;
 
 export class FrameBox {
   constructor(file, frameIndex) {
@@ -353,6 +403,7 @@ export class FrameBox {
     this.#setUpElementClasses();
     this.#appendFrameImage();
     this.#appendFrameLabel();
+    this.#setUpRangePopup();
   }
 
   #createElement() {
@@ -387,30 +438,19 @@ export class FrameBox {
     text.innerText = `${this.frame.duration}ms`;
     duration.appendChild(image);
     duration.appendChild(text);
+
+    duration.onclick = (event) => {
+      this.popup.enable(event.clientX, event.clientY);
+    };
+
     return duration;
-    // const duration = document.createElement('select');
-    // duration.classList.add('frame-duration', 'text');
-    // const options = this.#getOptions();
-    // options.forEach((option) => duration.appendChild(option));
-    // duration.onclick = (event) => {
-    //   event.stopPropagation();
-    // };
-    // duration.onchange = (event) => {
-    //   this.frame.duration = parseInt(event.target.value);
-    // };
-    // return duration;
   }
 
-  #getOptions() {
-    return frameDurations.map((duration) => {
-      const option = document.createElement('option');
-      option.value = duration.toString();
-      option.innerText = duration + 'ms';
-      if (duration === this.frame.duration) {
-        option.defaultSelected = true;
-      }
-      return option;
-    });
+  #setUpRangePopup() {
+    const setValue = (value) => {
+      this.frame.duration = parseInt(value);
+    };
+    this.popup = new RangePopup(MIN_DURATION, MAX_DURATION, setValue, 'Duration', this.frame.duration);
   }
 
   #appendFrameImage() {
@@ -449,10 +489,10 @@ class FrameMenu extends UiElement {
     this.buttons.addButton('duplicate-entity', (file) => {
       file.duplicateFrame(file.currentId);
     });
-    this.buttons.addButton('move-entity-down', (file) => {
+    this.buttons.addButton('move-entity-up', (file) => {
       file.moveFrameUp(file.currentId);
     });
-    this.buttons.addButton('move-entity-up', (file) => {
+    this.buttons.addButton('move-entity-down', (file) => {
       file.moveFrameDown(file.currentId);
     });
     this.buttons.addButton('remove-entity', (file) => {
