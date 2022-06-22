@@ -141,7 +141,7 @@ body {
   image-rendering: pixelated;
 }
 
-#layer-container {
+#entity-list {
   flex-grow: 1;
   height: 1pt;
   overflow: auto;
@@ -343,7 +343,7 @@ input[type=color]::-moz-color-swatch {
   background: lightgray;
 }
 
-#layer-actions {
+#entity-actions {
   margin-top: var(--inter-element-spacing);
   display: grid;
   grid-template-rows: auto;
@@ -642,7 +642,7 @@ input {
   height: 100pt;
 }
 
-#element-choice {
+#entity-choice {
   display: flex;
   justify-content: space-between;
   padding: 10pt;
@@ -652,7 +652,7 @@ input {
   margin-top: 6pt;
 }
 
-.element-chosen {
+.entity-chosen {
   background-image: linear-gradient(90deg, red, #FF9A02, #2EFD2A, #00C2FF, #9E00FF);
 }
 
@@ -662,48 +662,48 @@ input {
   height: 1pt;
 }
 
-#layer-actions {
+#entity-actions {
   margin-top: 6pt;
   padding: 5pt;
 }
 
-#add-layer {
+#add-entity {
   background-image: url("../images/add.png");
   width: 18pt;
   height: 18pt;
 }
 
-.layer-action {
+.entity-action {
   background-repeat: no-repeat;
   background-size: contain;
   image-rendering: pixelated;
 }
 
-#remove-layer {
+#remove-entity {
   background-image: url("../images/remove.png");
   width: 18pt;
   height: 18pt;
 }
 
-#move-layer-up {
+#move-entity-up {
   background-image: url("../images/up.png");
   width: 15pt;
   height: 15pt;
 }
 
-#move-layer-down {
+#move-entity-down {
   background-image: url("../images/down.png");
   width: 15pt;
   height: 15pt;
 }
 
-#merge-layers {
+#merge-entities {
   background-image: url("../images/merge.png");
   width: 18pt;
   height: 19pt;
 }
 
-#duplicate-layer {
+#duplicate-entity {
   background-image: url("../images/copy.png");
   width: 18pt;
   height: 19pt;

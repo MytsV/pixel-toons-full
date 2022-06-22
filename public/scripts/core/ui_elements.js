@@ -281,187 +281,6 @@ export class Toolbar extends UiElement {
   }
 }
 
-class LayerBox {
-  static #imageCache = new Map();
-
-  constructor(canvas, layerIndex) {
-    this.canvas = canvas;
-    this.layer = canvas.layers[layerIndex];
-    this.element = this.#createElement();
-    this.#setUpElementClasses();
-    this.#appendLayerImage();
-    this.#appendLayerName();
-    this.#appendVisibilityButton();
-  }
-
-  #createElement() {
-    const element = document.createElement('div');
-    element.onclick = () => {
-      this.canvas.switchLayer(this.layer.id);
-    };
-    return element;
-  }
-
-  #setUpElementClasses() {
-    this.element.classList.add('layer');
-    if (this.layer.id === this.canvas.drawnId) {
-      this.element.classList.add('layer-selected');
-    }
-  }
-
-  #appendLayerName() {
-    const name = getTextElement(this.layer.name);
-    name.classList.add('layer-name');
-    this.element.appendChild(name);
-  }
-
-  #appendVisibilityButton() {
-    const button = document.createElement('div');
-    this.#setVisibility(button);
-    button.onclick = () => {
-      this.layer.visible = !this.layer.visible;
-      this.canvas.redraw();
-      this.#setVisibility(button);
-    };
-    this.element.appendChild(button);
-  }
-
-  #setVisibility(button) {
-    button.classList.remove(...button.classList);
-    button.classList.add('visibility-button');
-    if (!this.layer.visible) {
-      button.classList.add('visibility-button-inactive');
-    }
-  }
-
-  #appendLayerImage() {
-    const image = document.createElement('div');
-    image.classList.add('layer-image');
-
-    const url = this.#getLayerImageUrl();
-    LayerBox.#imageCache.set(this.layer, url);
-    conv.setImageUrl(image, url);
-
-    this.element.appendChild(image);
-  }
-
-  #getLayerImageUrl() {
-    const layer = this.layer;
-    const isLayerDrawnOn = this.canvas.drawnId === layer.id;
-    const isCached = LayerBox.#imageCache.has(layer);
-    if (!isLayerDrawnOn) {
-      if (isCached) {
-        return LayerBox.#imageCache.get(layer);
-      }
-    } else if (!isCached) {
-      LayerBox.#imageCache.clear();
-    }
-
-    const imagePosition = [0, 0];
-    const { width, height } = layer;
-    const image = layer.context.getImageData(...imagePosition, width, height);
-
-    //Render image with transparency
-    const encoder = new BmpEncoder(BmpVersions.BMP_32);
-    const data = encoder.encode(image);
-    return encoder.isLastEncodedTransparent() ? '' : conv.bytesToUrl(data);
-  }
-}
-
-export class LayerMenu extends UiElement {
-  constructor() {
-    super();
-    this.#setUpButtons();
-    this.container = document.getElementById('layer-container');
-  }
-
-  #setUpButtons() {
-    this.buttons.addButton('add-layer', (canvas) => {
-      LayerMenu.#addLayer(canvas);
-    });
-    this.buttons.addButton('remove-layer', (canvas) => {
-      LayerMenu.#removeLayer(canvas);
-    });
-    this.buttons.addButton('move-layer-up', (canvas) => {
-      LayerMenu.#moveLayerUp(canvas);
-    });
-    this.buttons.addButton('move-layer-down', (canvas) => {
-      LayerMenu.#moveLayerDown(canvas);
-    });
-    this.buttons.addButton('merge-layers', (canvas) => {
-      LayerMenu.#mergeLayers(canvas);
-    });
-    this.buttons.addButton('duplicate-layer', (canvas) => {
-      LayerMenu.#duplicateLayer(canvas);
-    });
-  }
-
-  refresh({ canvas }) {
-    this.buttons.enableButtons(canvas);
-    this.#updateLayers(canvas);
-    this.#setFixationListener(canvas);
-    this.#enableOpacity(canvas);
-  }
-
-  #enableOpacity(canvas) {
-    this.input = document.getElementById('layer-opacity');
-    this.input.oninput = (event) => {
-      const id = canvas.drawnId;
-      const layer = canvas.layers.byIdentifier(id);
-      layer.opacity = parseFloat(event.target.value);
-      canvas.redraw();
-    };
-  }
-
-  #updateLayers(canvas) {
-    const layerBoxes = [];
-    //Iterate the list in reversed order
-    for (let i = canvas.layers.length - 1; i >= 0; i--) {
-      const layerBox = new LayerBox(canvas, i);
-      layerBoxes.push(layerBox.element);
-    }
-
-    this.container.innerHTML = '';
-
-    layerBoxes.forEach((box) => this.container.appendChild(box));
-  }
-
-  #setFixationListener(canvas) {
-    canvas.listenToUpdates(() => this.#updateLayers(canvas));
-  }
-
-  static #addLayer(canvas) {
-    canvas.appendLayer();
-  }
-
-  static #removeLayer(canvas) {
-    const removedId = canvas.drawnId;
-    canvas.removeLayer(removedId);
-  }
-
-  static #moveLayerUp(canvas) {
-    const movedId = canvas.drawnId;
-    canvas.moveLayerUp(movedId);
-  }
-
-  static #moveLayerDown(canvas) {
-    const movedId = canvas.drawnId;
-    canvas.moveLayerDown(movedId);
-  }
-
-  static #mergeLayers(canvas) {
-    const mergedId = canvas.drawnId;
-    const currentIndex = canvas.layers.getIndex(mergedId);
-    const bottomLayer = canvas.layers[currentIndex - 1];
-    canvas.mergeLayers(mergedId, bottomLayer.id);
-  }
-
-  static #duplicateLayer(canvas) {
-    const duplicatedId = canvas.drawnId;
-    canvas.duplicateLayer(duplicatedId);
-  }
-}
-
 export class ZoomButtonsManager extends UiElement {
   constructor(renderer) {
     super();
@@ -608,32 +427,34 @@ export class FrameBox {
   }
 }
 
-export class FrameMenu extends UiElement {
+class FrameMenu extends UiElement {
   constructor() {
     super();
     this.#setUpButtons();
 
-    this.label = document.getElementById('frame-label');
-    this.container = document.getElementById('frame-container');
-    this.footer = document.getElementById('footer');
-    this.opacity = document.getElementById('opacity');
-    this.#setUpOpacity();
+    //this.label = document.getElementById('frame-label');
+    //this.container = document.getElementById('frame-container');
+    //this.footer = document.getElementById('footer');
+    //this.opacity = document.getElementById('opacity');
+    //this.#setUpOpacity();
   }
 
   #setUpButtons() {
-    this.buttons.addButton('add-frame', (file) => file.appendFrame());
-    this.buttons.addButton('duplicate-frame', (file) => {
+    this.buttons.addButton('add-entity', (file) => file.appendFrame());
+    this.buttons.addButton('duplicate-entity', (file) => {
       file.duplicateFrame(file.currentId);
     });
-    this.buttons.addButton('frame-menu', () => this.#switchContainer());
-    this.buttons.addButton('move-frame-up', (file) => {
+    this.buttons.addButton('move-entity-down', (file) => {
       file.moveFrameUp(file.currentId);
     });
-    this.buttons.addButton('move-frame-down', (file) => {
+    this.buttons.addButton('move-entity-up', (file) => {
       file.moveFrameDown(file.currentId);
     });
-    this.buttons.addButton('remove-frame', (file) => {
+    this.buttons.addButton('remove-entity', (file) => {
       file.removeFrame(file.currentId);
+    });
+    this.buttons.addButton('merge-entities', () => {
+      throw Error('Merge operation is not implemented for frames');
     });
   }
 
@@ -651,11 +472,11 @@ export class FrameMenu extends UiElement {
     this.buttons.enableButtons(file);
     FrameMenu.#updateFrames(file);
     file.canvas.listenToUpdates(() => FrameMenu.#updateFrames(file));
-    this.#refreshLabel(file);
+    //this.#refreshLabel(file);
   }
 
   static #updateFrames(file) {
-    const list = document.getElementById('frame-list');
+    const list = document.getElementById('entity-list');
     list.innerHTML = '';
 
     //Iterate the list in reversed order
@@ -665,36 +486,247 @@ export class FrameMenu extends UiElement {
     }
   }
 
-  #refreshLabel(file) {
-    const baseLabel = 'Frames';
-    const frames = file.frames;
+  // #refreshLabel(file) {
+  //   const baseLabel = 'Frames';
+  //   const frames = file.frames;
+  //
+  //   if (frames.length <= 1) {
+  //     this.label.innerText = baseLabel;
+  //     return;
+  //   }
+  //
+  //   const currentPos = frames.getIndex(file.currentId) + 1;
+  //   this.label.innerText = baseLabel + ` (${currentPos}/${frames.length})`;
+  // }
+}
 
-    if (frames.length <= 1) {
-      this.label.innerText = baseLabel;
-      return;
+class LayerBox {
+  static #imageCache = new Map();
+
+  constructor(canvas, layerIndex) {
+    this.canvas = canvas;
+    this.layer = canvas.layers[layerIndex];
+    this.element = this.#createElement();
+    this.#setUpElementClasses();
+    this.#appendLayerImage();
+    this.#appendLayerName();
+    this.#appendVisibilityButton();
+  }
+
+  #createElement() {
+    const element = document.createElement('div');
+    element.onclick = () => {
+      this.canvas.switchLayer(this.layer.id);
+    };
+    return element;
+  }
+
+  #setUpElementClasses() {
+    this.element.classList.add('layer');
+    if (this.layer.id === this.canvas.drawnId) {
+      this.element.classList.add('layer-selected');
+    }
+  }
+
+  #appendLayerName() {
+    const name = getTextElement(this.layer.name);
+    name.classList.add('layer-name');
+    this.element.appendChild(name);
+  }
+
+  #appendVisibilityButton() {
+    const button = document.createElement('div');
+    this.#setVisibility(button);
+    button.onclick = () => {
+      this.layer.visible = !this.layer.visible;
+      this.canvas.redraw();
+      this.#setVisibility(button);
+    };
+    this.element.appendChild(button);
+  }
+
+  #setVisibility(button) {
+    button.classList.remove(...button.classList);
+    button.classList.add('visibility-button');
+    if (!this.layer.visible) {
+      button.classList.add('visibility-button-inactive');
+    }
+  }
+
+  #appendLayerImage() {
+    const image = document.createElement('div');
+    image.classList.add('layer-image');
+
+    const url = this.#getLayerImageUrl();
+    LayerBox.#imageCache.set(this.layer, url);
+    conv.setImageUrl(image, url);
+
+    this.element.appendChild(image);
+  }
+
+  #getLayerImageUrl() {
+    const layer = this.layer;
+    const isLayerDrawnOn = this.canvas.drawnId === layer.id;
+    const isCached = LayerBox.#imageCache.has(layer);
+    if (!isLayerDrawnOn) {
+      if (isCached) {
+        return LayerBox.#imageCache.get(layer);
+      }
+    } else if (!isCached) {
+      LayerBox.#imageCache.clear();
     }
 
-    const currentPos = frames.getIndex(file.currentId) + 1;
-    this.label.innerText = baseLabel + ` (${currentPos}/${frames.length})`;
+    const imagePosition = [0, 0];
+    const { width, height } = layer;
+    const image = layer.context.getImageData(...imagePosition, width, height);
+
+    //Render image with transparency
+    const encoder = new BmpEncoder(BmpVersions.BMP_32);
+    const data = encoder.encode(image);
+    return encoder.isLastEncodedTransparent() ? '' : conv.bytesToUrl(data);
+  }
+}
+
+class LayerMenu extends UiElement {
+  constructor() {
+    super();
+    this.#setUpButtons();
+    this.container = document.getElementById('entity-list');
   }
 
-  #switchContainer() {
-    if (this.container.style.display !== HIDE_DISPLAY) this.#hideContainer();
-    else this.#showContainer();
+  #setUpButtons() {
+    this.buttons.addButton('add-entity', (canvas) => {
+      LayerMenu.#addLayer(canvas);
+    });
+    this.buttons.addButton('remove-entity', (canvas) => {
+      LayerMenu.#removeLayer(canvas);
+    });
+    this.buttons.addButton('move-entity-up', (canvas) => {
+      LayerMenu.#moveLayerUp(canvas);
+    });
+    this.buttons.addButton('move-entity-down', (canvas) => {
+      LayerMenu.#moveLayerDown(canvas);
+    });
+    this.buttons.addButton('merge-entities', (canvas) => {
+      LayerMenu.#mergeLayers(canvas);
+    });
+    this.buttons.addButton('duplicate-entity', (canvas) => {
+      LayerMenu.#duplicateLayer(canvas);
+    });
   }
 
-  #showContainer() {
-    this.container.style.display = SHOW_DISPLAY_FLEX;
-    this.footer.style.width = 'calc(100% - 2 * var(--inter-element-spacing))';
-    this.footer.style.bottom = 'var(--inter-element-spacing)';
-    this.footer.style.position = 'absolute';
+  refresh({ canvas }) {
+    this.buttons.enableButtons(canvas);
+    this.#updateLayers(canvas);
+    this.#setFixationListener(canvas);
+    this.#enableOpacity(canvas);
   }
 
-  #hideContainer() {
-    this.container.style.display = HIDE_DISPLAY;
-    this.footer.style.width = '';
-    this.footer.style.bottom = '';
-    this.footer.style.position = 'relative';
+  #enableOpacity(canvas) {
+    this.input = document.getElementById('layer-opacity');
+    this.input.oninput = (event) => {
+      const id = canvas.drawnId;
+      const layer = canvas.layers.byIdentifier(id);
+      layer.opacity = parseFloat(event.target.value);
+      canvas.redraw();
+    };
+  }
+
+  #updateLayers(canvas) {
+    const layerBoxes = [];
+    //Iterate the list in reversed order
+    for (let i = canvas.layers.length - 1; i >= 0; i--) {
+      const layerBox = new LayerBox(canvas, i);
+      layerBoxes.push(layerBox.element);
+    }
+
+    this.container.innerHTML = '';
+
+    layerBoxes.forEach((box) => this.container.appendChild(box));
+  }
+
+  #setFixationListener(canvas) {
+    canvas.listenToUpdates(() => this.#updateLayers(canvas));
+  }
+
+  static #addLayer(canvas) {
+    canvas.appendLayer();
+  }
+
+  static #removeLayer(canvas) {
+    const removedId = canvas.drawnId;
+    canvas.removeLayer(removedId);
+  }
+
+  static #moveLayerUp(canvas) {
+    const movedId = canvas.drawnId;
+    canvas.moveLayerUp(movedId);
+  }
+
+  static #moveLayerDown(canvas) {
+    const movedId = canvas.drawnId;
+    canvas.moveLayerDown(movedId);
+  }
+
+  static #mergeLayers(canvas) {
+    const mergedId = canvas.drawnId;
+    const currentIndex = canvas.layers.getIndex(mergedId);
+    const bottomLayer = canvas.layers[currentIndex - 1];
+    canvas.mergeLayers(mergedId, bottomLayer.id);
+  }
+
+  static #duplicateLayer(canvas) {
+    const duplicatedId = canvas.drawnId;
+    canvas.duplicateLayer(duplicatedId);
+  }
+}
+
+const LAYERS_ID = 'show-layers';
+const FRAMES_ID = 'show-frames';
+
+export class EntityChooser extends UiElement {
+  constructor() {
+    super();
+    this.#setUpButtons();
+  }
+
+  refresh(file) {
+    this.buttons.enableButtons();
+    this.file = file;
+    if (!this.chosen || this.chosen === LAYERS_ID) {
+      this.#showLayers();
+    } else {
+      this.#showFrames();
+    }
+  }
+
+  #setUpButtons() {
+    this.buttons.addButton(LAYERS_ID, () => {
+      this.#showLayers();
+    });
+    this.buttons.addButton(FRAMES_ID, () => {
+      this.#showFrames();
+    });
+  }
+
+  #showLayers() {
+    const menu = new LayerMenu();
+    menu.refresh(this.file);
+    EntityChooser.#changeActive(FRAMES_ID, LAYERS_ID);
+    this.chosen = LAYERS_ID;
+  }
+
+  #showFrames() {
+    const menu = new FrameMenu();
+    menu.refresh(this.file);
+    EntityChooser.#changeActive(LAYERS_ID, FRAMES_ID);
+    this.chosen = FRAMES_ID;
+  }
+
+  static #changeActive(previousId, currentId) {
+    const activeId = 'entity-chosen';
+    document.getElementById(previousId).classList.remove(activeId);
+    document.getElementById(currentId).classList.add(activeId);
   }
 }
 

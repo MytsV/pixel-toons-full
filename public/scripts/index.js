@@ -2,11 +2,12 @@ import { CanvasRenderer } from './core/canvas_renderer.js';
 import { AnimationFile } from './core/canvas.js';
 import {
   FileMenu,
-  LayerMenu,
+  EntityChooser,
   StateButtons,
   Toolbar,
   ZoomButtonsManager,
-  ShortcutsMenu, FrameMenu, Preview
+  ShortcutsMenu,
+  Preview
 } from './core/ui_elements.js';
 import { ShortcutManager } from './core/key_shortcuts.js';
 import { GifEncoder, GifFrame } from './utilities/gif_encoder.js';
@@ -56,9 +57,8 @@ class Application {
       new StateButtons(),
       new FileMenu((width, height) => this.#setNewFile(width, height)),
       new Toolbar(),
-      new LayerMenu(),
+      new EntityChooser(),
       new ZoomButtonsManager(this.canvasRenderer),
-      new FrameMenu(),
       new Preview(),
     ];
     this.shortcuts = new ShortcutManager();
