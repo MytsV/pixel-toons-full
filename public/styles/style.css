@@ -236,9 +236,7 @@ body {
 .white-panel {
   box-sizing: border-box;
   background-color: white;
-  border-bottom: var(--border-size) solid lightgray;
-  border-right: var(--border-size) solid lightgray;
-  outline: var(--border-size) solid var(--border-color);
+  outline: var(--border-size) solid black;
   position: relative;
 }
 
@@ -251,12 +249,11 @@ body {
 
 .text {
   font-family: 'Pixelite', serif;
-  color: black;
   font-size: 8pt;
-  /*background: linear-gradient(90deg, red, #FF9A02, #2EFD2A, #00C2FF, #9E00FF);
   background-clip: text;
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent; */
+  -webkit-text-fill-color: transparent;
+  background-color: black;
 }
 
 .menu-item {
@@ -376,11 +373,11 @@ input[type=color]::-moz-color-swatch {
 }
 
 .button {
-  transition: background-color 150ms;
+  transition: background-image 150ms;
 }
 
 .button:hover {
-  background-color: var(--main-panel-color-shadow);
+  background-image: linear-gradient(90deg, red, #FF9A02, #2EFD2A, #00C2FF, #9E00FF);
 }
 
 #file-create-form div {
@@ -396,8 +393,12 @@ input {
 
 .text-ordinary {
   font-family: 'Pixelite', serif;
-  color: var(--border-color);
-  font-size: 15pt;
+  color: black;
+  font-size: 8pt;
+}
+
+.table-header {
+  height: 30pt;
 }
 
 #create-file-final {

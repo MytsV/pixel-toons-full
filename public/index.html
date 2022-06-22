@@ -11,16 +11,16 @@
     <div class="container">
       <div id="menu" class="main-panel">
         <div class="menu-item" id="create-file">
-          <span class="text">Create</span>
+          <span class="text button">Create</span>
         </div>
         <div class="menu-item" id="clear-file">
-          <span class="text">Clear</span>
+          <span class="text button">Clear</span>
         </div>
         <div class="menu-item" id="export-image">
-          <span class="text">Export</span>
+          <span class="text button">Export</span>
         </div>
         <div class="menu-item" id="shortcuts">
-          <span class="text">Shortcuts</span>
+          <span class="text button">Shortcuts</span>
         </div>
       </div>
       <div id="main">
@@ -30,7 +30,6 @@
           </div>
         </div>
         <div id="canvas-parent">
-          <div id="coordinates"></div>
           <div class="main-panel" id="tool-options">
             <div id="state-button-container" class="tool-option-container">
               <div id="undo" class="state-button"></div>
@@ -44,6 +43,7 @@
             <canvas class="canvas-element" id="canvas-pointer"></canvas>
             <div id="preview" class="canvas-element"></div>
           </div>
+          <div id="coordinates"></div>
         </div>
         <div id="sidebar" class="white-panel thing-container">
           <div id="zoom-container">
@@ -66,7 +66,7 @@
           </div>
         </div>
       </div>
-      <div id="footer">
+      <div id="footer" style="display: none">
         <div id="frame-menu" class="white-panel">
           <div id="frame-label" class="menu-item-frames text">Frames</div>
           <div id="add-frame" class="menu-item-frames text">Add</div>
@@ -106,10 +106,10 @@
     <div id="shortcuts-modal" class="modal">
       <div class="modal-content">
         <div id="shortcuts-table">
-          <div class="main-panel label-panel">
+          <div class="white-panel label-panel table-header">
             <span class="text">Action</span>
           </div>
-          <div class="main-panel label-panel">
+          <div class="white-panel label-panel table-header">
             <span class="text">Shortcut</span>
           </div>
           </div>
