@@ -121,8 +121,7 @@ class Layer {
     this.id = id;
     this.name = `Layer ${id}`;
 
-    //Determines whether the layer will be drawn over the main canvas
-    this.visible = true;
+    //Determines how the layer will be drawn over the main canvas
     this.opacity = DEFAULT_OPACITY;
   }
 
@@ -174,7 +173,7 @@ class LayerCache {
     if (!this.#isCurrentStable(current, currentIndex)) return;
     this.#resetCache();
     for (const [index, layer] of layers.entries()) {
-      if (!layer.visible || index === currentIndex) continue;
+      if (layer.opacity <= 0 || index === currentIndex) continue;
       const beforeCurrent = index < currentIndex;
       const appendedCache = beforeCurrent ? this.beforeCache : this.afterCache;
       drawLayer(appendedCache.context, layer);
@@ -196,7 +195,7 @@ class LayerCache {
   drawFromCache(context) {
     context.drawImage(this.beforeCache.virtualCanvas, ...START_POS);
     //Handling only the visibility of middle layer
-    if (this.#lastChanged.visible) {
+    if (this.#lastChanged.opacity > 0) {
       drawLayer(context, this.#lastChanged);
     }
     context.drawImage(this.afterCache.virtualCanvas, ...START_POS);
@@ -254,7 +253,7 @@ class Canvas extends SimpleStateEmitter {
       this.cache.drawFromCache(this.context);
     } else {
       this.#layers.forEach((layer) => {
-        if (!layer.visible) return;
+        if (layer.opacity <= 0) return;
         drawLayer(this.context, layer);
       });
     }

@@ -384,6 +384,7 @@ class RangePopup {
   disable() {
     this.element.style.display = HIDE_DISPLAY;
     this.element.onmouseout = undefined;
+    this.initial = this.input.value;
   }
 
   #getText(value) {
@@ -545,6 +546,9 @@ class FrameMenu extends UiElement {
   // }
 }
 
+const MIN_OPACITY = 0;
+const MAX_OPACITY = 255;
+
 class LayerBox {
   static #imageCache = new Map();
 
@@ -556,6 +560,7 @@ class LayerBox {
     this.#appendLayerImage();
     this.#appendLayerName();
     this.#appendVisibilityButton();
+    this.#setUpRangePopup();
   }
 
   #createElement() {
@@ -580,22 +585,29 @@ class LayerBox {
   }
 
   #appendVisibilityButton() {
-    const button = document.createElement('div');
-    this.#setVisibility(button);
-    button.onclick = () => {
-      this.layer.visible = !this.layer.visible;
-      this.canvas.redraw();
-      this.#setVisibility(button);
+    this.visibilityButton = document.createElement('div');
+    this.#setVisibility(this.visibilityButton);
+    this.visibilityButton.onclick = (event) => {
+      this.popup.enable(event.clientX, event.clientY);
     };
-    this.element.appendChild(button);
+    this.element.appendChild(this.visibilityButton);
   }
 
   #setVisibility(button) {
     button.classList.remove(...button.classList);
     button.classList.add('visibility-button');
-    if (!this.layer.visible) {
+    if (this.layer.opacity <= 0) {
       button.classList.add('visibility-button-inactive');
     }
+  }
+
+  #setUpRangePopup() {
+    const setValue = (value) => {
+      this.layer.opacity = parseInt(value) / MAX_OPACITY;
+      this.canvas.redraw();
+      this.#setVisibility(this.visibilityButton);
+    };
+    this.popup = new RangePopup(MIN_OPACITY, MAX_OPACITY, setValue, 'Opacity', this.layer.opacity * MAX_OPACITY);
   }
 
   #appendLayerImage() {
