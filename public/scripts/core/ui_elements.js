@@ -338,12 +338,10 @@ export class ShortcutsMenu extends UiElement {
 
 //option refactoring
 class RangePopup {
-  constructor(min, max, setValue, name, initial) {
-    this.setValue = setValue;
+  constructor(min, max, name) {
     this.name = name;
-    this.initial = initial;
-    this.#setUpElement();
     this.#setUpInput(min, max);
+    this.#setUpElement();
   }
 
   #setUpInput(min, max) {
@@ -351,40 +349,47 @@ class RangePopup {
     this.input.type = 'range';
     this.input.min = min;
     this.input.max = max;
-    this.input.value = this.initial;
-    this.input.oninput = () => {
-      const value = this.input.value;
-      this.nameElement.innerText = this.#getText(value);
-      this.setValue(value);
-    };
-    this.element.appendChild(this.input);
   }
 
   #setUpElement() {
-    const popup = document.createElement('div');
-    popup.classList.add('range-popup');
-    this.nameElement = getTextElement(this.#getText(this.initial));
-    popup.appendChild(this.nameElement);
-    document.body.appendChild(popup);
-    this.element = popup;
+    const id = `${this.name.toLowerCase()}-range`;
+    this.element = document.createElement('div');
+    this.element.id = id;
+    this.element.classList.add('range-popup');
+    this.nameElement = getTextElement(this.#getText(this.input.value));
+    this.element.appendChild(this.nameElement);
+    this.element.appendChild(this.input);
   }
 
-  enable(x, y) {
+  enable(x, y, setValue) {
     const offset = 15;
+    this.element.style.display = SHOW_DISPLAY;
+    document.body.appendChild(this.element);
+
     const rect = this.element.getBoundingClientRect();
     const left = x - rect.width + offset;
     const top = y - rect.height + offset;
-    this.element.style.display = SHOW_DISPLAY;
     this.element.style.position = 'absolute';
     this.element.style.left = left + 'px';
     this.element.style.top = top + 'px';
+
     this.element.onmouseleave = () => this.disable();
+    this.input.oninput = () => {
+      const value = this.input.value;
+      this.nameElement.innerText = this.#getText(value);
+      setValue(value);
+    };
+  }
+
+  updateValue(value) {
+    this.input.value = value;
+    this.nameElement.innerText = this.#getText(value);
   }
 
   disable() {
     this.element.style.display = HIDE_DISPLAY;
     this.element.onmouseout = undefined;
-    this.initial = this.input.value;
+    document.body.removeChild(this.element);
   }
 
   #getText(value) {
@@ -394,6 +399,7 @@ class RangePopup {
 
 const MIN_DURATION = 100;
 const MAX_DURATION = 1000;
+const popupDuration = new RangePopup(MIN_DURATION, MAX_DURATION, 'Duration');
 
 export class FrameBox {
   constructor(file, frameIndex) {
@@ -404,7 +410,6 @@ export class FrameBox {
     this.#setUpElementClasses();
     this.#appendFrameImage();
     this.#appendFrameLabel();
-    this.#setUpRangePopup();
   }
 
   #createElement() {
@@ -440,18 +445,15 @@ export class FrameBox {
     duration.appendChild(image);
     duration.appendChild(text);
 
-    duration.onclick = (event) => {
-      this.popup.enable(event.clientX, event.clientY);
-    };
-
-    return duration;
-  }
-
-  #setUpRangePopup() {
     const setValue = (value) => {
       this.frame.duration = parseInt(value);
     };
-    this.popup = new RangePopup(MIN_DURATION, MAX_DURATION, setValue, 'Duration', this.frame.duration);
+    duration.onclick = (event) => {
+      popupDuration.enable(event.clientX, event.clientY, setValue);
+      popupDuration.updateValue(this.frame.duration);
+    };
+
+    return duration;
   }
 
   #appendFrameImage() {
@@ -548,6 +550,7 @@ class FrameMenu extends UiElement {
 
 const MIN_OPACITY = 0;
 const MAX_OPACITY = 255;
+const popupOpacity = new RangePopup(MIN_OPACITY, MAX_OPACITY, 'Opacity');
 
 class LayerBox {
   static #imageCache = new Map();
@@ -560,7 +563,6 @@ class LayerBox {
     this.#appendLayerImage();
     this.#appendLayerName();
     this.#appendVisibilityButton();
-    this.#setUpRangePopup();
   }
 
   #createElement() {
@@ -587,8 +589,14 @@ class LayerBox {
   #appendVisibilityButton() {
     this.visibilityButton = document.createElement('div');
     this.#setVisibility(this.visibilityButton);
+    const setValue = (value) => {
+      this.layer.opacity = parseInt(value) / MAX_OPACITY;
+      this.canvas.redraw();
+      this.#setVisibility(this.visibilityButton);
+    };
     this.visibilityButton.onclick = (event) => {
-      this.popup.enable(event.clientX, event.clientY);
+      popupOpacity.enable(event.clientX, event.clientY, setValue);
+      popupOpacity.updateValue(this.layer.opacity * MAX_OPACITY);
     };
     this.element.appendChild(this.visibilityButton);
   }
@@ -599,15 +607,6 @@ class LayerBox {
     if (this.layer.opacity <= 0) {
       button.classList.add('visibility-button-inactive');
     }
-  }
-
-  #setUpRangePopup() {
-    const setValue = (value) => {
-      this.layer.opacity = parseInt(value) / MAX_OPACITY;
-      this.canvas.redraw();
-      this.#setVisibility(this.visibilityButton);
-    };
-    this.popup = new RangePopup(MIN_OPACITY, MAX_OPACITY, setValue, 'Opacity', this.layer.opacity * MAX_OPACITY);
   }
 
   #appendLayerImage() {

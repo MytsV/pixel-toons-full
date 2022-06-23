@@ -739,6 +739,7 @@ input {
   border: var(--border-size) solid black;
   padding-top: 10pt;
   padding-left: 10pt;
+  display: none;
 }
 
 .range-popup span {
