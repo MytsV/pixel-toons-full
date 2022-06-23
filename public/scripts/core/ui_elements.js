@@ -336,7 +336,6 @@ export class ShortcutsMenu extends UiElement {
   }
 }
 
-//option refactoring
 class RangePopup {
   constructor(min, max, name) {
     this.name = name;
@@ -479,12 +478,7 @@ class FrameMenu extends UiElement {
   constructor() {
     super();
     this.#setUpButtons();
-
-    //this.label = document.getElementById('frame-label');
-    //this.container = document.getElementById('frame-container');
-    //this.footer = document.getElementById('footer');
-    //this.opacity = document.getElementById('opacity');
-    //this.#setUpOpacity();
+    this.label = document.getElementById('show-frames');
   }
 
   #setUpButtons() {
@@ -520,7 +514,7 @@ class FrameMenu extends UiElement {
     this.buttons.enableButtons(file);
     FrameMenu.#updateFrames(file);
     file.canvas.listenToUpdates(() => FrameMenu.#updateFrames(file));
-    //this.#refreshLabel(file);
+    this.#refreshLabel(file);
   }
 
   static #updateFrames(file) {
@@ -534,18 +528,18 @@ class FrameMenu extends UiElement {
     }
   }
 
-  // #refreshLabel(file) {
-  //   const baseLabel = 'Frames';
-  //   const frames = file.frames;
-  //
-  //   if (frames.length <= 1) {
-  //     this.label.innerText = baseLabel;
-  //     return;
-  //   }
-  //
-  //   const currentPos = frames.getIndex(file.currentId) + 1;
-  //   this.label.innerText = baseLabel + ` (${currentPos}/${frames.length})`;
-  // }
+  #refreshLabel(file) {
+    const baseLabel = 'Frames';
+    const frames = file.frames;
+
+    if (frames.length <= 1) {
+      this.label.innerText = baseLabel;
+      return;
+    }
+
+    const currentPos = frames.getIndex(file.currentId) + 1;
+    this.label.innerText = baseLabel + ` (${currentPos}/${frames.length})`;
+  }
 }
 
 const MIN_OPACITY = 0;
