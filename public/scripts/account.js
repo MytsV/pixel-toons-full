@@ -3,7 +3,7 @@ import { authentication, userDatabase } from './utilities/database_handler.js';
 const getAccount = async () => {
   const id = authentication.getId();
   if (!id) {
-    throw Error('Not signed in!');
+    window.location.href = 'authentication.html';
   } else {
     const userData = await userDatabase.getUser(id);
     for (const [key, value] of Object.entries(userData)) {
@@ -15,4 +15,9 @@ const getAccount = async () => {
 
 window.onload = () => {
   getAccount();
+  const logOutButton = document.getElementById('log-out');
+  logOutButton.onclick = () => {
+    authentication.logOut();
+    window.location.href = 'authentication.html';
+  };
 };

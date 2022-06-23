@@ -9,6 +9,7 @@ const register = (values) => {
     values['email'] = values['password'] = undefined;
     await userDatabase.createUser(authentication.getId(), values);
     alert('Register successful');
+    redirect();
   }).catch((error) => {
     alert(error.toString());
   });
@@ -17,6 +18,7 @@ const register = (values) => {
 const login = async (values) => {
   await authentication.login(values).then(() => {
     alert('Login successful');
+    redirect();
   }).catch((error) => {
     alert(error.toString());
   });
@@ -92,7 +94,12 @@ class FormHandler {
   }
 }
 
+function redirect() {
+  window.location.href = 'account.html';
+}
+
 window.onload = () => {
+  if (authentication.getId()) redirect();
   const forms = new FormHandler();
   forms.enable();
 };

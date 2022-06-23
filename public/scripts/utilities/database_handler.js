@@ -24,6 +24,10 @@ class Authentication {
     await Authentication.#setCookies(response);
   }
 
+  logOut() {
+    window.localStorage.removeItem(ID_KEY);
+  }
+
   getId() {
     return window.localStorage.getItem(ID_KEY);
   }
