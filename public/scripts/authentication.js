@@ -3,61 +3,90 @@ import { authentication } from './utilities/database_handler.js';
 const DISPLAY_SHOW = 'block';
 const DISPLAY_HIDE = 'none';
 
-const register = async () => {
-  const emailElement = document.getElementById('email-register');
-  const passwordElement = document.getElementById('password-register');
-  const email = emailElement.value;
-  const password = passwordElement.value;
-  authentication.register(email, password, {}).then(() => {
+const register = (values) => {
+  authentication.register(values).then(() => {
     alert('Register successful');
   }).catch((error) => {
     alert(error.toString());
   });
 };
 
-const login = async () => {
-  const emailElement = document.getElementById('email-login');
-  const passwordElement = document.getElementById('password-login');
-  const email = emailElement.value;
-  const password = passwordElement.value;
-  await authentication.login(email, password).then(() => {
+const login = async (values) => {
+  await authentication.login(values).then(() => {
     alert('Login successful');
   }).catch((error) => {
     alert(error.toString());
   });
 };
 
-const modes = [
-  'login',
-  'register'
+class Form {
+  constructor(name, inputs, action) {
+    this.name = name;
+    this.inputs = inputs;
+    this.action = action;
+  }
+
+  async send() {
+    const values = {};
+    for (const [name, id] of Object.entries(this.inputs)) {
+      const element = document.getElementById(id);
+      if (!element.value) throw Error('Please check the data');
+      values[name] = element.value;
+    }
+    await this.action(values);
+  }
+}
+
+const forms = [
+  new Form(
+    'login',
+    {
+      'email': 'email-login',
+      'password': 'password-login'
+    },
+    login
+  ),
+  new Form(
+    'register',
+    {
+      'email': 'email-register',
+      'password': 'password-register',
+      'nickname': 'nickname',
+      'biography': 'biography',
+      'date_of_birth': 'date-of-birth'
+    },
+    register
+  )
 ];
 
-class AuthenticationForms {
+class FormHandler {
   constructor() {
-    this.currentMode = modes[0];
-    this.buttons = modes.map((mode) => document.getElementById(mode));
-    this.forms = modes.map((mode) => document.getElementById(`${mode}-form`));
+    this.currentForm = forms[0];
+    this.buttons = forms.map(({ name }) => document.getElementById(name));
+    this.formElements = forms.map(({ name }) => {
+      const id = `${name}-form`;
+      return document.getElementById(id);
+    });
   }
 
   enable() {
+    const onClick = (_, index) => {
+      if (this.currentForm !== forms[index]) {
+        this.formElements[index].style.display = DISPLAY_SHOW;
+        const active = this.formElements[index === 0 ? 1 : 0];
+        active.style.display = DISPLAY_HIDE;
+        this.currentForm = forms[index];
+      } else {
+        this.currentForm.send().then();
+      }
+    };
     this.buttons.forEach((button, index) => {
-      button.onclick = () => {
-        if (this.currentMode !== button.id) {
-          this.forms[index].style.display = DISPLAY_SHOW;
-          const active = this.forms.find((form) => form !== this.forms[index]);
-          active.style.display = DISPLAY_HIDE;
-          this.currentMode = button.id;
-        } else if (this.currentMode === 'register') {
-          register();
-        } else {
-          login();
-        }
-      };
+      button.onclick = () => onClick(button, index);
     });
   }
 }
 
 window.onload = () => {
-  const forms = new AuthenticationForms();
+  const forms = new FormHandler();
   forms.enable();
 };
