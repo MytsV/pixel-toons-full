@@ -63,23 +63,23 @@ class Application {
     ];
     this.shortcuts = new ShortcutManager();
     this.uiElements.push(new ShortcutsMenu(this.shortcuts));
-    setUpOpener((file) => this.#openFile(file));
+    //setUpOpener((file) => this.#openFile(file));
   }
 
   #setNewFile(width, height) {
     const file = new AnimationFile(width, height);
     const refresh = () => this.#refreshRenderer(file);
     file.listenToUpdates(refresh);
-    setUpGifExporter(file);
-    setUpSaver(file);
+    //setUpGifExporter(file);
+    //setUpSaver(file);
     refresh();
   }
 
   #openFile(file) {
     const refresh = () => this.#refreshRenderer(file);
     file.listenToUpdates(refresh);
-    setUpGifExporter(file);
-    setUpSaver(file);
+    //setUpGifExporter(file);
+    //setUpSaver(file);
     refresh();
   }
 

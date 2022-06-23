@@ -25,6 +25,7 @@
         <div class="menu-item" id="shortcuts">
           <span class="text button">Shortcuts</span>
         </div>
+        <div id="preview-menu" class="menu-item"><span class="text button">Preview</span></div>
       </div>
       <div id="main">
         <div id="toolbar" class="main-panel">
@@ -59,7 +60,6 @@
           </div>
           <div class="label-panel" id="entity-choice"><span class="text button entity-chosen" id="show-layers">Layers</span><span class="text button" id="show-frames">Frames</span></div>
           <div id="entity-list" class="white-panel"></div>
-          <input value="1" min="0" max="1" step="0.1" type="range" id="layer-opacity" style="display: none">
           <div class="white-panel" id="entity-actions">
             <div id="add-entity" class="entity-action"></div>
             <div id="remove-entity" class="entity-action"></div>
@@ -70,28 +70,6 @@
           </div>
         </div>
       </div>
-      <div id="footer" style="display: none">
-        <div id="frame-menu" class="white-panel">
-          <div id="frame-label" class="menu-item-frames text">Frames</div>
-          <div id="add-frame" class="menu-item-frames text" style="display: none">Add</div>
-          <div id="duplicate-frame" class="menu-item-frames text">Copy</div>
-          <div id="opacity-menu" class="menu-item-frames text">Overlay opacity <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.2"></div>
-          <button id="gif-export">Gif export</button>
-          <button id="file-save">Save file</button>
-          <input type="file" id="file-open"/>
-          <div id="preview-menu" class="menu-item-frames text">Preview <div id="preview-animation" class="play"></div></div>
-        </div>
-        <div id="frame-container" class="other-panel">
-          <div id="frame-button-container">
-            <div id="move-frame-down" class="frame-button button"><img src="images/arrow-left.png"></div>
-            <div id="move-frame-up" class="frame-button button"><img src="images/arrow-right.png"></div>
-            <div id="remove-frame" class="frame-button button"><img src="images/remove.png"></div>
-          </div>
-          <div id="frame-list">
-          </div>
-        </div>
-      </div>
-    </div>
 
     <div id="file-create-modal" class="modal">
       <div class="modal-content">

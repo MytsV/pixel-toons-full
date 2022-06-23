@@ -669,17 +669,6 @@ class LayerMenu extends UiElement {
     this.buttons.enableButtons(canvas);
     this.#updateLayers(canvas);
     this.#setFixationListener(canvas);
-    this.#enableOpacity(canvas);
-  }
-
-  #enableOpacity(canvas) {
-    this.input = document.getElementById('layer-opacity');
-    this.input.oninput = (event) => {
-      const id = canvas.drawnId;
-      const layer = canvas.layers.byIdentifier(id);
-      layer.opacity = parseFloat(event.target.value);
-      canvas.redraw();
-    };
   }
 
   #updateLayers(canvas) {
@@ -871,16 +860,16 @@ export class Preview extends UiElement {
     this.container.style.display = SHOW_DISPLAY;
     const frontIndex = 2;
     this.background.style.zIndex = frontIndex.toString();
-    this.playButton.classList.remove('play');
-    this.playButton.classList.add('stop');
+    //this.playButton.classList.remove('play');
+    //this.playButton.classList.add('stop');
   }
 
   #hidePreviewElement() {
     this.container.style.display = HIDE_DISPLAY;
     const backIndex = 0;
     this.background.style.zIndex = backIndex.toString();
-    this.playButton.classList.remove('stop');
-    this.playButton.classList.add('play');
+    //this.playButton.classList.remove('stop');
+    //this.playButton.classList.add('play');
   }
 }
 
