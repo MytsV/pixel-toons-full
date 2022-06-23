@@ -19,7 +19,8 @@ const login = async () => {
   const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${publicKey}&email=${email}&password=${password}`, {
     'method': 'POST',
   });
-  console.log(await response.text());
+  const data = await response.json();
+  window.localStorage.setItem('userId', data['idToken']);
 };
 
 window.onload = () => {
