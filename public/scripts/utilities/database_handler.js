@@ -63,7 +63,25 @@ class UserDatabase {
       'users.json',
       {},
       {
-        'method': 'PUT',
+        'method': 'PATCH',
+        'body': JSON.stringify(paramsObj)
+      }
+    );
+    if (!response.ok) {
+      throw Error('Something went wrong');
+    }
+  }
+
+  async setUserUrl(id, url) {
+    const paramsObj = {
+      'avatarUrl': url
+    };
+    const response = await requestData(
+      DATABASE_URL_START,
+      `users/${id}.json`,
+      {},
+      {
+        'method': 'PATCH',
         'body': JSON.stringify(paramsObj)
       }
     );
@@ -88,4 +106,23 @@ function toUrlString(params) {
     string += `${key}=${value}&`;
   }
   return string;
+}
+
+const STORAGE_URL_START = 'https://firebasestorage.googleapis.com/v0/b/pixel-toons.appspot.com/o/';
+
+export async function uploadFile(folder, file) {
+  const response = await requestData(
+    STORAGE_URL_START,
+    folder + '%2F' + crypto.randomUUID(),
+    {},
+    {
+      'method': 'POST',
+      'headers': {
+        'Content-Type': file.type
+      },
+      'body': file
+    }
+  );
+  const data = await response.json();
+  return `${STORAGE_URL_START}${data['name'].replace('/', '%2F')}?alt=media`;
 }
