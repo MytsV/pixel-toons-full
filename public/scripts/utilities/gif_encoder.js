@@ -127,7 +127,7 @@ class GifImageEncoder {
   //Make sure the table length is a power of two
   #offsetTable() {
     const isPowerOfTwo = (x) => x && !(x & (x - 1));
-    while (!isPowerOfTwo(this.table.length)) {
+    while (!isPowerOfTwo(this.table.length) || (this.table.length === 1)) {
       this.table.push(EMPTY_VALUE);
     }
   }
