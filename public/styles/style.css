@@ -56,11 +56,12 @@ body {
 #canvas-parent {
   width: 100%;
   background-color: black;
-  display: block;
+  display: flex;
   overflow: auto;
   position: relative;
   margin-left: var(--inter-element-spacing);
   margin-right: var(--inter-element-spacing);
+  flex-direction: column;
 }
 
 #sidebar {
@@ -318,24 +319,24 @@ input[type=color]::-moz-color-swatch {
   padding: 0;
 }
 
-#canvas-parent::-webkit-scrollbar {
+#canvas-wrapper-wrapper::-webkit-scrollbar {
   width: 20px;
   height: 20px;
 }
 
 /* Track */
-#canvas-parent::-webkit-scrollbar-track {
+#canvas-wrapper-wrapper::-webkit-scrollbar-track {
   background: lightgray;
 }
 
 /* Handle */
-#canvas-parent::-webkit-scrollbar-thumb {
+#canvas-wrapper-wrapper::-webkit-scrollbar-thumb {
   background: white;
   border: var(--border-size) solid black;
 }
 
 /* Handle on hover */
-#canvas-parent::-webkit-scrollbar-thumb:hover {
+#canvas-wrapper-wrapper::-webkit-scrollbar-thumb:hover {
   background: lightgray;
 }
 
@@ -584,7 +585,7 @@ input {
 }
 
 #tool-options {
-  position: absolute;
+  position: relative;
   width: 100%;
   z-index: 1;
   display: block;
@@ -610,7 +611,7 @@ input {
   font-family: 'Pixelite', serif;
   color: black;
   font-size: 8pt;
-  position: absolute;
+  position: relative;
   bottom: 0;
   background-color: white;
   border: var(--border-size) solid black;
@@ -887,4 +888,16 @@ input[type=range]:focus::-ms-fill-upper {
 #color-chosen {
   width: 30pt;
   background-color: black;
+}
+
+#avatarUrl {
+  height: 50pt;
+  width: 50pt;
+  image-rendering: pixelated;
+}
+
+#canvas-wrapper-wrapper {
+  position: relative;
+  flex-grow: 1;
+  overflow: scroll;
 }
