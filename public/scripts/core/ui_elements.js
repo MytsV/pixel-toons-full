@@ -3,6 +3,7 @@ import * as conv from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil, Pointer, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
 import { PxtDecoder, PxtEncoder } from '../utilities/pxt.js';
+import { GifEncoder, GifFrame } from '../utilities/gif_encoder.js';
 
 const HIDE_DISPLAY = 'none';
 const SHOW_DISPLAY = 'block';
@@ -128,14 +129,26 @@ export class FileMenu extends UiElement {
   }
 
   refresh(file) {
-    this.buttons.enableButtons(file.canvas);
+    this.buttons.enableButtons(file);
     this.#setUpNewButton(file);
   }
 
   #setUpDependentButtons() {
-    this.buttons.addButton('clear-file', (canvas) => this.#clear(canvas));
-    this.buttons.addButton('export-image', (canvas) => {
-      FileMenu.#exportImage(canvas);
+    this.buttons.addButton('clear-file', ({ canvas }) => this.#clear(canvas));
+    this.buttons.addButton('export-image', () => {
+      FileMenu.#exportImage();
+    });
+    this.buttons.addButton('export-to-bmp', ({ canvas }) => {
+      const image = canvas.getJoinedImage();
+      const encoder = new BmpEncoder(BmpVersions.BMP_32);
+      const data = encoder.encode(image);
+      conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.bmp');
+    });
+    this.buttons.addButton('export-to-gif', (file) => {
+      const encoder = new GifEncoder();
+      const frames = file.frames.map((frame) => GifFrame.from(frame));
+      const data = encoder.encode(frames);
+      conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.gif');
     });
   }
 
@@ -143,11 +156,9 @@ export class FileMenu extends UiElement {
     this.createNewFile(canvas.width, canvas.height);
   }
 
-  static #exportImage(canvas) {
-    const image = canvas.getJoinedImage();
-    const encoder = new BmpEncoder(BmpVersions.BMP_32);
-    const data = encoder.encode(image);
-    conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.bmp');
+  static #exportImage() {
+    const modal = new Modal('file-export-modal');
+    modal.show();
   }
 
   #setUpNewButton(file) {
