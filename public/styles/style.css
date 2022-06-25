@@ -614,7 +614,7 @@ input {
   position: relative;
   bottom: 0;
   background-color: white;
-  border: var(--border-size) solid black;
+  border-right: var(--border-size) solid black;
   width: 120pt;
   padding-top: 7pt;
   padding-left: 10pt;
@@ -900,4 +900,10 @@ input[type=range]:focus::-ms-fill-upper {
   position: relative;
   flex-grow: 1;
   overflow: scroll;
+}
+
+#canvas-bottom {
+  height: max-content;
+  width: 100%;
+  background-color: white;
 }
