@@ -25,22 +25,23 @@ I have also received and made peer reviews ([1](https://github.com/MrSampy/Map-G
 
 <h3>Features, which I find the most interesting. Click the name to see the code.</h3>
 
-<h4>[Canvas and frames](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/core/canvas.js) </h4>
+[Canvas and frames](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/core/canvas.js) <br>
 I tried hard to separate visual representation from logic. There are caching, implementations of Prototype and Memento patterns, high encapsulation and interesting structures.
 
-<h4>[Tools](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/core/tools.js) </h4>
+[Tools](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/core/tools.js) <br>
 I created an abstraction which allows a very easy implementation of new tools.
 
-<h4>[BMP encoder](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/utilities/bmp_encoder.js) </h4>
+[BMP encoder](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/utilities/bmp_encoder.js) <br>
 My first file format encoder. I used open source specifications to implement it and a not very usual for me way for fighting with magic number and will be excited to hear your opinion on it.
 
-<h4>[GIF encoder](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/utilities/gif_encoder.js) with [LZW compression](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/utilities/lzw_compression.js) </h4>
+[GIF encoder](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/utilities/gif_encoder.js) with [LZW compression](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/utilities/lzw_compression.js) <br>
 Carefully refactored to make the hard process of file encoding as understandable as possible. As BMP encoder, includes a link to specifications. 
 
-<h4>[Database handling](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/utilities/database_handler.js) and [Authentication](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/authentication.js) </h4>
+[Database handling](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/utilities/database_handler.js) and [Authentication](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/authentication.js) <br>
 Almost the only part using asynchronous programming. Implemented with Firebase. The public key in the files is secure to be shared.
 
 <h3>My proudest work</h3>
-<h4>[Own file format](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/utilities/pxt.js) </h4>
+
+[Own file format](https://github.com/MytsV/pixel-toons-editor/tree/dev/public/scripts/utilities/pxt.js) <br>
 [Here is the specification
 ](https://github.com/MytsV/pixel-toons-editor/tree/dev/examples/Structure.pdf). The format turned out to be extremely lightweight due to Quite OK algorithm chosen for compression. Credits are in the file!
