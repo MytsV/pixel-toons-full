@@ -7,15 +7,9 @@ import {
   Toolbar,
   ZoomButtonsManager,
   ShortcutsMenu,
-  Preview, ColorPicker
+  Preview
 } from './core/ui_elements.js';
 import { ShortcutManager } from './core/key_shortcuts.js';
-import { GifEncoder, GifFrame } from './utilities/gif_encoder.js';
-import * as conv from './utilities/bytes_conversion.js';
-
-const setUpGifExporter = (file) => {
-
-};
 
 class Application {
   constructor() {
@@ -28,7 +22,6 @@ class Application {
       new ZoomButtonsManager(this.canvasRenderer),
       new Preview(),
     ];
-    const colorPicker = new ColorPicker();
     this.shortcuts = new ShortcutManager();
     this.uiElements.push(new ShortcutsMenu(this.shortcuts));
   }
