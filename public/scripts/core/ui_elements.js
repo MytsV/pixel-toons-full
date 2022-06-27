@@ -1,8 +1,9 @@
 import { BmpEncoder, BmpVersions } from '../utilities/bmp_encoder.js';
 import * as conv from '../utilities/bytes_conversion.js';
-import { BucketFill, Eraser, Pencil, Pointer } from './tools.js';
+import { BucketFill, Eraser, Pencil, Pointer, Tool } from './tools.js';
 import { PxtDecoder, PxtEncoder } from '../utilities/pxt.js';
 import { GifEncoder, GifFrame } from '../utilities/gif_encoder.js';
+import { Color } from '../utilities/color.js';
 
 const HIDE_DISPLAY = 'none';
 const SHOW_DISPLAY = 'block';
@@ -886,6 +887,15 @@ export class Preview extends UiElement {
     this.container.style.display = HIDE_DISPLAY;
     const backIndex = 0;
     this.background.style.zIndex = backIndex.toString();
+  }
+}
+
+export class ColorPicker {
+  constructor() {
+    this.picker = document.getElementById('picker-input');
+    this.picker.oninput = () => {
+      Tool.color = Color.fromHex(this.picker.value);
+    };
   }
 }
 

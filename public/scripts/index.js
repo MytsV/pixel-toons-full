@@ -7,7 +7,7 @@ import {
   Toolbar,
   ZoomButtonsManager,
   ShortcutsMenu,
-  Preview
+  Preview, ColorPicker
 } from './core/ui_elements.js';
 import { ShortcutManager } from './core/key_shortcuts.js';
 
@@ -16,7 +16,10 @@ class Application {
     this.canvasRenderer = new CanvasRenderer();
     this.uiElements = [
       new StateButtons(),
-      new FileMenu((width, height) => this.#setNewFile(width, height), (file) => this.#openFile(file)),
+      new FileMenu(
+        (width, height) => this.#setNewFile(width, height),
+        (file) => this.#openFile(file)
+      ),
       new Toolbar(),
       new EntityChooser(),
       new ZoomButtonsManager(this.canvasRenderer),
@@ -24,6 +27,7 @@ class Application {
     ];
     this.shortcuts = new ShortcutManager();
     this.uiElements.push(new ShortcutsMenu(this.shortcuts));
+    new ColorPicker();
   }
 
   #setNewFile(width, height) {
