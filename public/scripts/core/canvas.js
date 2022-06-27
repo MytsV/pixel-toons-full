@@ -1,15 +1,8 @@
 import { applyImageMixin } from '../utilities/image.js';
 import { IdentifiedList } from '../utilities/intentified_list.js';
 
-//Array of x and y coordinates of image start
-const START_POS = [0, 0];
 //The minimum number of layers for which we perform caching
 const CACHE_MIN_LAYER_COUNT = 4;
-//Id for a layer or frame which is never rendered
-const OFFSCREEN_ID = -1;
-//A prefix for a copied layer name
-const COPY_PREFIX = ' copy';
-const DEFAULT_OPACITY = 1;
 
 class SimpleStateEmitter {
   #listeners;
@@ -105,6 +98,10 @@ function IdGetter() {
   };
 }
 
+//Array of x and y coordinates of image start
+const START_POS = [0, 0];
+const DEFAULT_OPACITY = 1;
+
 /*
 A set of virtual canvas and its visibility, marked with a unique identifier.
  */
@@ -124,28 +121,36 @@ class Layer {
     this.id = id;
     this.name = `Layer ${id}`;
 
-    //Determines whether the layer will be drawn over the main canvas
-    this.visible = true;
+    //Determines how the layer will be drawn over the main canvas
     this.opacity = DEFAULT_OPACITY;
   }
 
   //Prototype pattern implementation
   clone() {
     const cloned = new Layer(this.id, this.width, this.height);
-    const imageData = this.#getImageData(this.width, this.height);
+    const imageData = this.getImageData(this.width, this.height);
     //We clone the ImageData object to avoid changing pixel data by reference
     cloned.context.putImageData(imageData.clone(), ...START_POS);
     cloned.opacity = this.opacity;
     return cloned;
   }
 
-  #getImageData(width, height) {
+  getImageData(width, height) {
     const imageData = this.context.getImageData(...START_POS, width, height);
     //We apply mixin to be able to use clone() function
     applyImageMixin(imageData);
     return imageData;
   }
+
+  setData(data) {
+    const imageData = new ImageData(this.width, this.height);
+    imageData.data.set(data);
+    this.context.putImageData(imageData, ...START_POS);
+  }
 }
+
+//Id for a layer or frame which is never rendered
+const OFFSCREEN_ID = -1;
 
 /*
 A class implemented for faster update of canvas with many layers.
@@ -168,7 +173,7 @@ class LayerCache {
     if (!this.#isCurrentStable(current, currentIndex)) return;
     this.#resetCache();
     for (const [index, layer] of layers.entries()) {
-      if (!layer.visible || index === currentIndex) continue;
+      if (layer.opacity <= 0 || index === currentIndex) continue;
       const beforeCurrent = index < currentIndex;
       const appendedCache = beforeCurrent ? this.beforeCache : this.afterCache;
       drawLayer(appendedCache.context, layer);
@@ -190,12 +195,15 @@ class LayerCache {
   drawFromCache(context) {
     context.drawImage(this.beforeCache.virtualCanvas, ...START_POS);
     //Handling only the visibility of middle layer
-    if (this.#lastChanged.visible) {
+    if (this.#lastChanged.opacity > 0) {
       drawLayer(context, this.#lastChanged);
     }
     context.drawImage(this.afterCache.virtualCanvas, ...START_POS);
   }
 }
+
+//A prefix for a copied layer name
+const COPY_PREFIX = ' copy';
 
 /*
 A class which wraps HTML <canvas> element and adds functionality to it.
@@ -245,7 +253,7 @@ class Canvas extends SimpleStateEmitter {
       this.cache.drawFromCache(this.context);
     } else {
       this.#layers.forEach((layer) => {
-        if (!layer.visible) return;
+        if (layer.opacity <= 0) return;
         drawLayer(this.context, layer);
       });
     }
@@ -417,11 +425,11 @@ class AnimationFile extends SimpleStateEmitter {
     this.appendFrame();
   }
 
-  appendFrame() {
+  appendFrame(frame) {
     const canvas = new Canvas(this.width, this.height);
-    const frame = new Frame(this.idGetter.get(), canvas);
-    this.#frames.push(frame);
-    this.#setCurrentFrame(frame);
+    const appended = frame ?? new Frame(this.idGetter.get(), canvas);
+    this.#frames.push(appended);
+    this.#setCurrentFrame(appended);
   }
 
   switchFrame(id) {
@@ -502,4 +510,4 @@ function drawLayer(context, layer) {
   context.globalAlpha = DEFAULT_OPACITY;
 }
 
-export { Canvas, AnimationFile };
+export { Canvas, AnimationFile, Frame, Layer };

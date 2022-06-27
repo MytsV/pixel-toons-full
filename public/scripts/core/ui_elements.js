@@ -1,12 +1,12 @@
 import { BmpEncoder, BmpVersions } from '../utilities/bmp_encoder.js';
 import * as conv from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil, Pointer, Tool } from './tools.js';
+import { PxtDecoder, PxtEncoder } from '../utilities/pxt.js';
+import { GifEncoder, GifFrame } from '../utilities/gif_encoder.js';
 import { Color } from '../utilities/color.js';
-import { GifEncoder } from '../utilities/gif_encoder.js';
 
 const HIDE_DISPLAY = 'none';
 const SHOW_DISPLAY = 'block';
-const SHOW_DISPLAY_FLEX = 'flex';
 
 class VariableDependentButtons {
   constructor() {
@@ -52,6 +52,44 @@ class Modal {
   }
 }
 
+//TODO: refactoring
+class DropDownPopup {
+  constructor(elements) {
+    this.items = elements;
+  }
+
+  enable(x, y) {
+    this.element = document.createElement('div');
+    this.element.classList.add('drop-down-menu');
+    for (const [key, value] of Object.entries(this.items)) {
+      const item = document.createElement('div');
+      item.classList.add('drop-down-item', 'text', 'button');
+      item.innerText = key;
+      item.onclick = () => {
+        value();
+        this.disable();
+      };
+      this.element.appendChild(item);
+    }
+
+    const offsetSide = 20;
+    document.body.appendChild(this.element);
+
+    const left = x - offsetSide;
+    const top = y;
+    this.element.style.position = 'absolute';
+    this.element.style.left = left + 'px';
+    this.element.style.top = top + 'px';
+
+    this.element.onmouseleave = () => this.disable();
+  }
+
+  disable() {
+    document.body.removeChild(this.element);
+    this.element.onmouseleave = undefined;
+  }
+}
+
 class UiElement {
   constructor() {
     if (new.target === UiElement) {
@@ -79,24 +117,38 @@ export class StateButtons extends UiElement {
 const FILE_SIZE_LIMIT = 250;
 
 export class FileMenu extends UiElement {
-  constructor(createNewFile) {
+  constructor(createNewFile, openFile) {
     super();
     this.#setUpDependentButtons();
 
     this.createNewFile = createNewFile; //A function passed from the context
-    this.#setUpCreateButton();
+    this.openNewFile = openFile;
+    this.#setUpNewButton();
     this.#setUpCreateFinish();
     FileMenu.#setUpLimit();
   }
 
-  refresh({ canvas }) {
-    this.buttons.enableButtons(canvas);
+  refresh(file) {
+    this.buttons.enableButtons(file);
+    this.#setUpNewButton(file);
   }
 
   #setUpDependentButtons() {
-    this.buttons.addButton('clear-file', (canvas) => this.#clear(canvas));
-    this.buttons.addButton('export-image', (canvas) => {
-      FileMenu.#exportImage(canvas);
+    this.buttons.addButton('clear-file', ({ canvas }) => this.#clear(canvas));
+    this.buttons.addButton('export-image', () => {
+      FileMenu.#exportImage();
+    });
+    this.buttons.addButton('export-to-bmp', ({ canvas }) => {
+      const image = canvas.getJoinedImage();
+      const encoder = new BmpEncoder(BmpVersions.BMP_32);
+      const data = encoder.encode(image);
+      conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.bmp');
+    });
+    this.buttons.addButton('export-to-gif', (file) => {
+      const encoder = new GifEncoder();
+      const frames = file.frames.map((frame) => GifFrame.from(frame));
+      const data = encoder.encode(frames);
+      conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.gif');
     });
   }
 
@@ -104,17 +156,52 @@ export class FileMenu extends UiElement {
     this.createNewFile(canvas.width, canvas.height);
   }
 
-  static #exportImage(canvas) {
-    const image = canvas.getJoinedImage();
-    const encoder = new BmpEncoder(BmpVersions.BMP_32);
-    const data = encoder.encode(image);
-    conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.bmp');
+  static #exportImage() {
+    const modal = new Modal('file-export-modal');
+    modal.show();
   }
 
-  #setUpCreateButton() {
-    this.modal = new Modal('file-create-modal');
-    const createButton = document.getElementById('create-file');
-    createButton.onclick = () => this.modal.show();
+  #setUpNewButton(file) {
+    this.createModal = new Modal('file-create-modal');
+    const elements = {
+      'New': () => this.createModal.show(),
+      'Open': () => this.#open(),
+      'Save': () => this.#save(file),
+    };
+    const button = document.getElementById('create-file');
+    const dropdown = new DropDownPopup(elements);
+    button.onclick = (event) => {
+      dropdown.enable(event.clientX, event.clientY);
+    };
+  }
+
+  //TODO: refactoring
+  #open() {
+    const button = document.createElement('input');
+    button.type = 'file';
+    const openNewFile = this.openNewFile;
+    button.oninput = () => {
+      const reader = new FileReader();
+      reader.onload = function() {
+        const arrayBuffer = this.result;
+        const array = new Uint8Array(arrayBuffer);
+
+        const file = new PxtDecoder().decode(array);
+        openNewFile(file);
+      };
+      reader.readAsArrayBuffer(button.files[0]);
+    };
+    document.body.appendChild(button);
+    button.dispatchEvent(new MouseEvent('click', { view: window }));
+    document.body.removeChild(button);
+  }
+
+  #save(file) {
+    const encoder = new PxtEncoder();
+    const data = encoder.encode(file);
+    const decoder = new PxtDecoder();
+    decoder.decode(data);
+    conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.pxt');
   }
 
   #setUpCreateFinish() {
@@ -127,7 +214,7 @@ export class FileMenu extends UiElement {
         throw Error('Size values are illegal');
       }
       this.createNewFile(inputWidth.value, inputHeight.value);
-      this.modal.hide();
+      this.createModal.hide();
     };
   }
 
@@ -143,47 +230,35 @@ class ToolInfo {
     this.tool = tool;
     this.name = name;
     this.element = this.#createElement();
-    this.options = [];
   }
 
   #createElement() {
     const element = document.createElement('div');
     element.id = this.name.toLowerCase();
-    element.classList.add('single-tool', 'label-panel', 'main-panel');
-    element.appendChild(getTextElement(this.name));
+    element.classList.add('single-tool');
+    this.#setImage();
+    element.appendChild(this.image);
     return element;
   }
 
-  addOption(option, listener) {
-    option.input.oninput = (event) => listener(event, this.tool);
-    this.options.push(option);
-  }
-}
-
-class ToolOptionRange {
-  constructor(name, min, max, step = 1) {
-    this.input = document.createElement('input');
-    this.input.type = 'range';
-    this.input.min = min;
-    this.input.max = max;
-    this.input.step = step;
-    this.input.value = min;
-
-    this.name = name;
+  #setImage() {
+    this.image = document.createElement('img');
+    this.image.classList.add('tool-image');
+    this.disable();
   }
 
-  getElement() {
-    const element = document.createElement('span');
-    element.classList.add('tool-option');
-    element.appendChild(getTextElement(this.name));
-    element.appendChild(this.input);
-    return element;
+  enable() {
+    const imageName = this.name.toLowerCase();
+    this.image.src = `./images/${imageName}-active.png`;
+  }
+
+  disable() {
+    const imageName = this.name.toLowerCase();
+    this.image.src = `./images/${imageName}.png`;
   }
 }
 
 export class Toolbar extends UiElement {
-  static #activeClass = 'active-tool';
-
   constructor() {
     super();
 
@@ -196,8 +271,6 @@ export class Toolbar extends UiElement {
 
     this.container = document.getElementById('tools');
     this.#setUpTools();
-    this.#setUpOptions();
-    this.#setUpColorPicker();
     this.chosen = this.toolsInfo[0];
   }
 
@@ -216,232 +289,18 @@ export class Toolbar extends UiElement {
     });
   }
 
-  //To be refactored!
-  #setUpOptions() {
-    const thickMin = 1;
-    const thickMax = 10;
-    const pencilOption = new ToolOptionRange('Thickness', thickMin, thickMax);
-    this.toolsInfo[0].addOption(pencilOption, (event, tool) => {
-      tool.thickness = event.target.value;
-    });
-    const eraserOption = new ToolOptionRange('Thickness', thickMin, thickMax);
-    this.toolsInfo[1].addOption(eraserOption, (event, tool) => {
-      tool.thickness = event.target.value;
-    });
-    const bucketOption = new ToolOptionRange('tolerance', 0, 255);
-    this.toolsInfo[2].addOption(bucketOption, (event, tool) => {
-      tool.tolerance = parseFloat(event.target.value);
-    });
-  }
-
   #setChosen(toolInfo, canvas) {
     if (this.chosen) {
       this.chosen.tool.disable();
-      this.chosen.element.classList.remove(Toolbar.#activeClass);
+      this.chosen.disable();
     }
     this.chosen = toolInfo;
     this.chosen.tool.link(canvas);
-    this.chosen.element.classList.add(Toolbar.#activeClass);
-    this.#enableOptions(toolInfo);
-  }
-
-  #enableOptions(toolInfo) {
-    const container = document.getElementById('tool-options');
-    container.innerHTML = '';
-    toolInfo.options.forEach((option) => container.appendChild(option.getElement()));
-  }
-
-  #setUpColorPicker() {
-    const colorPicker = document.createElement('input');
-    colorPicker.type = 'color';
-    colorPicker.id = 'color-picker';
-
-    this.container.appendChild(colorPicker);
-    colorPicker.oninput = () => {
-      Tool.color = Color.fromHex(colorPicker.value);
-    };
+    this.chosen.enable();
   }
 
   #setUpPointer(canvas) {
     this.pointer.link(canvas);
-  }
-}
-
-class LayerBox {
-  static #imageCache = new Map();
-
-  constructor(canvas, layerIndex) {
-    this.canvas = canvas;
-    this.layer = canvas.layers[layerIndex];
-    this.element = this.#createElement();
-    this.#setUpElementClasses();
-    this.#appendLayerImage();
-    this.#appendLayerName();
-    this.#appendVisibilityButton();
-  }
-
-  #createElement() {
-    const element = document.createElement('div');
-    element.onclick = () => {
-      this.canvas.switchLayer(this.layer.id);
-    };
-    return element;
-  }
-
-  #setUpElementClasses() {
-    this.element.classList.add('layer');
-    if (this.layer.id === this.canvas.drawnId) {
-      this.element.classList.add('layer-selected');
-    }
-  }
-
-  #appendLayerName() {
-    const name = getTextElement(this.layer.name);
-    name.classList.add('layer-name');
-    this.element.appendChild(name);
-  }
-
-  #appendVisibilityButton() {
-    const button = document.createElement('div');
-    this.#setVisibility(button);
-    button.onclick = () => {
-      this.layer.visible = !this.layer.visible;
-      this.canvas.redraw();
-      this.#setVisibility(button);
-    };
-    this.element.appendChild(button);
-  }
-
-  #setVisibility(button) {
-    button.classList.remove(...button.classList);
-    button.classList.add('visibility-button');
-    if (!this.layer.visible) {
-      button.classList.add('visibility-button-inactive');
-    }
-  }
-
-  #appendLayerImage() {
-    const image = document.createElement('div');
-    image.classList.add('layer-image');
-
-    const url = this.#getLayerImageUrl();
-    LayerBox.#imageCache.set(this.layer, url);
-    conv.setImageUrl(image, url);
-
-    this.element.appendChild(image);
-  }
-
-  #getLayerImageUrl() {
-    const layer = this.layer;
-    const isLayerDrawnOn = this.canvas.drawnId === layer.id;
-    const isCached = LayerBox.#imageCache.has(layer);
-    if (!isLayerDrawnOn) {
-      if (isCached) {
-        return LayerBox.#imageCache.get(layer);
-      }
-    } else if (!isCached) {
-      LayerBox.#imageCache.clear();
-    }
-
-    const imagePosition = [0, 0];
-    const { width, height } = layer;
-    const image = layer.context.getImageData(...imagePosition, width, height);
-
-    //Render image with transparency
-    const encoder = new BmpEncoder(BmpVersions.BMP_32);
-    const data = encoder.encode(image);
-    return encoder.isLastEncodedTransparent() ? '' : conv.bytesToUrl(data);
-  }
-}
-
-export class LayerMenu extends UiElement {
-  constructor() {
-    super();
-    this.#setUpButtons();
-    this.container = document.getElementById('layer-container');
-  }
-
-  #setUpButtons() {
-    this.buttons.addButton('add-layer', (canvas) => {
-      LayerMenu.#addLayer(canvas);
-    });
-    this.buttons.addButton('remove-layer', (canvas) => {
-      LayerMenu.#removeLayer(canvas);
-    });
-    this.buttons.addButton('move-layer-up', (canvas) => {
-      LayerMenu.#moveLayerUp(canvas);
-    });
-    this.buttons.addButton('move-layer-down', (canvas) => {
-      LayerMenu.#moveLayerDown(canvas);
-    });
-    this.buttons.addButton('merge-layers', (canvas) => {
-      LayerMenu.#mergeLayers(canvas);
-    });
-    this.buttons.addButton('duplicate-layer', (canvas) => {
-      LayerMenu.#duplicateLayer(canvas);
-    });
-  }
-
-  refresh({ canvas }) {
-    this.buttons.enableButtons(canvas);
-    this.#updateLayers(canvas);
-    this.#setFixationListener(canvas);
-    this.#enableOpacity(canvas);
-  }
-
-  #enableOpacity(canvas) {
-    this.input = document.getElementById('layer-opacity');
-    this.input.oninput = (event) => {
-      const id = canvas.drawnId;
-      const layer = canvas.layers.byIdentifier(id);
-      layer.opacity = parseFloat(event.target.value);
-      canvas.redraw();
-    };
-  }
-
-  #updateLayers(canvas) {
-    this.container.innerHTML = '';
-
-    //Iterate the list in reversed order
-    for (let i = canvas.layers.length - 1; i >= 0; i--) {
-      const layerBox = new LayerBox(canvas, i);
-      this.container.appendChild(layerBox.element);
-    }
-  }
-
-  #setFixationListener(canvas) {
-    canvas.listenToUpdates(() => this.#updateLayers(canvas));
-  }
-
-  static #addLayer(canvas) {
-    canvas.appendLayer();
-  }
-
-  static #removeLayer(canvas) {
-    const removedId = canvas.drawnId;
-    canvas.removeLayer(removedId);
-  }
-
-  static #moveLayerUp(canvas) {
-    const movedId = canvas.drawnId;
-    canvas.moveLayerUp(movedId);
-  }
-
-  static #moveLayerDown(canvas) {
-    const movedId = canvas.drawnId;
-    canvas.moveLayerDown(movedId);
-  }
-
-  static #mergeLayers(canvas) {
-    const mergedId = canvas.drawnId;
-    const currentIndex = canvas.layers.getIndex(mergedId);
-    const bottomLayer = canvas.layers[currentIndex - 1];
-    canvas.mergeLayers(mergedId, bottomLayer.id);
-  }
-
-  static #duplicateLayer(canvas) {
-    const duplicatedId = canvas.drawnId;
-    canvas.duplicateLayer(duplicatedId);
   }
 }
 
@@ -500,13 +359,69 @@ export class ShortcutsMenu extends UiElement {
   }
 }
 
-const frameDurations = [
-  100,
-  200,
-  300,
-  500,
-  1000
-];
+class RangePopup {
+  constructor(min, max, name) {
+    this.name = name;
+    this.#setUpInput(min, max);
+    this.#setUpElement();
+  }
+
+  #setUpInput(min, max) {
+    this.input = document.createElement('input');
+    this.input.type = 'range';
+    this.input.min = min;
+    this.input.max = max;
+  }
+
+  #setUpElement() {
+    const id = `${this.name.toLowerCase()}-range`;
+    this.element = document.createElement('div');
+    this.element.id = id;
+    this.element.classList.add('range-popup');
+    this.nameElement = getTextElement(this.#getText(this.input.value));
+    this.element.appendChild(this.nameElement);
+    this.element.appendChild(this.input);
+  }
+
+  enable(x, y, setValue) {
+    const offset = 15;
+    this.element.style.display = SHOW_DISPLAY;
+    document.body.appendChild(this.element);
+
+    const rect = this.element.getBoundingClientRect();
+    const left = x - rect.width + offset;
+    const top = y - rect.height + offset;
+    this.element.style.position = 'absolute';
+    this.element.style.left = left + 'px';
+    this.element.style.top = top + 'px';
+
+    this.element.onmouseleave = () => this.disable();
+    this.input.oninput = () => {
+      const value = this.input.value;
+      this.nameElement.innerText = this.#getText(value);
+      setValue(value);
+    };
+  }
+
+  updateValue(value) {
+    this.input.value = value;
+    this.nameElement.innerText = this.#getText(value);
+  }
+
+  disable() {
+    this.element.style.display = HIDE_DISPLAY;
+    this.element.onmouseout = undefined;
+    document.body.removeChild(this.element);
+  }
+
+  #getText(value) {
+    return `${this.name}: ${value}`;
+  }
+}
+
+const MIN_DURATION = 100;
+const MAX_DURATION = 1000;
+const popupDuration = new RangePopup(MIN_DURATION, MAX_DURATION, 'Duration');
 
 export class FrameBox {
   constructor(file, frameIndex) {
@@ -515,12 +430,12 @@ export class FrameBox {
     this.frameIndex = frameIndex;
     this.element = this.#createElement();
     this.#setUpElementClasses();
-    this.#appendFrameLabel();
     this.#appendFrameImage();
+    this.#appendFrameLabel();
   }
 
   #createElement() {
-    const element =  document.createElement('div');
+    const element = document.createElement('div');
     element.onclick = () => {
       this.file.switchFrame(this.frame.id);
     };
@@ -528,53 +443,44 @@ export class FrameBox {
   }
 
   #setUpElementClasses() {
-    this.element.classList.add('frame');
-    if (this.frame.id === this.frame.drawnId) {
-      this.element.classList.add('frame-selected');
+    this.element.classList.add('entity');
+    if (this.frame.id === this.file.currentId) {
+      this.element.classList.add('entity-selected');
     }
   }
 
   #appendFrameLabel() {
     const container = document.createElement('div');
-
-    container.classList.add('frame-label');
-    const name = getTextElement(this.frameIndex + 1);
-    name.classList.add('frame-index');
-
+    container.classList.add('entity-label');
+    const name = getTextElement('Frame ' + this.frame.id);
     container.appendChild(name);
     container.appendChild(this.#getDurationElement());
     this.element.appendChild(container);
   }
 
   #getDurationElement() {
-    const duration = document.createElement('select');
-    duration.classList.add('frame-duration', 'text');
-    const options = this.#getOptions();
-    options.forEach((option) => duration.appendChild(option));
-    duration.onclick = (event) => {
-      event.stopPropagation();
-    };
-    duration.onchange = (event) => {
-      this.frame.duration = parseInt(event.target.value);
-    };
-    return duration;
-  }
+    const duration = document.createElement('div');
+    duration.classList.add('frame-duration');
+    const image = document.createElement('img');
+    const text = document.createElement('div');
+    text.innerText = `${this.frame.duration}ms`;
+    duration.appendChild(image);
+    duration.appendChild(text);
 
-  #getOptions() {
-    return frameDurations.map((duration) => {
-      const option = document.createElement('option');
-      option.value = duration.toString();
-      option.innerText = duration + 'ms';
-      if (duration === this.frame.duration) {
-        option.defaultSelected = true;
-      }
-      return option;
-    });
+    const setValue = (value) => {
+      this.frame.duration = parseInt(value);
+    };
+    duration.onclick = (event) => {
+      popupDuration.enable(event.clientX, event.clientY, setValue);
+      popupDuration.updateValue(this.frame.duration);
+    };
+
+    return duration;
   }
 
   #appendFrameImage() {
     const image = document.createElement('div');
-    image.classList.add('frame-image');
+    image.classList.add('entity-image');
 
     const url = this.#getFrameImageUrl();
     conv.setImageUrl(image, url);
@@ -591,32 +497,29 @@ export class FrameBox {
   }
 }
 
-export class FrameMenu extends UiElement {
+class FrameMenu extends UiElement {
   constructor() {
     super();
     this.#setUpButtons();
-
-    this.label = document.getElementById('frame-label');
-    this.container = document.getElementById('frame-container');
-    this.footer = document.getElementById('footer');
-    this.opacity = document.getElementById('opacity');
-    this.#setUpOpacity();
+    this.label = document.getElementById('show-frames');
   }
 
   #setUpButtons() {
-    this.buttons.addButton('add-frame', (file) => file.appendFrame());
-    this.buttons.addButton('duplicate-frame', (file) => {
+    this.buttons.addButton('add-entity', (file) => file.appendFrame());
+    this.buttons.addButton('duplicate-entity', (file) => {
       file.duplicateFrame(file.currentId);
     });
-    this.buttons.addButton('frame-menu', () => this.#switchContainer());
-    this.buttons.addButton('move-frame-up', (file) => {
+    this.buttons.addButton('move-entity-up', (file) => {
       file.moveFrameUp(file.currentId);
     });
-    this.buttons.addButton('move-frame-down', (file) => {
+    this.buttons.addButton('move-entity-down', (file) => {
       file.moveFrameDown(file.currentId);
     });
-    this.buttons.addButton('remove-frame', (file) => {
+    this.buttons.addButton('remove-entity', (file) => {
       file.removeFrame(file.currentId);
+    });
+    this.buttons.addButton('merge-entities', () => {
+      throw Error('Merge operation is not implemented for frames');
     });
   }
 
@@ -633,15 +536,16 @@ export class FrameMenu extends UiElement {
   refresh(file) {
     this.buttons.enableButtons(file);
     FrameMenu.#updateFrames(file);
+    file.canvas.listenToUpdates(() => FrameMenu.#updateFrames(file));
     this.#refreshLabel(file);
   }
 
   static #updateFrames(file) {
-    const list = document.getElementById('frame-list');
+    const list = document.getElementById('entity-list');
     list.innerHTML = '';
 
     //Iterate the list in reversed order
-    for (let i = 0; i < file.frames.length; i++) {
+    for (let i = file.frames.length - 1; i >= 0; i--) {
       const frameBox = new FrameBox(file, i);
       list.appendChild(frameBox.element);
     }
@@ -659,24 +563,232 @@ export class FrameMenu extends UiElement {
     const currentPos = frames.getIndex(file.currentId) + 1;
     this.label.innerText = baseLabel + ` (${currentPos}/${frames.length})`;
   }
+}
 
-  #switchContainer() {
-    if (this.container.style.display !== HIDE_DISPLAY) this.#hideContainer();
-    else this.#showContainer();
+const MIN_OPACITY = 0;
+const MAX_OPACITY = 255;
+const popupOpacity = new RangePopup(MIN_OPACITY, MAX_OPACITY, 'Opacity');
+
+class LayerBox {
+  static #imageCache = new Map();
+
+  constructor(canvas, layerIndex) {
+    this.canvas = canvas;
+    this.layer = canvas.layers[layerIndex];
+    this.element = this.#createElement();
+    this.#setUpElementClasses();
+    this.#appendLayerImage();
+    this.#appendLayerName();
+    this.#appendVisibilityButton();
   }
 
-  #showContainer() {
-    this.container.style.display = SHOW_DISPLAY_FLEX;
-    this.footer.style.width = 'calc(100% - 2 * var(--inter-element-spacing))';
-    this.footer.style.bottom = 'var(--inter-element-spacing)';
-    this.footer.style.position = 'absolute';
+  #createElement() {
+    const element = document.createElement('div');
+    element.onclick = () => {
+      this.canvas.switchLayer(this.layer.id);
+    };
+    return element;
   }
 
-  #hideContainer() {
-    this.container.style.display = HIDE_DISPLAY;
-    this.footer.style.width = '';
-    this.footer.style.bottom = '';
-    this.footer.style.position = 'relative';
+  #setUpElementClasses() {
+    this.element.classList.add('entity');
+    if (this.layer.id === this.canvas.drawnId) {
+      this.element.classList.add('entity-selected');
+    }
+  }
+
+  #appendLayerName() {
+    const name = getTextElement(this.layer.name);
+    name.classList.add('entity-name');
+    this.element.appendChild(name);
+  }
+
+  #appendVisibilityButton() {
+    this.visibilityButton = document.createElement('div');
+    this.#setVisibility(this.visibilityButton);
+    const setValue = (value) => {
+      this.layer.opacity = parseInt(value) / MAX_OPACITY;
+      this.canvas.redraw();
+      this.#setVisibility(this.visibilityButton);
+    };
+    this.visibilityButton.onclick = (event) => {
+      popupOpacity.enable(event.clientX, event.clientY, setValue);
+      popupOpacity.updateValue(this.layer.opacity * MAX_OPACITY);
+    };
+    this.element.appendChild(this.visibilityButton);
+  }
+
+  #setVisibility(button) {
+    button.classList.remove(...button.classList);
+    button.classList.add('visibility-button');
+    if (this.layer.opacity <= 0) {
+      button.classList.add('visibility-button-inactive');
+    }
+  }
+
+  #appendLayerImage() {
+    const image = document.createElement('div');
+    image.classList.add('entity-image');
+
+    const url = this.#getLayerImageUrl();
+    LayerBox.#imageCache.set(this.layer, url);
+    conv.setImageUrl(image, url);
+
+    this.element.appendChild(image);
+  }
+
+  #getLayerImageUrl() {
+    const layer = this.layer;
+    const isLayerDrawnOn = this.canvas.drawnId === layer.id;
+    const isCached = LayerBox.#imageCache.has(layer);
+    if (!isLayerDrawnOn) {
+      if (isCached) {
+        return LayerBox.#imageCache.get(layer);
+      }
+    } else if (!isCached) {
+      LayerBox.#imageCache.clear();
+    }
+
+    const imagePosition = [0, 0];
+    const { width, height } = layer;
+    const image = layer.context.getImageData(...imagePosition, width, height);
+
+    //Render image with transparency
+    const encoder = new BmpEncoder(BmpVersions.BMP_32);
+    const data = encoder.encode(image);
+    return encoder.isLastEncodedTransparent() ? '' : conv.bytesToUrl(data);
+  }
+}
+
+class LayerMenu extends UiElement {
+  constructor() {
+    super();
+    this.#setUpButtons();
+    this.container = document.getElementById('entity-list');
+  }
+
+  #setUpButtons() {
+    this.buttons.addButton('add-entity', (canvas) => {
+      LayerMenu.#addLayer(canvas);
+    });
+    this.buttons.addButton('remove-entity', (canvas) => {
+      LayerMenu.#removeLayer(canvas);
+    });
+    this.buttons.addButton('move-entity-up', (canvas) => {
+      LayerMenu.#moveLayerUp(canvas);
+    });
+    this.buttons.addButton('move-entity-down', (canvas) => {
+      LayerMenu.#moveLayerDown(canvas);
+    });
+    this.buttons.addButton('merge-entities', (canvas) => {
+      LayerMenu.#mergeLayers(canvas);
+    });
+    this.buttons.addButton('duplicate-entity', (canvas) => {
+      LayerMenu.#duplicateLayer(canvas);
+    });
+  }
+
+  refresh({ canvas }) {
+    this.buttons.enableButtons(canvas);
+    this.#updateLayers(canvas);
+    this.#setFixationListener(canvas);
+  }
+
+  #updateLayers(canvas) {
+    const layerBoxes = [];
+    //Iterate the list in reversed order
+    for (let i = canvas.layers.length - 1; i >= 0; i--) {
+      const layerBox = new LayerBox(canvas, i);
+      layerBoxes.push(layerBox.element);
+    }
+
+    this.container.innerHTML = '';
+
+    layerBoxes.forEach((box) => this.container.appendChild(box));
+  }
+
+  #setFixationListener(canvas) {
+    canvas.listenToUpdates(() => this.#updateLayers(canvas));
+  }
+
+  static #addLayer(canvas) {
+    canvas.appendLayer();
+  }
+
+  static #removeLayer(canvas) {
+    const removedId = canvas.drawnId;
+    canvas.removeLayer(removedId);
+  }
+
+  static #moveLayerUp(canvas) {
+    const movedId = canvas.drawnId;
+    canvas.moveLayerUp(movedId);
+  }
+
+  static #moveLayerDown(canvas) {
+    const movedId = canvas.drawnId;
+    canvas.moveLayerDown(movedId);
+  }
+
+  static #mergeLayers(canvas) {
+    const mergedId = canvas.drawnId;
+    const currentIndex = canvas.layers.getIndex(mergedId);
+    const bottomLayer = canvas.layers[currentIndex - 1];
+    canvas.mergeLayers(mergedId, bottomLayer.id);
+  }
+
+  static #duplicateLayer(canvas) {
+    const duplicatedId = canvas.drawnId;
+    canvas.duplicateLayer(duplicatedId);
+  }
+}
+
+const LAYERS_ID = 'show-layers';
+const FRAMES_ID = 'show-frames';
+
+export class EntityChooser extends UiElement {
+  constructor() {
+    super();
+    this.#setUpButtons();
+  }
+
+  refresh(file) {
+    this.buttons.enableButtons();
+    this.file = file;
+    if (!this.chosen || this.chosen === LAYERS_ID) {
+      this.#showLayers();
+    } else {
+      this.#showFrames();
+    }
+  }
+
+  #setUpButtons() {
+    this.buttons.addButton(LAYERS_ID, () => {
+      this.#showLayers();
+    });
+    this.buttons.addButton(FRAMES_ID, () => {
+      this.#showFrames();
+    });
+  }
+
+  #showLayers() {
+    const menu = new LayerMenu();
+    menu.refresh(this.file);
+    EntityChooser.#changeActive(FRAMES_ID, LAYERS_ID);
+    this.chosen = LAYERS_ID;
+  }
+
+  #showFrames() {
+    const menu = new FrameMenu();
+    menu.refresh(this.file);
+    EntityChooser.#changeActive(LAYERS_ID, FRAMES_ID);
+    this.chosen = FRAMES_ID;
+  }
+
+  static #changeActive(previousId, currentId) {
+    const activeId = 'entity-chosen';
+    document.getElementById(previousId).classList.remove(activeId);
+    document.getElementById(currentId).classList.add(activeId);
   }
 }
 
@@ -689,7 +801,6 @@ export class Preview extends UiElement {
     this.#setUpElements();
     this.encoder = new BmpEncoder(BmpVersions.BMP_32);
     this.playing = false;
-    this.playButton = document.getElementById('preview-animation');
   }
 
   #setUpButtons() {
@@ -771,16 +882,21 @@ export class Preview extends UiElement {
     this.container.style.display = SHOW_DISPLAY;
     const frontIndex = 2;
     this.background.style.zIndex = frontIndex.toString();
-    this.playButton.classList.remove('play');
-    this.playButton.classList.add('stop');
   }
 
   #hidePreviewElement() {
     this.container.style.display = HIDE_DISPLAY;
     const backIndex = 0;
     this.background.style.zIndex = backIndex.toString();
-    this.playButton.classList.remove('stop');
-    this.playButton.classList.add('play');
+  }
+}
+
+export class ColorPicker {
+  constructor() {
+    this.picker = document.getElementById('picker-input');
+    this.picker.oninput = () => {
+      Tool.color = Color.fromHex(this.picker.value);
+    };
   }
 }
 

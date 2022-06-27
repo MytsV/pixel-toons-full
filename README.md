@@ -116,7 +116,7 @@ User interface is currently extremely raw. It will be improved in the future.
     </tr>
     <tr>
         <td>
-            🟥 GIF encoder
+            🟩 GIF encoder
         </td>
         <td>
         </td>

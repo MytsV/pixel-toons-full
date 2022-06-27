@@ -1,7 +1,9 @@
 import { Buffer } from './buffer.js';
-import { LZWCompressor } from './lzw_compression.js';
+import { LzwCompressor } from './lzw_compression.js';
+import { scale } from './image.js';
 
-const EMPTY_VALUE = 0x00;
+const COLOR_PARAMETERS = 3;
+const MAX_COLOR_PARAMETERS = 4;
 const COLOR_RANGE = 256;
 
 const RED_REGIONS = 8;
@@ -9,9 +11,6 @@ const RED_REGIONS = 8;
 const GREEN_REGIONS = 4;
 const BLUE_REGIONS = 8;
 const MAX_COLORS = RED_REGIONS * GREEN_REGIONS * BLUE_REGIONS;
-
-const COLOR_PARAMETERS = 3;
-const MAX_COLOR_PARAMETERS = 4;
 
 /*
 A class to handle the quantization of colors => their such mapping to values,
@@ -60,6 +59,8 @@ class UniformQuantizer {
   }
 }
 
+const IMAGE_SCALE = 10;
+
 /*
 A wrapper which can be created from Frame defined in canvas.js
  */
@@ -71,9 +72,11 @@ class GifFrame {
 
   static from(canvasFrame) {
     const image = canvasFrame.canvas.getJoinedImage();
-    return new GifFrame(image, canvasFrame.duration);
+    return new GifFrame(scale(image, IMAGE_SCALE), canvasFrame.duration);
   }
 }
+
+const EMPTY_VALUE = 0x00;
 
 class GifImageEncoder {
   #buffer;
@@ -124,7 +127,7 @@ class GifImageEncoder {
   //Make sure the table length is a power of two
   #offsetTable() {
     const isPowerOfTwo = (x) => x && !(x & (x - 1));
-    while (!isPowerOfTwo(this.table.length)) {
+    while (!isPowerOfTwo(this.table.length) || (this.table.length === 1)) {
       this.table.push(EMPTY_VALUE);
     }
   }
@@ -190,7 +193,7 @@ class GifImageEncoder {
 
   #setPixelData() {
     const colorBits = this.#getColorsBits();
-    const compressor = new LZWCompressor(colorBits);
+    const compressor = new LzwCompressor(colorBits);
     const compressed = compressor.compress(this.indices);
     this.#buffer.writeArray(compressed);
     this.#buffer.writeByte(EMPTY_VALUE);
