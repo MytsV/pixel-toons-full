@@ -122,7 +122,7 @@ export class FileMenu extends UiElement {
     this.#setUpDependentButtons();
 
     this.createNewFile = createNewFile; //A function passed from the context
-    this.openFile = openFile;
+    this.openNewFile = openFile;
     this.#setUpNewButton();
     this.#setUpCreateFinish();
     FileMenu.#setUpLimit();
@@ -165,7 +165,7 @@ export class FileMenu extends UiElement {
     this.createModal = new Modal('file-create-modal');
     const elements = {
       'New': () => this.createModal.show(),
-      'Open': () => this.#open,
+      'Open': () => this.#open(),
       'Save': () => this.#save(file),
     };
     const button = document.getElementById('create-file');
@@ -179,6 +179,7 @@ export class FileMenu extends UiElement {
   #open() {
     const button = document.createElement('input');
     button.type = 'file';
+    const openNewFile = this.openNewFile;
     button.oninput = () => {
       const reader = new FileReader();
       reader.onload = function() {
@@ -186,7 +187,7 @@ export class FileMenu extends UiElement {
         const array = new Uint8Array(arrayBuffer);
 
         const file = new PxtDecoder().decode(array);
-        this.openFile(file);
+        openNewFile(file);
       };
       reader.readAsArrayBuffer(button.files[0]);
     };
