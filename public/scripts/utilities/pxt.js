@@ -123,55 +123,75 @@ class PxtDecoder {
   #readInfoHeader() {
     const width = this.reader.readInteger(TWO_BYTES);
     const height = this.reader.readInteger(TWO_BYTES);
-
-    this.file = new AnimationFile(width, height);
+    const file = this.file = new AnimationFile(width, height);
 
     const frameCount = this.reader.readByte();
     const currentId = this.reader.readInteger(TWO_BYTES);
-    const overlayId = this.reader.readInteger(TWO_BYTES); //Unused at the moment
+    //UNUSED. Feature will be implemented later
+    const overlayId = this.reader.readInteger(TWO_BYTES);
     const frames = this.#getFrameData(frameCount);
 
-    this.file.frames.splice(0, this.file.frames.length);
-    frames.forEach((frame) => this.file.appendFrame(frame));
-    this.file.switchFrame(currentId);
+    file.frames.splice(0, file.frames.length);
+    frames.forEach((frame) => file.appendFrame(frame));
+    file.switchFrame(currentId);
   }
 
   #getFrameData(frameCount) {
     const frames = [];
-    const { width, height } = this.file;
     for (let i = 0; i < frameCount; i++) {
       const frameId = this.reader.readInteger(TWO_BYTES);
       const frameNameLength = this.reader.readByte();
+      //UNUSED. Feature will be implemented later
       const frameName = this.reader.readString(frameNameLength);
       const duration = this.reader.readInteger(TWO_BYTES);
-
-      const drawnId = this.reader.readInteger(TWO_BYTES);
-      const layerCount = this.reader.readByte();
-      const layers = [];
-      for (let j = 0; j < layerCount; j++) {
-        const layerId = this.reader.readInteger(TWO_BYTES);
-        const layerNameLength = this.reader.readByte();
-        const layerName = this.reader.readString(layerNameLength);
-        const opacity = this.reader.readByte();
-        const length = this.reader.readInteger(FOUR_BYTES);
-        const data = this.reader.readArray(length);
-
-        const layer = new Layer(layerId, width, height);
-        layer.name = layerName;
-        layer.opacity = opacity / COLOR_MAX;
-        const decompressed = new QoiDecompressor().decompress(data, width, height);
-        layer.setData(decompressed);
-        layers.push(layer);
-      }
-      const canvas = new Canvas(width, height);
-      canvas.layers.splice(0, canvas.layers.length);
-      layers.forEach((layer) => canvas.appendLayer(layer));
-      canvas.switchLayer(drawnId);
+      const canvas = this.#getCanvasFromData();
 
       const frame = new Frame(frameId, canvas, duration);
       frames.push(frame);
     }
     return frames;
+  }
+
+  #getCanvasFromData() {
+    const { width, height } = this.file;
+    const drawnId = this.reader.readInteger(TWO_BYTES);
+    const layerCount = this.reader.readByte();
+    const layers = this.#getLayerData(layerCount);
+
+    const canvas = new Canvas(width, height);
+    //Remove any automatically appended layers
+    canvas.layers.splice(0, canvas.layers.length);
+    layers.forEach((layer) => canvas.appendLayer(layer));
+    canvas.switchLayer(drawnId);
+
+    return canvas;
+  }
+
+  #getLayerData(layerCount) {
+    const layers = [];
+    const { width, height } = this.file;
+    for (let j = 0; j < layerCount; j++) {
+      const layerId = this.reader.readInteger(TWO_BYTES);
+      const layer = new Layer(layerId, width, height);
+
+      const layerNameLength = this.reader.readByte();
+      layer.name = this.reader.readString(layerNameLength);
+
+      const opacity = this.reader.readByte();
+      layer.opacity = opacity / COLOR_MAX;
+
+      this.#setImageData(layer);
+      layers.push(layer);
+    }
+    return layers;
+  }
+
+  #setImageData(layer) {
+    const { width, height } = this.file;
+    const length = this.reader.readInteger(FOUR_BYTES);
+    const data = this.reader.readArray(length);
+    const decompressed = new QoiDecompressor().decompress(data, width, height);
+    layer.setData(decompressed);
   }
 }
 
