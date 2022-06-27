@@ -102,35 +102,58 @@ class PxtEncoder {
   }
 }
 
-const BIG_VALUE_BYTES = 2;
-const HUGE_VALUE_BYTES = 4;
+const TWO_BYTES = 2;
+const FOUR_BYTES = 4;
 
 class PxtDecoder {
   decode(bytes) {
     this.reader = new ByteReader(bytes);
     this.#readHeader();
-    const width = this.reader.readInteger(BIG_VALUE_BYTES);
-    const height = this.reader.readInteger(BIG_VALUE_BYTES);
+    this.#readInfoHeader();
+    return this.file;
+  }
+
+  #readHeader() {
+    const signature = this.reader.readString(EXTENSION.length);
+    if (signature !== EXTENSION) throw Error('Extension is not valid');
+    const version = this.reader.readByte();
+    if (version !== VERSION) throw Error('Version is not valid');
+  }
+
+  #readInfoHeader() {
+    const width = this.reader.readInteger(TWO_BYTES);
+    const height = this.reader.readInteger(TWO_BYTES);
+
+    this.file = new AnimationFile(width, height);
+
     const frameCount = this.reader.readByte();
-    const currentId = this.reader.readInteger(BIG_VALUE_BYTES);
-    const overlayId = this.reader.readInteger(BIG_VALUE_BYTES);
-    const file = new AnimationFile(width, height);
+    const currentId = this.reader.readInteger(TWO_BYTES);
+    const overlayId = this.reader.readInteger(TWO_BYTES); //Unused at the moment
+    const frames = this.#getFrameData(frameCount);
+
+    this.file.frames.splice(0, this.file.frames.length);
+    frames.forEach((frame) => this.file.appendFrame(frame));
+    this.file.switchFrame(currentId);
+  }
+
+  #getFrameData(frameCount) {
     const frames = [];
+    const { width, height } = this.file;
     for (let i = 0; i < frameCount; i++) {
-      const frameId = this.reader.readInteger(BIG_VALUE_BYTES);
+      const frameId = this.reader.readInteger(TWO_BYTES);
       const frameNameLength = this.reader.readByte();
       const frameName = this.reader.readString(frameNameLength);
-      const duration = this.reader.readInteger(BIG_VALUE_BYTES);
+      const duration = this.reader.readInteger(TWO_BYTES);
 
-      const drawnId = this.reader.readInteger(BIG_VALUE_BYTES);
+      const drawnId = this.reader.readInteger(TWO_BYTES);
       const layerCount = this.reader.readByte();
       const layers = [];
       for (let j = 0; j < layerCount; j++) {
-        const layerId = this.reader.readInteger(BIG_VALUE_BYTES);
+        const layerId = this.reader.readInteger(TWO_BYTES);
         const layerNameLength = this.reader.readByte();
         const layerName = this.reader.readString(layerNameLength);
         const opacity = this.reader.readByte();
-        const length = this.reader.readInteger(4);
+        const length = this.reader.readInteger(FOUR_BYTES);
         const data = this.reader.readArray(length);
 
         const layer = new Layer(layerId, width, height);
@@ -148,17 +171,7 @@ class PxtDecoder {
       const frame = new Frame(frameId, canvas, duration);
       frames.push(frame);
     }
-    file.frames.splice(0, file.frames.length);
-    frames.forEach((frame) => file.appendFrame(frame));
-    file.switchFrame(currentId);
-    return file;
-  }
-
-  #readHeader() {
-    const signature = this.reader.readString(EXTENSION.length);
-    if (signature !== EXTENSION) throw Error('Extension is not valid');
-    const version = this.reader.readByte();
-    if (version !== VERSION) throw Error('Version is not valid');
+    return frames;
   }
 }
 
