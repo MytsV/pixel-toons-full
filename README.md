@@ -1,6 +1,8 @@
 # Platform for creating and sharing pixelated animations <br>
 
+Interface <br>
 <img src="./examples/interface.png"> <br>
+Exported GIF <br>
 <img src="./examples/exported.gif">
 
 <h3>Completeness</h3>
