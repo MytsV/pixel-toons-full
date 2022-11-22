@@ -417,7 +417,6 @@ class ShortcutsMenu {
   }
 }
 
-
 class FrameMenu {
   constructor() {
     this.buttons = new VariableDependentButtons();
