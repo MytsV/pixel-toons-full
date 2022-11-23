@@ -4,8 +4,8 @@ but it is not supported by all browsers.
 And, after all, why not have fun?
  */
 
-const bitsInByte = 8;
-const maxColorParameters = 4; //In RGBA format
+const BITS_IN_BYTE = 8;
+const MAX_COLOR_PARAMETERS = 4; //In RGBA format
 
 /*
 A class that represents a writable array of bytes.
@@ -30,7 +30,7 @@ class Buffer {
   }
 
   #writeInteger(bits, number, offset) {
-    const array = intToByteArray(number, bits / bitsInByte);
+    const array = intToByteArray(number, bits / BITS_IN_BYTE);
     this.writeArray(array, offset);
   }
 
@@ -52,7 +52,7 @@ function stringToByteArray(string) {
 function intToByteArray(number, size) {
   const array = new Uint8Array(size);
   for (let i = 0; i < size; i++) {
-    array[i] = number >> bitsInByte * i;
+    array[i] = number >> BITS_IN_BYTE * i;
   }
   return array;
 }
@@ -86,7 +86,7 @@ class BmpEncoder {
   #buffer;
 
   constructor(version = bmpVersions.bmp24) {
-    this.#perPixel = version.bitCount / bitsInByte;
+    this.#perPixel = version.bitCount / BITS_IN_BYTE;
     this.#infoHeaderSize = version.infoHeaderSize;
     this.dataOffset = BmpEncoder.#headerSize + this.#infoHeaderSize;
   }
@@ -113,7 +113,7 @@ class BmpEncoder {
   }
 
   #setUpEncoding(image) {
-    this.padding = this.#is32() ? 0 : image.width % maxColorParameters;
+    this.padding = this.#is32() ? 0 : image.width % MAX_COLOR_PARAMETERS;
     const rowLength = this.#perPixel * image.width + this.padding;
     this.bitmapSize = rowLength * image.height;
     this.fileSize = this.dataOffset + this.bitmapSize;
@@ -144,7 +144,7 @@ class BmpEncoder {
     //Planes | 2 bytes | 0x1A | Number of planes = 1
     this.#buffer.write16Integer(1, 0x1A);
     //Bits Per Pixel | 2 bytes | 0x1C | 24 or 32, depending on format
-    this.#buffer.write16Integer(this.#perPixel * bitsInByte, 0x1C);
+    this.#buffer.write16Integer(this.#perPixel * BITS_IN_BYTE, 0x1C);
     this.#setCompression();
     //ImageSize | 4 bytes | 0x22 | Size of the raw bitmap data
     this.#buffer.write32Integer(this.bitmapSize, 0x22);
@@ -190,7 +190,7 @@ class BmpEncoder {
     let position = this.#infoHeaderSize + BmpEncoder.#headerSize;
     for (let i = image.height - 1; i >= 0; i--) {
       for (let j = 0; j < image.width; j++) {
-        const dataPos = (i * image.width + j) * maxColorParameters;
+        const dataPos = (i * image.width + j) * MAX_COLOR_PARAMETERS;
         const color = image.data.slice(dataPos, dataPos + this.#perPixel);
         this.#handleTransparency(color);
         this.#transformColorArray(color);
@@ -208,6 +208,7 @@ class BmpEncoder {
     }
   }
 
+  //Initially it is in RGBA format
   #transformColorArray(colors) {
     if (this.#is32()) {
       //Color is stored in RGBA order, so we don't change anything
@@ -218,7 +219,7 @@ class BmpEncoder {
   }
 
   #is32() {
-    return this.#perPixel === maxColorParameters;
+    return this.#perPixel === MAX_COLOR_PARAMETERS;
   }
 }
 
