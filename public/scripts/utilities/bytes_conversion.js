@@ -1,8 +1,9 @@
 const bytesToBase64 = (data) => {
-  return window.btoa(data.reduce((prev, curr) => {
+  const dataReduced = data.reduce((prev, curr) => {
     const encoded = String.fromCharCode(curr);
     return prev + encoded;
-  }, ''));
+  }, '');
+  return window.btoa(dataReduced);
 };
 
 const bytesToUrl = (data) => {
