@@ -264,14 +264,6 @@ body {
   display: inline-block;
 }
 
-.menu-item-frames {
-  padding: 7pt 20pt 7pt 20pt;
-  margin-top: -2pt;
-  width: max-content;
-  border-right: var(--border-size) solid #42568b;
-  display: inline-block;
-}
-
 .label-panel {
   padding-top: 3pt;
   padding-left: 8pt;
@@ -421,6 +413,7 @@ input {
 #frame-container {
   height: 100pt;
   display: none;
+  background-color: #C2D7FF;
 }
 
 #frame-menu {
@@ -429,13 +422,40 @@ input {
 
 #footer {
   height: max-content;
-  /* width: calc(100% - 2 * var(--inter-element-spacing)); */
   position: relative;
-  /* bottom: var(--inter-element-spacing); */
+}
+
+.menu-item-frames {
+  padding: 6pt 20pt 5pt 20pt;
+  margin-top: -2pt;
+  width: max-content;
+  border-right: var(--border-size) solid #42568b;
+  display: inline-block;
 }
 
 .button-white {
   transition: background-color 150ms;
+}
+
+#preview-menu {
+  position: relative;
+}
+
+#preview-animation {
+  height: 12pt;
+  width: 12pt;
+  background-size: cover;
+  display: inline-block;
+  image-rendering: pixelated;
+  margin-left: 3pt;
+}
+
+.play {
+  background-image: url("../images/play.png");
+}
+
+.stop {
+  background-image: url("../images/stop.png");
 }
 
 .button-white:hover {

@@ -18,7 +18,10 @@ class VariableDependentButtons {
 
   addButton(id, listener) {
     const element = document.getElementById(id);
-    const closureListener = (variable) => () => listener(variable);
+    const closureListener = (variable) => (event) => {
+      event.stopPropagation();
+      listener(variable);
+    };
     this.buttons.set(element, closureListener);
   }
 
@@ -422,6 +425,8 @@ class FrameMenu {
     this.buttons = new VariableDependentButtons();
     this.#setUpButtons();
     this.label = document.getElementById('frame-label');
+    this.container = document.getElementById('frame-container');
+    this.footer = document.getElementById('footer');
   }
 
   #setUpButtons() {
@@ -429,6 +434,7 @@ class FrameMenu {
     this.buttons.addButton('duplicate-frame', (file) => {
       file.duplicateFrame(file.currentId);
     });
+    this.buttons.addButton('frame-menu', () => this.#switchContainer());
     // this.buttons.addButton('move-frame-up', (file) => {
     //   file.moveFrameUp(file.currentId);
     // });
@@ -452,7 +458,26 @@ class FrameMenu {
     }
 
     const currentPos = frames.getIndex(file.currentId) + 1;
-    this.label.innerText = baseLabel + `(${currentPos}/${frames.length})`;
+    this.label.innerText = baseLabel + ` (${currentPos}/${frames.length})`;
+  }
+
+  #switchContainer() {
+    if (this.container.style.display === SHOW_DISPLAY) this.#hideContainer();
+    else this.#showContainer();
+  }
+
+  #showContainer() {
+    this.container.style.display = SHOW_DISPLAY;
+    this.footer.style.width = 'calc(100% - 2 * var(--inter-element-spacing))';
+    this.footer.style.bottom = 'var(--inter-element-spacing)';
+    this.footer.style.position = 'absolute';
+  }
+
+  #hideContainer() {
+    this.container.style.display = HIDE_DISPLAY;
+    this.footer.style.width = '';
+    this.footer.style.bottom = '';
+    this.footer.style.position = 'relative';
   }
 }
 
@@ -464,11 +489,12 @@ class Preview {
     this.#setUpElements();
     this.encoder = new BmpEncoder(bmpVersions.bmp32);
     this.playing = false;
+    this.playButton = document.getElementById('preview-animation');
   }
 
   #setUpButtons() {
     this.buttons = new VariableDependentButtons();
-    this.buttons.addButton('preview-animation', (file) => this.#preview(file));
+    this.buttons.addButton('preview-menu', (file) => this.#preview(file));
   }
 
   #setUpElements() {
@@ -537,12 +563,16 @@ class Preview {
     this.container.style.display = SHOW_DISPLAY;
     const frontIndex = 1;
     this.background.style.zIndex = frontIndex.toString();
+    this.playButton.classList.remove('play');
+    this.playButton.classList.add('stop');
   }
 
   #hidePreview() {
     this.container.style.display = HIDE_DISPLAY;
     const backIndex = 0;
     this.background.style.zIndex = backIndex.toString();
+    this.playButton.classList.remove('stop');
+    this.playButton.classList.add('play');
   }
 
   refresh(file) {
