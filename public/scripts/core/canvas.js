@@ -430,6 +430,15 @@ class AnimationFile {
     this.#setCurrentFrame(frame);
   }
 
+  removeFrame(id) {
+    if (this.#frames.length <= 1) throw Error('Cannot remove the only frame');
+
+    this.#frames = this.#frames.remove(id);
+    const topFrame = this.#frames[this.#frames.length - 1];
+    this.#setCurrentFrame(topFrame);
+    this.#update();
+  }
+
   duplicateFrame(id) {
     const frame = this.#frames.byIdentifier(id);
     const duplicate = frame.clone();
