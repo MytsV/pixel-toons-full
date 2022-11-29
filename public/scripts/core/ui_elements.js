@@ -1,10 +1,5 @@
 import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
-import {
-  bytesToBase64,
-  bytesToUrl,
-  downloadLocalUrl, setImageBase64,
-  setImageUrl
-} from '../utilities/bytes_conversion.js';
+import { bytesToBase64, bytesToUrl, downloadLocalUrl, setImageBase64, setImageUrl } from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
 
@@ -420,6 +415,88 @@ class ShortcutsMenu {
   }
 }
 
+const frameDurations = [
+  100,
+  200,
+  300,
+  500,
+  1000
+];
+
+class FrameBox {
+  constructor(file, frameIndex) {
+    this.file = file;
+    this.frame = file.frames[frameIndex];
+    this.frameIndex = frameIndex;
+    this.element = this.#createElement();
+    this.#setUpElementClasses();
+    this.#appendFrameLabel();
+    this.#appendFrameImage();
+  }
+
+  #createElement() {
+    const element =  document.createElement('div');
+    element.onclick = () => {
+      this.file.switchFrame(this.frame.id);
+    };
+    return element;
+  }
+
+  #setUpElementClasses() {
+    this.element.classList.add('frame');
+    if (this.frame.id === this.frame.drawnId) {
+      this.element.classList.add('frame-selected');
+    }
+  }
+
+  #appendFrameLabel() {
+    const container = document.createElement('div');
+    container.classList.add('frame-label');
+    const name = getTextElement(this.frameIndex + 1);
+    name.classList.add('frame-index');
+    container.appendChild(name);
+    const duration = document.createElement('select');
+    duration.classList.add('frame-duration', 'text');
+    const options = frameDurations.map((duration) => {
+      const option = document.createElement('option');
+      option.value = duration.toString();
+      option.innerText = duration + 'ms';
+      if (duration === this.frame.duration) {
+        option.defaultSelected = true;
+      }
+      return option;
+    });
+    options.forEach((option) => duration.appendChild(option));
+    duration.onclick = (event) => {
+      event.stopPropagation();
+    };
+    duration.onchange = (event) => {
+      this.frame.duration = parseInt(event.target.value);
+    };
+    container.appendChild(duration);
+
+    this.element.appendChild(container);
+  }
+
+  #appendFrameImage() {
+    const image = document.createElement('div');
+    image.classList.add('frame-image');
+
+    const url = this.#getFrameImageUrl();
+    setImageUrl(image, url);
+
+    this.element.appendChild(image);
+  }
+
+  #getFrameImageUrl() {
+    const image = this.frame.canvas.getJoinedImage();
+    //Render image with transparency
+    const encoder = new BmpEncoder(bmpVersions.bmp32);
+    const data = encoder.encode(image);
+    return encoder.isLastEncodedTransparent() ? '' : bytesToUrl(data);
+  }
+}
+
 class FrameMenu {
   constructor() {
     this.buttons = new VariableDependentButtons();
@@ -448,7 +525,19 @@ class FrameMenu {
 
   refresh(file) {
     this.buttons.enableButtons(file);
+    FrameMenu.#updateFrames(file);
     this.#refreshLabel(file);
+  }
+
+  static #updateFrames(file) {
+    const list = document.getElementById('frame-list');
+    list.innerHTML = '';
+
+    //Iterate the list in reversed order
+    for (let i = 0; i < file.frames.length; i++) {
+      const frameBox = new FrameBox(file, i);
+      list.appendChild(frameBox.element);
+    }
   }
 
   #refreshLabel(file) {
@@ -465,12 +554,12 @@ class FrameMenu {
   }
 
   #switchContainer() {
-    if (this.container.style.display === SHOW_DISPLAY) this.#hideContainer();
+    if (this.container.style.display === 'flex') this.#hideContainer();
     else this.#showContainer();
   }
 
   #showContainer() {
-    this.container.style.display = SHOW_DISPLAY;
+    this.container.style.display = 'flex';
     this.footer.style.width = 'calc(100% - 2 * var(--inter-element-spacing))';
     this.footer.style.bottom = 'var(--inter-element-spacing)';
     this.footer.style.position = 'absolute';

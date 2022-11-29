@@ -45,6 +45,7 @@ class Application {
   start() {
     this.shortcuts.enable();
     window.onresize = () => this.canvasRenderer.adjustSize();
+    this.#setNewFile(100, 100);
   }
 }
 

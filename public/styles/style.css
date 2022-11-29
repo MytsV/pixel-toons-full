@@ -414,6 +414,8 @@ input {
   height: 125pt;
   display: none;
   background-color: #C2D7FF;
+  flex-grow: 1;
+  flex-direction: column;
 }
 
 #frame-menu {
@@ -496,4 +498,69 @@ input {
 
 #remove-frame img {
   margin-left: 2pt;
+}
+
+#frame-list {
+  flex-grow: 1;
+  overflow: auto;
+  display: flex;
+  margin-left: 8pt;
+  margin-right: 8pt;
+  margin-bottom: 10pt;
+}
+
+.frame {
+  box-sizing: border-box;
+  background-color: white;
+  /*border-top: var(--border-size) solid white;*/
+  /*border-bottom: var(--border-size) solid lightgray;*/
+  /*border-right: var(--border-size) solid lightgray;*/
+  outline: var(--border-size) solid var(--border-color);
+  position: relative;
+  margin: 2pt 2pt;
+  display: flex;
+  width: 120pt;
+  margin-right: var(--inter-element-spacing);
+  flex-direction: column;
+}
+
+.frame-label {
+  height: 20pt;
+  border-bottom: var(--border-size) solid var(--border-color);
+  display: flex;
+  width: 100%;
+  padding-right: -2pt;
+}
+
+.frame-index {
+  width: 20pt;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-right: var(--border-size) solid var(--border-color);
+}
+
+.frame-duration {
+  -webkit-appearance: none;
+  border: none;
+  background-color: transparent;
+  padding-left: 10pt;
+  padding-right: 10pt;
+  width: available;
+  flex-grow: 1;
+}
+
+.frame-duration:focus {
+  -webkit-appearance: none;
+  border: none;
+}
+
+.frame-image {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-size: cover;
+  image-rendering: pixelated;
+  background-color: white;
+  background-position: center;
 }
