@@ -1,10 +1,11 @@
 import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
-import { bytesToBase64, bytesToUrl, downloadLocalUrl, setImageBase64, setImageUrl } from '../utilities/bytes_conversion.js';
+import * as conv from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
 
 const HIDE_DISPLAY = 'none';
 const SHOW_DISPLAY = 'block';
+const SHOW_DISPLAY_FLEX = 'flex';
 
 class VariableDependentButtons {
   constructor() {
@@ -50,7 +51,7 @@ class Modal {
   }
 }
 
-class StateButtons {
+export class StateButtons {
   constructor() {
     this.buttons = new VariableDependentButtons();
     this.buttons.addButton('undo', (canvas) => canvas.undo());
@@ -62,9 +63,9 @@ class StateButtons {
   }
 }
 
-const sizeLimit = 250;
+const FILE_SIZE_LIMIT = 250;
 
-class FileMenu {
+export class FileMenu {
   constructor(createNewFile) {
     this.createNewFile = createNewFile; //A function passed from the context
     this.buttons = new VariableDependentButtons();
@@ -94,7 +95,8 @@ class FileMenu {
   static #exportImage(canvas) {
     const image = canvas.getJoinedImage();
     const encoder = new BmpEncoder(bmpVersions.bmp32);
-    downloadLocalUrl(bytesToUrl(encoder.encode(image)), 'image.bmp');
+    const data = encoder.encode(image);
+    conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.bmp');
   }
 
   #setUpCreateButton() {
@@ -104,7 +106,7 @@ class FileMenu {
 
   #setUpCreateFinish() {
     const createFinishButton = document.getElementById('create-file-final');
-    const inRange = (value) => value > 0 && value <= sizeLimit;
+    const inRange = (value) => value > 0 && value <= FILE_SIZE_LIMIT;
     createFinishButton.onclick = () => {
       const inputWidth = document.getElementById('width-input');
       const inputHeight = document.getElementById('height-input');
@@ -118,7 +120,7 @@ class FileMenu {
 
   static #setUpLimit() {
     const limit = document.getElementById('limit');
-    limit.innerText = `Size limit is ${sizeLimit}x${sizeLimit}`;
+    limit.innerText = `Size limit is ${FILE_SIZE_LIMIT}x${FILE_SIZE_LIMIT}`;
   }
 }
 
@@ -139,7 +141,7 @@ class ToolInfo {
   }
 }
 
-class Toolbar {
+export class Toolbar {
   static #activeClass = 'active-tool';
 
   constructor() {
@@ -250,7 +252,7 @@ class LayerBox {
 
     const url = this.#getLayerImageUrl();
     LayerBox.#imageCache.set(this.layer, url);
-    setImageUrl(image, url);
+    conv.setImageUrl(image, url);
 
     this.element.appendChild(image);
   }
@@ -274,11 +276,11 @@ class LayerBox {
     //Render image with transparency
     const encoder = new BmpEncoder(bmpVersions.bmp32);
     const data = encoder.encode(image);
-    return encoder.isLastEncodedTransparent() ? '' : bytesToUrl(data);
+    return encoder.isLastEncodedTransparent() ? '' : conv.bytesToUrl(data);
   }
 }
 
-class LayerMenu {
+export class LayerMenu {
   constructor() {
     this.container = document.getElementById('layer-container');
     this.buttons = new VariableDependentButtons();
@@ -358,7 +360,7 @@ class LayerMenu {
   }
 }
 
-class ZoomButtons {
+export class ZoomButtons {
   constructor(renderer) {
     this.buttons = new VariableDependentButtons();
     this.buttons.addButton('zoom-in', () => renderer.zoomIn());
@@ -370,7 +372,7 @@ class ZoomButtons {
   }
 }
 
-class ShortcutsMenu {
+export class ShortcutsMenu {
   constructor(manager) {
     this.manager = manager;
     this.modal = new Modal('shortcuts-modal');
@@ -423,7 +425,7 @@ const frameDurations = [
   1000
 ];
 
-class FrameBox {
+export class FrameBox {
   constructor(file, frameIndex) {
     this.file = file;
     this.frame = file.frames[frameIndex];
@@ -451,13 +453,32 @@ class FrameBox {
 
   #appendFrameLabel() {
     const container = document.createElement('div');
+
     container.classList.add('frame-label');
     const name = getTextElement(this.frameIndex + 1);
     name.classList.add('frame-index');
+
     container.appendChild(name);
+    container.appendChild(this.#getDurationElement());
+    this.element.appendChild(container);
+  }
+
+  #getDurationElement() {
     const duration = document.createElement('select');
     duration.classList.add('frame-duration', 'text');
-    const options = frameDurations.map((duration) => {
+    const options = this.#getOptions();
+    options.forEach((option) => duration.appendChild(option));
+    duration.onclick = (event) => {
+      event.stopPropagation();
+    };
+    duration.onchange = (event) => {
+      this.frame.duration = parseInt(event.target.value);
+    };
+    return duration;
+  }
+
+  #getOptions() {
+    return frameDurations.map((duration) => {
       const option = document.createElement('option');
       option.value = duration.toString();
       option.innerText = duration + 'ms';
@@ -466,16 +487,6 @@ class FrameBox {
       }
       return option;
     });
-    options.forEach((option) => duration.appendChild(option));
-    duration.onclick = (event) => {
-      event.stopPropagation();
-    };
-    duration.onchange = (event) => {
-      this.frame.duration = parseInt(event.target.value);
-    };
-    container.appendChild(duration);
-
-    this.element.appendChild(container);
   }
 
   #appendFrameImage() {
@@ -483,7 +494,7 @@ class FrameBox {
     image.classList.add('frame-image');
 
     const url = this.#getFrameImageUrl();
-    setImageUrl(image, url);
+    conv.setImageUrl(image, url);
 
     this.element.appendChild(image);
   }
@@ -493,11 +504,11 @@ class FrameBox {
     //Render image with transparency
     const encoder = new BmpEncoder(bmpVersions.bmp32);
     const data = encoder.encode(image);
-    return encoder.isLastEncodedTransparent() ? '' : bytesToUrl(data);
+    return encoder.isLastEncodedTransparent() ? '' : conv.bytesToUrl(data);
   }
 }
 
-class FrameMenu {
+export class FrameMenu {
   constructor() {
     this.buttons = new VariableDependentButtons();
     this.#setUpButtons();
@@ -554,12 +565,12 @@ class FrameMenu {
   }
 
   #switchContainer() {
-    if (this.container.style.display === 'flex') this.#hideContainer();
+    if (this.container.style.display !== HIDE_DISPLAY) this.#hideContainer();
     else this.#showContainer();
   }
 
   #showContainer() {
-    this.container.style.display = 'flex';
+    this.container.style.display = SHOW_DISPLAY_FLEX;
     this.footer.style.width = 'calc(100% - 2 * var(--inter-element-spacing))';
     this.footer.style.bottom = 'var(--inter-element-spacing)';
     this.footer.style.position = 'absolute';
@@ -573,7 +584,7 @@ class FrameMenu {
   }
 }
 
-class Preview {
+export class Preview {
   #savedFrames;
 
   constructor() {
@@ -633,14 +644,14 @@ class Preview {
       const image = frame.canvas.getJoinedImage();
       const encoded = this.encoder.encode(image);
       const isFullyTransparent = this.encoder.isLastEncodedTransparent();
-      data = isFullyTransparent ? null : bytesToBase64(encoded);
+      data = isFullyTransparent ? null : conv.bytesToBase64(encoded);
     }
     return data;
   }
 
   #setImage(url) {
     if (url) {
-      setImageBase64(this.container, url);
+      conv.setImageBase64(this.container, url);
     } else {
       this.container.style.backgroundImage = '';
     }
@@ -678,14 +689,3 @@ function getTextElement(text) {
   textElement.classList.add('text');
   return textElement;
 }
-
-export {
-  StateButtons,
-  FileMenu,
-  Toolbar,
-  LayerMenu,
-  ZoomButtons,
-  ShortcutsMenu,
-  FrameMenu,
-  Preview
-};
