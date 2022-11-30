@@ -10,6 +10,27 @@ const OFFSCREEN_ID = -1;
 //A prefix for a copied layer name
 const COPY_PREFIX = ' copy';
 
+class SimpleStateEmitter {
+  #listeners;
+
+  constructor() {
+    this.#listeners = [];
+  }
+
+
+  /*
+  The implementation of EventEmitter pattern.
+  Allows other entities to know when an entity is getting a fixated state
+ */
+  listenToUpdates(listener) {
+    this.#listeners.push(listener);
+  }
+
+  _fixateState() {
+    this.#listeners.forEach((listener) => listener());
+  }
+}
+
 /*
 A class which stores canvas parameters that are changed outside of drawing.
 It uses Memento pattern to implement Undo/Redo actions.
@@ -177,14 +198,14 @@ class LayerCache {
 A class which wraps HTML <canvas> element and adds functionality to it.
 Implements undo/redo actions, layering and listening to changes.
  */
-class Canvas {
+class Canvas extends SimpleStateEmitter {
   #layers; //An ordered array of virtual canvases
-  #listeners; //A variable needed to implement simple EventEmitter
 
   drawnId; //The ID of the currently drawn on layer
   image; //Image associated with the currently drawn on layer
 
   constructor(width, height) {
+    super();
     //Saving width and height for later reuse
     Object.assign(this, { width, height });
 
@@ -195,7 +216,6 @@ class Canvas {
 
     this.state = new CanvasState(this);
     this.#layers = new IdentifiedList();
-    this.#listeners = [];
     this.idGetter = new IdGetter();
 
     this.cache = new LayerCache(width, height);
@@ -264,7 +284,7 @@ class Canvas {
   switchLayer(id) {
     const layer = this.#layers.byIdentifier(id);
     this.#setDrawnLayer(layer);
-    this.#fixateChanges();
+    this._fixateState();
   }
 
   moveLayerUp(id) {
@@ -312,7 +332,7 @@ class Canvas {
   //Saves the current layers on the canvas for retrieving them later
   save() {
     this.state.save(this.#layers);
-    this.#fixateChanges();
+    this._fixateState();
   }
 
   //Reverts the layers to the previously saved ones
@@ -333,7 +353,7 @@ class Canvas {
 
     this.#setDrawnLayer(lastLayer);
     this.redraw();
-    this.#fixateChanges();
+    this._fixateState();
   }
 
   //Update instance variables with current layer data
@@ -342,18 +362,6 @@ class Canvas {
     const { width, height } = this;
     this.image = layer.context.getImageData(...START_POS, width, height);
     applyImageMixin(this.image);
-  }
-
-  /*
-  The implementation of EventEmitter pattern.
-  Allows other entities to know when the canvas is getting a fixated state
-   */
-  listenToUpdates(listener) {
-    this.#listeners.push(listener);
-  }
-
-  #fixateChanges() {
-    this.#listeners.forEach((listener) => listener());
   }
 
   clone() {
@@ -392,14 +400,16 @@ class Frame {
   }
 }
 
-class AnimationFile {
+class AnimationFile extends SimpleStateEmitter {
   #frames;
-  #listeners;
+
+  currentId; //The id of a frame we drawn on currently
+  overlayId; //The id of a frame which is rendered beneath
 
   constructor(width, height) {
+    super();
     this.idGetter = new IdGetter();
     this.#frames = new IdentifiedList();
-    this.#listeners = [];
     Object.assign(this, { width, height });
     this.appendFrame();
   }
@@ -454,15 +464,11 @@ class AnimationFile {
     this.#update();
   }
 
-  listenToUpdates(listener) {
-    this.#listeners.push(listener);
-  }
-
   #update() {
     const index = this.#frames.getIndex(this.currentId);
     const overlayFrame = this.#frames[index - 1];
     this.overlayId = overlayFrame ? overlayFrame.id : -1;
-    this.#listeners.forEach((listener) => listener());
+    this._fixateState();
   }
 
   get canvas() {
@@ -481,6 +487,7 @@ class AnimationFile {
   }
 }
 
+//Accepts a IdentifiedList with objects that implement clone() method
 function deepCloneList(list) {
   const clonedArray = list.map((value) => value.clone());
   return new IdentifiedList(clonedArray);
