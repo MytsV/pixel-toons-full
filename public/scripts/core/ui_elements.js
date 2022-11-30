@@ -1,15 +1,11 @@
 import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
-import {
-  bytesToBase64,
-  bytesToUrl,
-  downloadLocalUrl, setImageBase64,
-  setImageUrl
-} from '../utilities/bytes_conversion.js';
+import * as conv from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
 
 const HIDE_DISPLAY = 'none';
 const SHOW_DISPLAY = 'block';
+const SHOW_DISPLAY_FLEX = 'flex';
 
 class VariableDependentButtons {
   constructor() {
@@ -18,7 +14,10 @@ class VariableDependentButtons {
 
   addButton(id, listener) {
     const element = document.getElementById(id);
-    const closureListener = (variable) => () => listener(variable);
+    const closureListener = (variable) => (event) => {
+      event.stopPropagation();
+      listener(variable);
+    };
     this.buttons.set(element, closureListener);
   }
 
@@ -52,7 +51,7 @@ class Modal {
   }
 }
 
-class StateButtons {
+export class StateButtons {
   constructor() {
     this.buttons = new VariableDependentButtons();
     this.buttons.addButton('undo', (canvas) => canvas.undo());
@@ -64,9 +63,9 @@ class StateButtons {
   }
 }
 
-const sizeLimit = 250;
+const FILE_SIZE_LIMIT = 250;
 
-class FileMenu {
+export class FileMenu {
   constructor(createNewFile) {
     this.createNewFile = createNewFile; //A function passed from the context
     this.buttons = new VariableDependentButtons();
@@ -96,7 +95,8 @@ class FileMenu {
   static #exportImage(canvas) {
     const image = canvas.getJoinedImage();
     const encoder = new BmpEncoder(bmpVersions.bmp32);
-    downloadLocalUrl(bytesToUrl(encoder.encode(image)), 'image.bmp');
+    const data = encoder.encode(image);
+    conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.bmp');
   }
 
   #setUpCreateButton() {
@@ -106,7 +106,7 @@ class FileMenu {
 
   #setUpCreateFinish() {
     const createFinishButton = document.getElementById('create-file-final');
-    const inRange = (value) => value > 0 && value <= sizeLimit;
+    const inRange = (value) => value > 0 && value <= FILE_SIZE_LIMIT;
     createFinishButton.onclick = () => {
       const inputWidth = document.getElementById('width-input');
       const inputHeight = document.getElementById('height-input');
@@ -120,7 +120,7 @@ class FileMenu {
 
   static #setUpLimit() {
     const limit = document.getElementById('limit');
-    limit.innerText = `Size limit is ${sizeLimit}x${sizeLimit}`;
+    limit.innerText = `Size limit is ${FILE_SIZE_LIMIT}x${FILE_SIZE_LIMIT}`;
   }
 }
 
@@ -141,7 +141,7 @@ class ToolInfo {
   }
 }
 
-class Toolbar {
+export class Toolbar {
   static #activeClass = 'active-tool';
 
   constructor() {
@@ -252,7 +252,7 @@ class LayerBox {
 
     const url = this.#getLayerImageUrl();
     LayerBox.#imageCache.set(this.layer, url);
-    setImageUrl(image, url);
+    conv.setImageUrl(image, url);
 
     this.element.appendChild(image);
   }
@@ -276,11 +276,11 @@ class LayerBox {
     //Render image with transparency
     const encoder = new BmpEncoder(bmpVersions.bmp32);
     const data = encoder.encode(image);
-    return encoder.isLastEncodedTransparent() ? '' : bytesToUrl(data);
+    return encoder.isLastEncodedTransparent() ? '' : conv.bytesToUrl(data);
   }
 }
 
-class LayerMenu {
+export class LayerMenu {
   constructor() {
     this.container = document.getElementById('layer-container');
     this.buttons = new VariableDependentButtons();
@@ -360,7 +360,7 @@ class LayerMenu {
   }
 }
 
-class ZoomButtons {
+export class ZoomButtons {
   constructor(renderer) {
     this.buttons = new VariableDependentButtons();
     this.buttons.addButton('zoom-in', () => renderer.zoomIn());
@@ -372,7 +372,7 @@ class ZoomButtons {
   }
 }
 
-class ShortcutsMenu {
+export class ShortcutsMenu {
   constructor(manager) {
     this.manager = manager;
     this.modal = new Modal('shortcuts-modal');
@@ -417,32 +417,174 @@ class ShortcutsMenu {
   }
 }
 
+const frameDurations = [
+  100,
+  200,
+  300,
+  500,
+  1000
+];
 
-class FrameMenu {
+export class FrameBox {
+  constructor(file, frameIndex) {
+    this.file = file;
+    this.frame = file.frames[frameIndex];
+    this.frameIndex = frameIndex;
+    this.element = this.#createElement();
+    this.#setUpElementClasses();
+    this.#appendFrameLabel();
+    this.#appendFrameImage();
+  }
+
+  #createElement() {
+    const element =  document.createElement('div');
+    element.onclick = () => {
+      this.file.switchFrame(this.frame.id);
+    };
+    return element;
+  }
+
+  #setUpElementClasses() {
+    this.element.classList.add('frame');
+    if (this.frame.id === this.frame.drawnId) {
+      this.element.classList.add('frame-selected');
+    }
+  }
+
+  #appendFrameLabel() {
+    const container = document.createElement('div');
+
+    container.classList.add('frame-label');
+    const name = getTextElement(this.frameIndex + 1);
+    name.classList.add('frame-index');
+
+    container.appendChild(name);
+    container.appendChild(this.#getDurationElement());
+    this.element.appendChild(container);
+  }
+
+  #getDurationElement() {
+    const duration = document.createElement('select');
+    duration.classList.add('frame-duration', 'text');
+    const options = this.#getOptions();
+    options.forEach((option) => duration.appendChild(option));
+    duration.onclick = (event) => {
+      event.stopPropagation();
+    };
+    duration.onchange = (event) => {
+      this.frame.duration = parseInt(event.target.value);
+    };
+    return duration;
+  }
+
+  #getOptions() {
+    return frameDurations.map((duration) => {
+      const option = document.createElement('option');
+      option.value = duration.toString();
+      option.innerText = duration + 'ms';
+      if (duration === this.frame.duration) {
+        option.defaultSelected = true;
+      }
+      return option;
+    });
+  }
+
+  #appendFrameImage() {
+    const image = document.createElement('div');
+    image.classList.add('frame-image');
+
+    const url = this.#getFrameImageUrl();
+    conv.setImageUrl(image, url);
+
+    this.element.appendChild(image);
+  }
+
+  #getFrameImageUrl() {
+    const image = this.frame.canvas.getJoinedImage();
+    //Render image with transparency
+    const encoder = new BmpEncoder(bmpVersions.bmp32);
+    const data = encoder.encode(image);
+    return encoder.isLastEncodedTransparent() ? '' : conv.bytesToUrl(data);
+  }
+}
+
+export class FrameMenu {
   constructor() {
     this.buttons = new VariableDependentButtons();
+    this.#setUpButtons();
+    this.label = document.getElementById('frame-label');
+    this.container = document.getElementById('frame-container');
+    this.footer = document.getElementById('footer');
+  }
+
+  #setUpButtons() {
     this.buttons.addButton('add-frame', (file) => file.appendFrame());
-    this.buttons.addButton('switch-frame', (file) => {
-      const input = document.getElementById('switch-input');
-      file.switchFrame(parseInt(input.value));
-    });
     this.buttons.addButton('duplicate-frame', (file) => {
       file.duplicateFrame(file.currentId);
     });
+    this.buttons.addButton('frame-menu', () => this.#switchContainer());
     this.buttons.addButton('move-frame-up', (file) => {
       file.moveFrameUp(file.currentId);
     });
     this.buttons.addButton('move-frame-down', (file) => {
       file.moveFrameDown(file.currentId);
     });
+    this.buttons.addButton('remove-frame', (file) => {
+      file.removeFrame(file.currentId);
+    });
   }
 
   refresh(file) {
     this.buttons.enableButtons(file);
+    FrameMenu.#updateFrames(file);
+    this.#refreshLabel(file);
+  }
+
+  static #updateFrames(file) {
+    const list = document.getElementById('frame-list');
+    list.innerHTML = '';
+
+    //Iterate the list in reversed order
+    for (let i = 0; i < file.frames.length; i++) {
+      const frameBox = new FrameBox(file, i);
+      list.appendChild(frameBox.element);
+    }
+  }
+
+  #refreshLabel(file) {
+    const baseLabel = 'Frames';
+    const frames = file.frames;
+
+    if (frames.length <= 1) {
+      this.label.innerText = baseLabel;
+      return;
+    }
+
+    const currentPos = frames.getIndex(file.currentId) + 1;
+    this.label.innerText = baseLabel + ` (${currentPos}/${frames.length})`;
+  }
+
+  #switchContainer() {
+    if (this.container.style.display !== HIDE_DISPLAY) this.#hideContainer();
+    else this.#showContainer();
+  }
+
+  #showContainer() {
+    this.container.style.display = SHOW_DISPLAY_FLEX;
+    this.footer.style.width = 'calc(100% - 2 * var(--inter-element-spacing))';
+    this.footer.style.bottom = 'var(--inter-element-spacing)';
+    this.footer.style.position = 'absolute';
+  }
+
+  #hideContainer() {
+    this.container.style.display = HIDE_DISPLAY;
+    this.footer.style.width = '';
+    this.footer.style.bottom = '';
+    this.footer.style.position = 'relative';
   }
 }
 
-class Preview {
+export class Preview {
   #savedFrames;
 
   constructor() {
@@ -450,12 +592,12 @@ class Preview {
     this.#setUpElements();
     this.encoder = new BmpEncoder(bmpVersions.bmp32);
     this.playing = false;
+    this.playButton = document.getElementById('preview-animation');
   }
 
   #setUpButtons() {
     this.buttons = new VariableDependentButtons();
-    this.buttons.addButton('preview-animation', (file) => this.#play(file));
-    this.buttons.addButton('stop-animation', () => this.#stop());
+    this.buttons.addButton('preview-menu', (file) => this.#preview(file));
   }
 
   #setUpElements() {
@@ -463,10 +605,14 @@ class Preview {
     this.container = document.getElementById('preview');
   }
 
+  #preview(file) {
+    if (!this.playing) this.#play(file);
+    else this.#stop();
+  }
+
   #play(file) {
     this.#showPreview();
     this.playing = true;
-    this.#savedFrames = new Map();
 
     const changeImage = this.#getImageChanger(file.frames);
     changeImage();
@@ -474,6 +620,8 @@ class Preview {
 
   #getImageChanger(frames) {
     let index = 0;
+    this.#savedFrames = new Map();
+
     const changeImage = () => {
       if (!this.playing) return;
 
@@ -496,14 +644,14 @@ class Preview {
       const image = frame.canvas.getJoinedImage();
       const encoded = this.encoder.encode(image);
       const isFullyTransparent = this.encoder.isLastEncodedTransparent();
-      data = isFullyTransparent ? null : bytesToBase64(encoded);
+      data = isFullyTransparent ? null : conv.bytesToBase64(encoded);
     }
     return data;
   }
 
   #setImage(url) {
     if (url) {
-      setImageBase64(this.container, url);
+      conv.setImageBase64(this.container, url);
     } else {
       this.container.style.backgroundImage = '';
     }
@@ -518,12 +666,16 @@ class Preview {
     this.container.style.display = SHOW_DISPLAY;
     const frontIndex = 1;
     this.background.style.zIndex = frontIndex.toString();
+    this.playButton.classList.remove('play');
+    this.playButton.classList.add('stop');
   }
 
   #hidePreview() {
     this.container.style.display = HIDE_DISPLAY;
     const backIndex = 0;
     this.background.style.zIndex = backIndex.toString();
+    this.playButton.classList.remove('stop');
+    this.playButton.classList.add('play');
   }
 
   refresh(file) {
@@ -537,14 +689,3 @@ function getTextElement(text) {
   textElement.classList.add('text');
   return textElement;
 }
-
-export {
-  StateButtons,
-  FileMenu,
-  Toolbar,
-  LayerMenu,
-  ZoomButtons,
-  ShortcutsMenu,
-  FrameMenu,
-  Preview
-};

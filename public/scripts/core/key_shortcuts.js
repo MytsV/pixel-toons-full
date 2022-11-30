@@ -1,3 +1,8 @@
+/*
+The decision is to link keybindings with clickable buttons by the buttons' ids.
+If needed, there will be an abstraction for shortcut with fire method created,
+which could include other types of shortcuts.
+ */
 class InterfaceShortcut {
   static #event = new Event('click');
 
@@ -22,33 +27,43 @@ class InterfaceShortcut {
   }
 }
 
+/*
+A parsed keybinding should have such format:
+First - modifiers, separated by a +, in strict order:
+ctrl, then shift, then alt.
+Ctrl is converted to Command key on macOS.
+After modifiers goes exactly ONE key.
+ */
+const interfaceShortcuts = {
+  'ctrl+shift+f': new InterfaceShortcut('create-file'),
+  'ctrl+shift+c': new InterfaceShortcut('clear-file'),
+  'ctrl+shift+e': new InterfaceShortcut('export-image'),
+  'p': new InterfaceShortcut('pencil'),
+  'e': new InterfaceShortcut('eraser'),
+  'b': new InterfaceShortcut('bucket fill'),
+  '=': new InterfaceShortcut('zoom-in'),
+  '-': new InterfaceShortcut('zoom-out'),
+  'ctrl+z': new InterfaceShortcut('undo'),
+  'ctrl+y': new InterfaceShortcut('redo'),
+  'shift+a': new InterfaceShortcut('add-layer'),
+  'shift+r': new InterfaceShortcut('remove-layer'),
+  'shift+u': new InterfaceShortcut('move-layer-up'),
+  'shift+d': new InterfaceShortcut('move-layer-down'),
+  'shift+m': new InterfaceShortcut('merge-layers'),
+  'shift+c': new InterfaceShortcut('duplicate-layer'),
+  'shift+e': new InterfaceShortcut('rename-layer')
+};
+
 class ShortcutManager {
   constructor() {
-    this.shortcuts = toMap({
-      'ctrl+shift+f': new InterfaceShortcut('create-file'),
-      'ctrl+shift+c': new InterfaceShortcut('clear-file'),
-      'ctrl+shift+e': new InterfaceShortcut('export-image'),
-      'p': new InterfaceShortcut('pencil'),
-      'e': new InterfaceShortcut('eraser'),
-      'b': new InterfaceShortcut('bucket fill'),
-      '=': new InterfaceShortcut('zoom-in'),
-      '-': new InterfaceShortcut('zoom-out'),
-      'ctrl+z': new InterfaceShortcut('undo'),
-      'ctrl+y': new InterfaceShortcut('redo'),
-      'shift+a': new InterfaceShortcut('add-layer'),
-      'shift+r': new InterfaceShortcut('remove-layer'),
-      'shift+u': new InterfaceShortcut('move-layer-up'),
-      'shift+d': new InterfaceShortcut('move-layer-down'),
-      'shift+m': new InterfaceShortcut('merge-layers'),
-      'shift+c': new InterfaceShortcut('duplicate-layer'),
-      'shift+e': new InterfaceShortcut('rename-layer')
-    });
+    this.shortcuts = new Map(Object.entries(interfaceShortcuts));
   }
 
   enable() {
     window.onkeydown = (event) => {
       const keybinding = parseKeybinding(event).toLowerCase();
       if (this.shortcuts.has(keybinding)) {
+        //We keep browser shortcuts from working
         event.preventDefault();
         const shortcut = this.shortcuts.get(keybinding);
         shortcut.fire();
@@ -57,11 +72,11 @@ class ShortcutManager {
     window.onkeypress = () => (event) => event.preventDefault();
     window.onkeyup = () => (event) => event.preventDefault();
   }
-
 }
 
 const modifierParsing = getModifierParsing();
 
+//Links parameter names of event with my parsing directives
 function getModifierParsing() {
   const modifierParsing = new Map();
   const isMac = navigator.platform.indexOf('Mac') > -1;
@@ -91,10 +106,6 @@ function parseKeybinding(event) {
     return `${modString}+${event.key}`;
   }
   return event.key;
-}
-
-function toMap(obj) {
-  return new Map(Object.entries(obj));
 }
 
 export { ShortcutManager };

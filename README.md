@@ -106,7 +106,7 @@ User interface is currently extremely raw. It will be improved in the future.
     </tr>
     <tr>
         <td>
-            🟥 Frames
+            🟩 Frames
         </td>
         <td>
         </td>
