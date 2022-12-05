@@ -378,6 +378,17 @@ export class LayerMenu extends UiElement {
     this.buttons.enableButtons(canvas);
     this.#updateLayers(canvas);
     this.#setFixationListener(canvas);
+    this.#enableOpacity(canvas);
+  }
+
+  #enableOpacity(canvas) {
+    this.input = document.getElementById('layer-opacity');
+    this.input.oninput = (event) => {
+      const id = canvas.drawnId;
+      const layer = canvas.layers.byIdentifier(id);
+      layer.opacity = parseFloat(event.target.value);
+      canvas.redraw();
+    };
   }
 
   #updateLayers(canvas) {

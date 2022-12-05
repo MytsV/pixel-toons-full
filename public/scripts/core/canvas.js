@@ -9,6 +9,7 @@ const CACHE_MIN_LAYER_COUNT = 4;
 const OFFSCREEN_ID = -1;
 //A prefix for a copied layer name
 const COPY_PREFIX = ' copy';
+const DEFAULT_OPACITY = 1;
 
 class SimpleStateEmitter {
   #listeners;
@@ -125,6 +126,7 @@ class Layer {
 
     //Determines whether the layer will be drawn over the main canvas
     this.visible = true;
+    this.opacity = DEFAULT_OPACITY;
   }
 
   //Prototype pattern implementation
@@ -133,6 +135,7 @@ class Layer {
     const imageData = this.#getImageData(this.width, this.height);
     //We clone the ImageData object to avoid changing pixel data by reference
     cloned.context.putImageData(imageData.clone(), ...START_POS);
+    cloned.opacity = this.opacity;
     return cloned;
   }
 
@@ -168,7 +171,7 @@ class LayerCache {
       if (!layer.visible || index === currentIndex) continue;
       const beforeCurrent = index < currentIndex;
       const appendedCache = beforeCurrent ? this.beforeCache : this.afterCache;
-      appendedCache.context.drawImage(layer.virtualCanvas, ...START_POS);
+      drawLayer(appendedCache.context, layer);
     }
   }
 
@@ -188,7 +191,7 @@ class LayerCache {
     context.drawImage(this.beforeCache.virtualCanvas, ...START_POS);
     //Handling only the visibility of middle layer
     if (this.#lastChanged.visible) {
-      context.drawImage(this.#lastChanged.virtualCanvas, ...START_POS);
+      drawLayer(context, this.#lastChanged);
     }
     context.drawImage(this.afterCache.virtualCanvas, ...START_POS);
   }
@@ -243,7 +246,7 @@ class Canvas extends SimpleStateEmitter {
     } else {
       this.#layers.forEach((layer) => {
         if (!layer.visible) return;
-        this.context.drawImage(layer.virtualCanvas, ...START_POS);
+        drawLayer(this.context, layer);
       });
     }
   }
@@ -491,6 +494,12 @@ class AnimationFile extends SimpleStateEmitter {
 function deepCloneList(list) {
   const clonedArray = list.map((value) => value.clone());
   return new IdentifiedList(clonedArray);
+}
+
+function drawLayer(context, layer) {
+  context.globalAlpha = layer.opacity;
+  context.drawImage(layer.virtualCanvas, ...START_POS);
+  context.globalAlpha = DEFAULT_OPACITY;
 }
 
 export { Canvas, AnimationFile };
