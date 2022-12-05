@@ -2,6 +2,7 @@ import { Coordinates } from '../utilities/coordinates.js';
 import { Color } from '../utilities/color.js';
 
 const DEFAULT_PENCIL_COLOR = '#000000';
+const DEFAULT_THICKNESS = 1;
 
 /*
 An abstract class which defines drawing operations.
@@ -22,6 +23,7 @@ class Tool {
        */
       this.listenersCanvas = new Map();
       this.listenersDocument = new Map();
+      this.thickness = DEFAULT_THICKNESS;
     }
   }
 
@@ -76,7 +78,7 @@ class Pencil extends Tool {
     super.link(canvas);
     //To achieve less arguments for functions we assign mixins to canvas
     const mixin = {
-      drawPoint,
+      setPixel,
       plotLine
     };
     Object.assign(canvas, mixin);
@@ -103,7 +105,7 @@ class Pencil extends Tool {
   #onClick(event) {
     const mouseCoords = new Coordinates(event.clientX, event.clientY);
     const canvasCoords = getRealCoordinates(this.canvas.element, mouseCoords);
-    this.canvas.drawPoint(this.getColor(), canvasCoords);
+    this.canvas.setPixel(this.getColor(), canvasCoords, this.thickness);
     this.canvas.redraw();
   }
 
@@ -115,7 +117,7 @@ class Pencil extends Tool {
     if (!this.#isOffsetValid(event)) return;
 
     const dest = new Coordinates(event.clientX, event.clientY);
-    this.canvas.plotLine(this.getColor(), this.#lastCoordinates, dest);
+    this.canvas.plotLine(this.getColor(), this.thickness, this.#lastCoordinates, dest);
     this.canvas.redraw();
 
     this.#lastCoordinates = dest;
@@ -148,10 +150,10 @@ class Pencil extends Tool {
   }
 }
 
-function plotLine(color, src, dest) {
+function plotLine(color, thickness, src, dest) {
   const srcReal = getRealCoordinates(this.element, dest);
   const destReal = getRealCoordinates(this.element, src);
-  const plotPoint = ({ x, y }) => this.drawPoint(color, { x, y });
+  const plotPoint = ({ x, y }) => this.setPixel(color, { x, y }, thickness);
   bresenhamLine(destReal, srcReal, plotPoint);
 }
 
@@ -213,7 +215,7 @@ class BucketFill extends Tool {
   link(canvas) {
     super.link(canvas);
     const mixin = {
-      drawPoint,
+      setPixel,
     };
     Object.assign(canvas, mixin);
   }
@@ -243,7 +245,7 @@ class BucketFill extends Tool {
       const current = this.#queue.shift();
       const currentColor = image.getPixelColor(current.x, current.y);
       if (!this.#isColorValid(initialColor, currentColor)) continue;
-      this.canvas.drawPoint(this.getColor(), current);
+      this.canvas.setPixel(this.getColor(), current, this.thickness);
 
       this.#visit(new Coordinates(current.x - 1, current.y));
       this.#visit(new Coordinates(current.x + 1, current.y));
@@ -285,8 +287,12 @@ class BucketFill extends Tool {
   }
 }
 
-function drawPoint(color, { x, y }) {
-  this.image.setPixelColor(x, y, color);
+function setPixel(color, { x, y }, thickness) {
+  for (let i = 0; i < thickness; i++) {
+    for (let j = 0; j < thickness; j++) {
+      this.image.setPixelColor(x + i, y + j, color);
+    }
+  }
 }
 
 function getRealCoordinates(element, absCoords) {
