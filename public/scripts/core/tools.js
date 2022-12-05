@@ -74,10 +74,8 @@ class Tool {
   }
 
   plotLine(color, src, dest) {
-    const srcReal = this.getRealCoords(this.canvas.element, dest);
-    const destReal = this.getRealCoords(this.canvas.element, src);
     const plotPoint = ({ x, y }) => this.setPixel(color, { x, y });
-    bresenhamLine(destReal, srcReal, plotPoint);
+    bresenhamLine(dest, src, plotPoint);
   }
 
   getRealCoords(element, abs) {
@@ -92,11 +90,13 @@ class Tool {
     };
     const curr = new Coordinates(rel.x * ratio.width, rel.y * ratio.height);
 
+    const overflowOff = (this.thickness / 2) | 0;
+    const sideOff = this.thickness % 2;
     //Check for overflow
-    curr.x = Math.min(width - this.thickness, curr.x);
-    curr.x = Math.max(0, curr.x);
-    curr.y = Math.min(height - this.thickness, curr.y);
-    curr.y = Math.max(0, curr.y);
+    curr.x = Math.min(width - overflowOff - sideOff, curr.x);
+    curr.x = Math.max(overflowOff, curr.x);
+    curr.y = Math.min(height - overflowOff - sideOff, curr.y);
+    curr.y = Math.max(overflowOff, curr.y);
 
     return new Coordinates(Math.floor(curr.x), Math.floor(curr.y));
   }
@@ -106,12 +106,12 @@ class Tool {
 Tool which draws simple lines on the canvas
  */
 class Pencil extends Tool {
-  #lastCoordinates;
+  #lastCoords;
   #drawing;
 
   constructor() {
     super();
-    this.#lastCoordinates = undefined;
+    this.#lastCoords = undefined;
     this.#drawing = false;
   }
 
@@ -132,7 +132,7 @@ class Pencil extends Tool {
 
   //When mouse button is initially pressed, we start drawing
   #onMouseDown(event) {
-    this.#lastCoordinates = new Coordinates(event.clientX, event.clientY);
+    this.#lastCoords = new Coordinates(event.clientX, event.clientY);
     this.#drawing = true;
   }
 
@@ -140,7 +140,7 @@ class Pencil extends Tool {
   #onClick(event) {
     const mouseCoords = new Coordinates(event.clientX, event.clientY);
     const canvasCoords = this.getRealCoords(this.canvas.element, mouseCoords);
-    this.setPixel(this.getColor(), canvasCoords);
+    this.setPixel(this.getColor(), this.#center(canvasCoords));
     this.canvas.redraw();
   }
 
@@ -151,11 +151,21 @@ class Pencil extends Tool {
     //We don't draw if between last drawn point there is not enough space
     if (!this.#isOffsetValid(event)) return;
 
-    const dest = new Coordinates(event.clientX, event.clientY);
-    this.plotLine(this.getColor(), this.#lastCoordinates, dest);
+    const destAbs = new Coordinates(event.clientX, event.clientY);
+    const destReal = this.getRealCoords(this.canvas.element, destAbs);
+    const src = this.getRealCoords(this.canvas.element, this.#lastCoords);
+
+    this.plotLine(this.getColor(), this.#center(src), this.#center(destReal));
     this.canvas.redraw();
 
-    this.#lastCoordinates = dest;
+    this.#lastCoords = destAbs;
+  }
+
+  #center(coords) {
+    if (this.thickness <= 1) return coords;
+    const difference = (this.thickness / 2) | 0;
+    const delta = new Coordinates(difference, difference);
+    return Coordinates.getDifference(delta, coords);
   }
 
   #onMouseUp() {
@@ -174,8 +184,8 @@ class Pencil extends Tool {
     const ERROR = 0.3;
     minOffset -= minOffset * ERROR * this.thickness;
 
-    const dx = event.clientX - this.#lastCoordinates.x;
-    const dy = event.clientY - this.#lastCoordinates.y;
+    const dx = event.clientX - this.#lastCoords.x;
+    const dy = event.clientY - this.#lastCoords.y;
     return Math.abs(dx) >= minOffset || Math.abs(dy) >= minOffset;
   }
 }
