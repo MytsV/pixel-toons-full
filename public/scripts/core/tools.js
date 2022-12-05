@@ -140,7 +140,7 @@ class Pencil extends Tool {
   #onClick(event) {
     const mouseCoords = new Coordinates(event.clientX, event.clientY);
     const canvasCoords = this.getRealCoords(this.canvas.element, mouseCoords);
-    this.canvas.setPixel(canvasCoords);
+    this.setPixel(this.getColor(), canvasCoords);
     this.canvas.redraw();
   }
 
@@ -172,7 +172,7 @@ class Pencil extends Tool {
 
     //We decrease minimal offset to make drawing more smooth
     const ERROR = 0.3;
-    minOffset -= minOffset * ERROR;
+    minOffset -= minOffset * ERROR * this.thickness;
 
     const dx = event.clientX - this.#lastCoordinates.x;
     const dy = event.clientY - this.#lastCoordinates.y;
