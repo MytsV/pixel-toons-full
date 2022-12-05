@@ -515,6 +515,8 @@ export class FrameMenu {
     this.label = document.getElementById('frame-label');
     this.container = document.getElementById('frame-container');
     this.footer = document.getElementById('footer');
+    this.opacity = document.getElementById('opacity');
+    this.#setUpOpacity();
   }
 
   #setUpButtons() {
@@ -532,6 +534,16 @@ export class FrameMenu {
     this.buttons.addButton('remove-frame', (file) => {
       file.removeFrame(file.currentId);
     });
+  }
+
+  #setUpOpacity() {
+    this.overlayElement = document.getElementById('canvas-overlay');
+    this.opacity.onclick = (event) => {
+      event.stopPropagation();
+    };
+    this.opacity.oninput = () => {
+      this.overlayElement.style.opacity = this.opacity.value;
+    };
   }
 
   refresh(file) {
