@@ -59,6 +59,47 @@ class Tool {
       }
     }
   }
+
+  //Makes the class open to extensions
+  getColor() {
+    return Tool.color;
+  }
+
+  setPixel(color, { x, y }) {
+    for (let i = 0; i < this.thickness; i++) {
+      for (let j = 0; j < this.thickness; j++) {
+        this.canvas.image.setPixelColor(x + i, y + j, color);
+      }
+    }
+  }
+
+  plotLine(color, src, dest) {
+    const srcReal = this.getRealCoords(this.canvas.element, dest);
+    const destReal = this.getRealCoords(this.canvas.element, src);
+    const plotPoint = ({ x, y }) => this.setPixel(color, { x, y });
+    bresenhamLine(destReal, srcReal, plotPoint);
+  }
+
+  getRealCoords(element, abs) {
+    const { width, height, offsetWidth, offsetHeight } = element;
+
+    const rect = element.getBoundingClientRect(); //Allows to retrieve offset
+    const rel = new Coordinates(abs.x - rect.left, abs.y - rect.top);
+
+    const ratio = {
+      width: width / offsetWidth,
+      height: height / offsetHeight
+    };
+    const curr = new Coordinates(rel.x * ratio.width, rel.y * ratio.height);
+
+    //Check for overflow
+    curr.x = Math.min(width - this.thickness, curr.x);
+    curr.x = Math.max(0, curr.x);
+    curr.y = Math.min(height - this.thickness, curr.y);
+    curr.y = Math.max(0, curr.y);
+
+    return new Coordinates(Math.floor(curr.x), Math.floor(curr.y));
+  }
 }
 
 /*
@@ -76,12 +117,6 @@ class Pencil extends Tool {
 
   link(canvas) {
     super.link(canvas);
-    //To achieve less arguments for functions we assign mixins to canvas
-    const mixin = {
-      setPixel,
-      plotLine
-    };
-    Object.assign(canvas, mixin);
   }
 
   setEvents() {
@@ -104,8 +139,8 @@ class Pencil extends Tool {
   //When mouse is pressed and release, we draw one pixel
   #onClick(event) {
     const mouseCoords = new Coordinates(event.clientX, event.clientY);
-    const canvasCoords = getRealCoordinates(this.canvas.element, mouseCoords);
-    this.canvas.setPixel(this.getColor(), canvasCoords, this.thickness);
+    const canvasCoords = this.getRealCoords(this.canvas.element, mouseCoords);
+    this.canvas.setPixel(canvasCoords);
     this.canvas.redraw();
   }
 
@@ -117,7 +152,7 @@ class Pencil extends Tool {
     if (!this.#isOffsetValid(event)) return;
 
     const dest = new Coordinates(event.clientX, event.clientY);
-    this.canvas.plotLine(this.getColor(), this.thickness, this.#lastCoordinates, dest);
+    this.plotLine(this.getColor(), this.#lastCoordinates, dest);
     this.canvas.redraw();
 
     this.#lastCoordinates = dest;
@@ -143,18 +178,6 @@ class Pencil extends Tool {
     const dy = event.clientY - this.#lastCoordinates.y;
     return Math.abs(dx) >= minOffset || Math.abs(dy) >= minOffset;
   }
-
-  //Makes the class open to extensions
-  getColor() {
-    return Tool.color;
-  }
-}
-
-function plotLine(color, thickness, src, dest) {
-  const srcReal = getRealCoordinates(this.element, dest);
-  const destReal = getRealCoordinates(this.element, src);
-  const plotPoint = ({ x, y }) => this.setPixel(color, { x, y }, thickness);
-  bresenhamLine(destReal, srcReal, plotPoint);
 }
 
 /*
@@ -214,10 +237,6 @@ class BucketFill extends Tool {
 
   link(canvas) {
     super.link(canvas);
-    const mixin = {
-      setPixel,
-    };
-    Object.assign(canvas, mixin);
   }
 
   setEvents() {
@@ -227,7 +246,7 @@ class BucketFill extends Tool {
 
   #onClick(event) {
     const mouseCoords = new Coordinates(event.clientX, event.clientY);
-    const realCoords = getRealCoordinates(this.canvas.element, mouseCoords);
+    const realCoords = this.getRealCoords(this.canvas.element, mouseCoords);
     this.#floodFill(realCoords);
     this.canvas.redraw();
     this.canvas.save();
@@ -245,7 +264,7 @@ class BucketFill extends Tool {
       const current = this.#queue.shift();
       const currentColor = image.getPixelColor(current.x, current.y);
       if (!this.#isColorValid(initialColor, currentColor)) continue;
-      this.canvas.setPixel(this.getColor(), current, this.thickness);
+      this.setPixel(this.getColor(), current);
 
       this.#visit(new Coordinates(current.x - 1, current.y));
       this.#visit(new Coordinates(current.x + 1, current.y));
@@ -285,35 +304,6 @@ class BucketFill extends Tool {
   getColor() {
     return Tool.color;
   }
-}
-
-function setPixel(color, { x, y }, thickness) {
-  for (let i = 0; i < thickness; i++) {
-    for (let j = 0; j < thickness; j++) {
-      this.image.setPixelColor(x + i, y + j, color);
-    }
-  }
-}
-
-function getRealCoordinates(element, absCoords) {
-  const { width, height, offsetWidth, offsetHeight } = element;
-
-  const rect = element.getBoundingClientRect(); //Allows to retrieve offset
-  const rel = new Coordinates(absCoords.x - rect.left, absCoords.y - rect.top);
-
-  const ratio = {
-    width: width / offsetWidth,
-    height: height / offsetHeight
-  };
-  const curr = new Coordinates(rel.x * ratio.width, rel.y * ratio.height);
-
-  //Check for overflow
-  curr.x = Math.min(width - 1, curr.x);
-  curr.x = Math.max(0, curr.x);
-  curr.y = Math.min(height - 1, curr.y);
-  curr.y = Math.max(0, curr.y);
-
-  return new Coordinates(Math.floor(curr.x), Math.floor(curr.y));
 }
 
 export { Tool, Pencil, Eraser, BucketFill };
