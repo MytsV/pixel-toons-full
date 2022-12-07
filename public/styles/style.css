@@ -593,3 +593,11 @@ input {
 #canvas-pointer {
   pointer-events: none;
 }
+
+#coordinates {
+  font-family: 'Pixelite', serif;
+  color: white;
+  font-size: 13pt;
+  margin: 10pt;
+  position: absolute;
+}
