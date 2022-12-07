@@ -222,6 +222,7 @@ class Pointer extends PointedTool {
   constructor() {
     super();
     this.pointerElement = document.getElementById('canvas-pointer');
+    this.cleared = true;
   }
 
   link(canvas) {
@@ -231,13 +232,24 @@ class Pointer extends PointedTool {
   }
 
   setEvents() {
-    const { listenersCanvas } = this;
-    listenersCanvas.set('mousemove', (event) => this.#onMouseMove(event));
+    const { listenersDocument } = this;
+    listenersDocument.set('mousemove', (event) => this.#onMouseMove(event));
     super.setEvents();
   }
 
   #onMouseMove(event) {
+    if (event.target !== this.canvas.element) {
+      if (!this.cleared) {
+        this.cleared = true;
+        const context = this.pointerElement.getContext('2d');
+        context.fillStyle = '#00000000';
+        context.globalCompositeOperation = 'copy';
+        context.fillRect(0, 0, this.thickness, this.thickness);
+      }
+      return;
+    }
     if (this._lastCoords && !this._isOffsetValid(event)) return;
+    this.cleared = false;
 
     const destAbs = new Coordinates(event.clientX, event.clientY);
     const destReal = this._toRealCoords(this.pointerElement, destAbs);
