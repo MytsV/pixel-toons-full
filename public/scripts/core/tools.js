@@ -2,7 +2,7 @@ import { Coordinates } from '../utilities/coordinates.js';
 import { Color } from '../utilities/color.js';
 
 const DEFAULT_PENCIL_COLOR = '#000000';
-const DEFAULT_THICKNESS = 3;
+const DEFAULT_THICKNESS = 1;
 
 /*
 An abstract class which defines drawing operations.
@@ -65,7 +65,7 @@ class Tool {
     return Tool.color;
   }
 
-  drawPoint(color, { x, y }) {
+  _drawPoint(color, { x, y }) {
     for (let i = 0; i < this.thickness; i++) {
       for (let j = 0; j < this.thickness; j++) {
         this.canvas.image.setPixelColor(x + i, y + j, color);
@@ -73,32 +73,42 @@ class Tool {
     }
   }
 
-  plotLine(color, src, dest) {
-    const plotPoint = ({ x, y }) => this.drawPoint(color, { x, y });
+  _plotLine(color, src, dest) {
+    const plotPoint = ({ x, y }) => this._drawPoint(color, { x, y });
     bresenhamLine(dest, src, plotPoint);
   }
 
-  getRealCoords(element, abs) {
-    const { width, height, offsetWidth, offsetHeight } = element;
-
+  _toRealCoords(element, abs) {
     const rect = element.getBoundingClientRect(); //Allows to retrieve offset
     const rel = new Coordinates(abs.x - rect.left, abs.y - rect.top);
 
-    const ratio = {
-      width: width / offsetWidth,
-      height: height / offsetHeight
-    };
+    const ratio = Tool.#getRatio(element);
     const curr = new Coordinates(rel.x * ratio.width, rel.y * ratio.height);
 
     const overflowOff = (this.thickness / 2) | 0;
     const sideOff = this.thickness % 2;
     //Check for overflow
-    curr.x = Math.min(width - overflowOff - sideOff, curr.x);
+    curr.x = Math.min(element.width - overflowOff - sideOff, curr.x);
     curr.x = Math.max(overflowOff, curr.x);
-    curr.y = Math.min(height - overflowOff - sideOff, curr.y);
+    curr.y = Math.min(element.height - overflowOff - sideOff, curr.y);
     curr.y = Math.max(overflowOff, curr.y);
 
     return new Coordinates(Math.floor(curr.x), Math.floor(curr.y));
+  }
+
+  _toAbsCoords(element, real) {
+    const ratio = Tool.#getRatio(element);
+    const curr = new Coordinates(real.x / ratio.width, real.y / ratio.height);
+    const rect = element.getBoundingClientRect();
+    return new Coordinates(curr.x + rect.left, curr.y + rect.top);
+  }
+
+  static #getRatio(element) {
+    const { width, height, offsetWidth, offsetHeight } = element;
+    return {
+      width: width / offsetWidth,
+      height: height / offsetHeight
+    };
   }
 }
 
@@ -118,12 +128,12 @@ class PointedTool extends Tool {
     let minOffset = canvasElement.offsetWidth / canvasElement.width;
 
     //We decrease minimal offset to make drawing more smooth
-    const ERROR = 0.15;
+    const ERROR = 0.5;
     minOffset -= minOffset * ERROR * this.thickness;
 
     const dx = event.clientX - this._lastCoords.x;
     const dy = event.clientY - this._lastCoords.y;
-    return Math.abs(dx) >= minOffset || Math.abs(dy) >= minOffset;
+    return Math.sqrt(dx * dx + dy * dy) >= minOffset;
   }
 
   _center(coords) {
@@ -169,8 +179,8 @@ class Pencil extends PointedTool {
   //When mouse is pressed and release, we draw one pixel
   #onClick(event) {
     const mouseCoords = new Coordinates(event.clientX, event.clientY);
-    const canvasCoords = this.getRealCoords(this.canvas.element, mouseCoords);
-    this.drawPoint(this.getColor(), this._center(canvasCoords));
+    const canvasCoords = this._toRealCoords(this.canvas.element, mouseCoords);
+    this._drawPoint(this.getColor(), this._center(canvasCoords));
     this.canvas.redraw();
   }
 
@@ -182,10 +192,10 @@ class Pencil extends PointedTool {
     if (!this._isOffsetValid(event)) return;
 
     const destAbs = new Coordinates(event.clientX, event.clientY);
-    const destReal = this.getRealCoords(this.canvas.element, destAbs);
-    const src = this.getRealCoords(this.canvas.element, this._lastCoords);
+    const destReal = this._toRealCoords(this.canvas.element, destAbs);
+    const src = this._toRealCoords(this.canvas.element, this._lastCoords);
 
-    this.plotLine(this.getColor(), this._center(src), this._center(destReal));
+    this._plotLine(this.getColor(), this._center(src), this._center(destReal));
     this.canvas.redraw();
 
     this._lastCoords = destAbs;
@@ -230,7 +240,7 @@ class Pointer extends PointedTool {
     if (this._lastCoords && !this._isOffsetValid(event)) return;
 
     const destAbs = new Coordinates(event.clientX, event.clientY);
-    const destReal = this.getRealCoords(this.pointerElement, destAbs);
+    const destReal = this._toRealCoords(this.pointerElement, destAbs);
 
     const context = this.pointerElement.getContext('2d');
     context.fillStyle = this.getColor().toString();
@@ -238,7 +248,7 @@ class Pointer extends PointedTool {
     const coords = this._center(destReal);
     context.fillRect(coords.x, coords.y, this.thickness, this.thickness);
 
-    this._lastCoords = destAbs;
+    this._lastCoords = this._toAbsCoords(this.canvas.element, this._center(destReal));
   }
 
   getColor() {
@@ -303,7 +313,7 @@ class BucketFill extends Tool {
 
   #onClick(event) {
     const mouseCoords = new Coordinates(event.clientX, event.clientY);
-    const realCoords = this.getRealCoords(this.canvas.element, mouseCoords);
+    const realCoords = this._toRealCoords(this.canvas.element, mouseCoords);
     this.#floodFill(realCoords);
     this.canvas.redraw();
     this.canvas.save();
@@ -321,7 +331,7 @@ class BucketFill extends Tool {
       const current = this.#queue.shift();
       const currentColor = image.getPixelColor(current.x, current.y);
       if (!this.#isColorValid(initialColor, currentColor)) continue;
-      this.drawPoint(this.getColor(), current);
+      this._drawPoint(this.getColor(), current);
 
       this.#visit(new Coordinates(current.x - 1, current.y));
       this.#visit(new Coordinates(current.x + 1, current.y));
