@@ -25,5 +25,4 @@ const compress = (data) => {
   return output;
 };
 
-const data = 'WYS*WYGWYS*WYSWYSG';
-console.log(compress(data));
+export { compress };
