@@ -108,7 +108,7 @@ export class FileMenu extends UiElement {
     const image = canvas.getJoinedImage();
     //const encoder = new BmpEncoder(bmpVersions.bmp32);
     const encoder = new GifEncoder();
-    const data = encoder.encode(image);
+    const data = encoder.encode([1]);
     conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.gif');
   }
 
