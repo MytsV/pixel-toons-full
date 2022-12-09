@@ -109,7 +109,7 @@ class GifEncoder {
   #setLocalColorTable(imageData) {
     const table = GifEncoder.#getLocalColorTable(imageData);
     const buffer = new Buffer(MIN_COLOR_PARAMETERS * table.length);
-    table.forEach((color) => buffer.writeArray(color));
+    table.forEach((color) => buffer.writeInteger(MIN_COLOR_PARAMETERS * BITS_IN_BYTE, color));
     this.#appendBuffer(buffer);
   }
 
@@ -124,18 +124,25 @@ class GifEncoder {
 
   #setImage(imageData) {
     const indices = GifEncoder.#pixelsToIndices(imageData);
-    const compressor = new LZWCompressor(2);
-    console.log(compressor.compress(indices));
-    const buffer = new Buffer(25);
-    buffer.writeArray([0x02, 0x16, 0x8C, 0x2D, 0x99, 0x87, 0x2A, 0x1C, 0xDC, 0x33, 0xA0, 0x02, 0x75, 0xEC, 0x95, 0xFA, 0xA8, 0xDE, 0x60, 0x8C, 0x04, 0x91, 0x4C, 0x01, 0x00], 0x00);
+    const codeSize = 2;
+    const compressor = new LZWCompressor(codeSize);
+    const compressed = compressor.compress(indices);
+    const length = 2 + compressed.reduce((acc, block) => acc + block.length + 1, 0);
+    const buffer = new Buffer(length);
+    buffer.writeInteger(BITS_IN_BYTE, codeSize);
+    compressed.forEach((block) => {
+      buffer.writeArray([block.length, ...block]);
+    });
+    buffer.writeInteger(BITS_IN_BYTE, 0);
+
     this.#appendBuffer(buffer);
   }
 
   static #pixelsToIndices(imageData) {
     const indices = new Uint8Array(imageData.height * imageData.width);
     const table = GifEncoder.#getLocalColorTable(imageData);
-    for (let i = imageData.height - 1; i >= 0; i--) {
-      for (let j = 0; j < imageData.width; j++) {
+    for (let i = 0; i < imageData.height; i++) {
+      for (let j = imageData.width - 1; j >= 0; j--) {
         const dataPos = (i * imageData.width + j) * MAX_COLOR_PARAMETERS;
         const color = imageData.data.slice(dataPos, dataPos + MIN_COLOR_PARAMETERS);
         const colorConverted = (color[0] !== 0 ? color[0] << 16 : color[0]) + (color[1] !== 0 ? color[1] << 8 : color[1]) + color[2];
