@@ -2,6 +2,8 @@ import { Buffer } from './buffer.js';
 
 const BITS_IN_BYTE = 8;
 const TEMP_SIZE = 10;
+const MIN_COLOR_PARAMETERS = 3;
+const MAX_COLOR_PARAMETERS = 4;
 
 /*
 GIF (Graphics Interchange Format) is used to store
@@ -104,20 +106,41 @@ class GifEncoder {
 
   //Temporary
   #setLocalColorTable(imageData) {
-    const colorLength = 3;
-    const size = 4;
-    const buffer = new Buffer(colorLength * size);
-    buffer.writeInteger(colorLength * BITS_IN_BYTE, 0xFFFFFF);
-    buffer.writeInteger(colorLength * BITS_IN_BYTE, 0xFF0000);
-    buffer.writeInteger(colorLength * BITS_IN_BYTE, 0x0000FF);
-    buffer.writeInteger(colorLength * BITS_IN_BYTE, 0x000000);
+    const table = GifEncoder.#getLocalColorTable(imageData);
+    const buffer = new Buffer(MIN_COLOR_PARAMETERS * table.length);
+    table.forEach((color) => buffer.writeArray(color));
     this.#appendBuffer(buffer);
   }
 
+  static #getLocalColorTable(imageData) {
+    return [
+      0xFFFFFF,
+      0xFF0000,
+      0x0000FF,
+      0x000000
+    ];
+  }
+
   #setImage(imageData) {
+    console.log(GifEncoder.#pixelsToIndices(imageData));
     const buffer = new Buffer(25);
     buffer.writeArray([0x02, 0x16, 0x8C, 0x2D, 0x99, 0x87, 0x2A, 0x1C, 0xDC, 0x33, 0xA0, 0x02, 0x75, 0xEC, 0x95, 0xFA, 0xA8, 0xDE, 0x60, 0x8C, 0x04, 0x91, 0x4C, 0x01, 0x00], 0x00);
     this.#appendBuffer(buffer);
+  }
+
+  static #pixelsToIndices(imageData) {
+    const indices = new Uint8Array(imageData.height * imageData.width);
+    const table = GifEncoder.#getLocalColorTable(imageData);
+    for (let i = imageData.height - 1; i >= 0; i--) {
+      for (let j = 0; j < imageData.width; j++) {
+        const dataPos = (i * imageData.width + j) * MAX_COLOR_PARAMETERS;
+        const color = imageData.data.slice(dataPos, dataPos + MIN_COLOR_PARAMETERS);
+        const colorConverted = (color[0] !== 0 ? color[0] << 16 : color[0]) + (color[1] !== 0 ? color[1] << 8 : color[1]) + color[2];
+        const index = table.indexOf(colorConverted);
+        indices.set([index], i * imageData.width + j);
+      }
+    }
+    return indices;
   }
 }
 
