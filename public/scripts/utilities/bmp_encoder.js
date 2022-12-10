@@ -52,21 +52,21 @@ class BmpEncoder {
   The comment lines represent structures of format in a format:
   Name | Size | Offset | Description
    */
-  encode(image) {
+  encode(imageData) {
     this.#buffer = new Buffer();
-    this.#setUpEncoding(image);
+    this.#setUpEncoding(imageData);
     this.#setHeader();
-    this.#setInfoHeader(image);
+    this.#setInfoHeader(imageData);
     this.#setExtendedInfoHeader();
     this.#offsetImage();
-    this.#setPixelData(image);
+    this.#setPixelData(imageData);
     return this.#buffer.data;
   }
 
-  #setUpEncoding(image) {
-    this.padding = this.#is32() ? 0 : image.width % MAX_COLOR_PARAMETERS;
-    const rowLength = this.#perPixel * image.width + this.padding;
-    this.bitmapSize = rowLength * image.height;
+  #setUpEncoding({ width, height }) {
+    this.padding = this.#is32() ? 0 : width % MAX_COLOR_PARAMETERS;
+    const rowLength = this.#perPixel * width + this.padding;
+    this.bitmapSize = rowLength * height;
     this.fileSize = this.dataOffset + this.bitmapSize;
   }
 

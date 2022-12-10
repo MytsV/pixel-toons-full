@@ -224,4 +224,27 @@ class GifEncoder {
   }
 }
 
-export { GifFrame, GifEncoder };
+const MAX_COLORS = 256;
+
+const quantize = (imageData) => {
+  const resolution = imageData.width * imageData.height;
+  const regionSize = MAX_COLORS / 8;
+  const regionSizeGreen = MAX_COLORS / 4;
+  const quantized = new ImageData(imageData.width, imageData.height);
+  for (let i = 0; i < imageData.height; i++) {
+    for (let j = imageData.width - 1; j >= 0; j--) {
+      const dataPos = (i * imageData.width + j) * MAX_COLOR_PARAMETERS;
+      const color = imageData.data.slice(dataPos, dataPos + MAX_COLOR_PARAMETERS);
+      const colorQuantized = [
+        regionSize / 2 + (color[0] / regionSize | 0) * regionSize,
+        regionSize / 2 + (color[1] / regionSize | 0) * regionSize,
+        regionSizeGreen / 2 + (color[2] / regionSizeGreen | 0) * regionSizeGreen,
+        color[3]
+      ];
+      quantized.data.set(colorQuantized, dataPos);
+    }
+  }
+  return quantized;
+};
+
+export { GifFrame, GifEncoder, quantize };
