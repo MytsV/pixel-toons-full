@@ -159,7 +159,7 @@ class GifEncoder {
       for (let j = imageData.width - 1; j >= 0; j--) {
         const dataPos = (i * imageData.width + j) * MAX_COLOR_PARAMETERS;
         const color = imageData.data.slice(dataPos, dataPos + MIN_COLOR_PARAMETERS);
-        const colorConverted = (color[0] !== 0 ? color[0] << 16 : color[0]) + (color[1] !== 0 ? color[1] << 8 : color[1]) + color[2];
+        const colorConverted = (color[2] !== 0 ? color[2] << 16 : color[2]) + (color[1] !== 0 ? color[1] << 8 : color[1]) + color[0];
         const index = table.indexOf(colorConverted);
         indices.set([index], i * imageData.width + j);
       }
