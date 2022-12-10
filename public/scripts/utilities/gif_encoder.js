@@ -17,6 +17,44 @@ class GifFrame {
   }
 }
 
+class GifImageEncoder {
+  #buffer;
+
+  constructor(imageData, colorTable) {
+    this.imageData = imageData;
+    this.colorTable = colorTable;
+    this.#buffer = new Buffer();
+  }
+
+  encode() {
+    const indices = this.#pixelsToIndices(this.imageData);
+    const codeSize = 2;
+    const compressor = new LZWCompressor(codeSize);
+    const compressed = compressor.compress(indices);
+    this.#buffer.writeByte(codeSize);
+    compressed.forEach((block) => {
+      this.#buffer.writeArray([block.length, ...block]);
+    });
+    this.#buffer.writeByte(EMPTY_VALUE);
+    return this.#buffer.data;
+  }
+
+  #pixelsToIndices(imageData) {
+    const indices = new Uint8Array(imageData.height * imageData.width);
+    const table = this.colorTable;
+    for (let i = 0; i < imageData.height; i++) {
+      for (let j = imageData.width - 1; j >= 0; j--) {
+        const dataPos = (i * imageData.width + j) * MAX_COLOR_PARAMETERS;
+        const color = imageData.data.slice(dataPos, dataPos + COLOR_PARAMETERS);
+        const colorConverted = (color[2] !== 0 ? color[2] << 16 : color[2]) + (color[1] !== 0 ? color[1] << 8 : color[1]) + color[0];
+        const index = table.indexOf(colorConverted);
+        indices.set([index], i * imageData.width + j);
+      }
+    }
+    return indices;
+  }
+}
+
 /*
 GIF (Graphics Interchange Format) is used to store
 multiple bitmap images in a single file.
@@ -181,33 +219,9 @@ class GifEncoder {
   }
 
   #setImage(imageData) {
-    const indices = GifEncoder.#pixelsToIndices(imageData);
-    const codeSize = 2;
-    const compressor = new LZWCompressor(codeSize);
-    const compressed = compressor.compress(indices);
-    this.#mainBuffer.writeByte(codeSize);
-    compressed.forEach((block) => {
-      this.#mainBuffer.writeArray([block.length, ...block]);
-    });
-    this.#mainBuffer.writeByte(EMPTY_VALUE);
-  }
-
-  static #pixelsToIndices(imageData) {
-    const indices = new Uint8Array(imageData.height * imageData.width);
-    const table = GifEncoder.#getLocalColorTable(imageData);
-    for (let i = 0; i < imageData.height; i++) {
-      for (let j = imageData.width - 1; j >= 0; j--) {
-        const dataPos = (i * imageData.width + j) * MAX_COLOR_PARAMETERS;
-        const color = imageData.data.slice(dataPos, dataPos + COLOR_PARAMETERS);
-        const colorConverted = (color[2] !== 0 ? color[2] << 16 : color[2]) + (color[1] !== 0 ? color[1] << 8 : color[1]) + color[0];
-        const index = table.indexOf(colorConverted);
-        indices.set([index], i * imageData.width + j);
-      }
-    }
-    return indices;
+    const encoder = new GifImageEncoder(imageData, GifEncoder.#getLocalColorTable(imageData));
+    this.#mainBuffer.writeArray(encoder.encode());
   }
 }
-
-
 
 export { GifFrame, GifEncoder };
