@@ -1,4 +1,4 @@
-import { BmpEncoder, bmpVersions } from '../utilities/bmp_encoder.js';
+import { BmpEncoder, BmpVersions } from '../utilities/bmp_encoder.js';
 import * as conv from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil, Pointer, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
@@ -106,7 +106,7 @@ export class FileMenu extends UiElement {
 
   static #exportImage(canvas) {
     const image = canvas.getJoinedImage();
-    const encoder = new BmpEncoder(bmpVersions.bmp32);
+    const encoder = new BmpEncoder(BmpVersions.BMP_32);
     const data = encoder.encode(image);
     conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.bmp');
   }
@@ -348,7 +348,7 @@ class LayerBox {
     const image = layer.context.getImageData(...imagePosition, width, height);
 
     //Render image with transparency
-    const encoder = new BmpEncoder(bmpVersions.bmp32);
+    const encoder = new BmpEncoder(BmpVersions.BMP_32);
     const data = encoder.encode(image);
     return encoder.isLastEncodedTransparent() ? '' : conv.bytesToUrl(data);
   }
@@ -585,7 +585,7 @@ export class FrameBox {
   #getFrameImageUrl() {
     const image = this.frame.canvas.getJoinedImage();
     //Render image with transparency
-    const encoder = new BmpEncoder(bmpVersions.bmp32);
+    const encoder = new BmpEncoder(BmpVersions.BMP_32);
     const data = encoder.encode(image);
     return encoder.isLastEncodedTransparent() ? '' : conv.bytesToUrl(data);
   }
@@ -687,7 +687,7 @@ export class Preview extends UiElement {
     super();
     this.#setUpButtons();
     this.#setUpElements();
-    this.encoder = new BmpEncoder(bmpVersions.bmp32);
+    this.encoder = new BmpEncoder(BmpVersions.BMP_32);
     this.playing = false;
     this.playButton = document.getElementById('preview-animation');
   }
