@@ -9,18 +9,17 @@ import {
   ShortcutsMenu, FrameMenu, Preview
 } from './core/ui_elements.js';
 import { ShortcutManager } from './core/key_shortcuts.js';
-import { GifEncoder } from './utilities/gif_encoder.js';
+import { GifEncoder, GifFrame } from './utilities/gif_encoder.js';
 import * as conv from './utilities/bytes_conversion.js';
 
 const setUpGifExporter = (file) => {
   const button = document.getElementById('gif-export');
   button.onclick = () => {
     const encoder = new GifEncoder();
-    const frames = file.frames.map((frame) => frame.canvas.getJoinedImage());
-    console.log(frames);
+    const frames = file.frames.map((frame) => GifFrame.from(frame));
     const data = encoder.encode(frames);
     conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.gif');
-  }
+  };
 };
 
 class Application {
