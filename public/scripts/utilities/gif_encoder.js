@@ -53,7 +53,6 @@ class GifImageEncoder {
     while (!isPowerOfTwo(this.table.length)) {
       this.table.push(EMPTY_VALUE);
     }
-    console.log(this.table);
   }
 
   /*
