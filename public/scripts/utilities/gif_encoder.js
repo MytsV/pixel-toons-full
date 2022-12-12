@@ -49,6 +49,11 @@ class GifImageEncoder {
         this.indices.set([this.table.indexOf(colorConverted)], pos);
       }
     }
+    this.#offsetTable();
+  }
+
+  //Make sure the table length is a power of two
+  #offsetTable() {
     const isPowerOfTwo = (x) => x && !(x & (x - 1));
     while (!isPowerOfTwo(this.table.length)) {
       this.table.push(EMPTY_VALUE);
@@ -107,6 +112,7 @@ class GifImageEncoder {
     this.#buffer.writeByte(fields);
   }
 
+  //Optional, but set by the encoder. Triplets of BGR bytes
   #setLocalColorTable() {
     this.table.forEach((color) => {
       this.#buffer.writeInteger(COLOR_PARAMETERS, color);
@@ -114,12 +120,17 @@ class GifImageEncoder {
   }
 
   #setPixelData() {
-    const codeSize = Math.log2(this.table.length);
-    const compressor = new LZWCompressor(codeSize);
+    const colorBits = this.#getColorsBits();
+    const compressor = new LZWCompressor(colorBits);
     const compressed = compressor.compress(this.indices);
     this.#buffer.writeArray(compressed);
     this.#buffer.writeByte(EMPTY_VALUE);
     return this.#buffer.data;
+  }
+
+  //Length of a minimal color entry in bits
+  #getColorsBits() {
+    return Math.log2(this.table.length);
   }
 }
 
