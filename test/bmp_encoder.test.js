@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import {
   BmpEncoder,
-  bmpVersions
+  BmpVersions
 } from '../public/scripts/utilities/bmp_encoder.js';
 import { readFile } from 'fs/promises';
 
@@ -24,7 +24,7 @@ async function testBlack() {
   for (let i = start; i < imageData.data.length; i += parameterCount) {
     imageData.data[i] = 255;
   }
-  const encoder = new BmpEncoder(bmpVersions.bmp32);
+  const encoder = new BmpEncoder(BmpVersions.BMP_32);
   const data = encoder.encode(imageData);
 
   const result = await readFile('./test/images/black.bmp');
