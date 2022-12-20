@@ -252,17 +252,16 @@ class Pointer extends PointedTool {
       this.#cleanCanvas();
       return;
     }
-
-    if (this._lastCoords && !this._isOffsetValid(event)) return;
     this.canvasClean = false;
 
     const destAbs = new Coordinates(event.clientX, event.clientY);
     const destReal = this._toRealCoords(destAbs);
     const centered = this._center(destReal);
+    if (this._lastCoords && centered.equal(this._lastCoords)) return;
     this.#highlightPixel(centered, this.getColor());
     this.coordsElement.innerText = `x: ${centered.x}, y: ${centered.y}`;
 
-    this._lastCoords = this._toAbsCoords(centered);
+    this._lastCoords = centered;
   }
 
   #cleanCanvas() {
