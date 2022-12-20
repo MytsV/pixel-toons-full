@@ -4,10 +4,10 @@ import { LZWCompressor } from './lzw_compression.js';
 const EMPTY_VALUE = 0x00;
 const COLOR_RANGE = 256;
 
-const RED_REGIONS = 2;
+const RED_REGIONS = 8;
 //Green color quantization will be less accurate
-const GREEN_REGIONS = 2;
-const BLUE_REGIONS = 2;
+const GREEN_REGIONS = 4;
+const BLUE_REGIONS = 8;
 const MAX_COLORS = RED_REGIONS * GREEN_REGIONS * BLUE_REGIONS;
 
 const COLOR_PARAMETERS = 3;
@@ -86,40 +86,39 @@ class GifImageEncoder {
   }
 
   #initTable() {
-    const quantizer = new UniformQuantizer(this.imageData);
-    const quantizedTable = [];
     const { width, height, data } = this.imageData;
     const resolution = width * height;
+    this.#setUpQuantization(resolution);
+    const setColorDefault = getColorSetter(this.table, this.indices);
+    const setColorQuant = getColorSetter(this.quantTable, this.quantIndices);
 
-    this.indices = new Uint8Array(resolution);
-    const quantizedIncides = new Uint8Array(resolution);
     for (let i = 0; i < height; i++) {
       for (let j = width - 1; j >= 0; j--) {
         const pos = i * width + j;
         const dataPos = pos * MAX_COLOR_PARAMETERS;
         const color = data.slice(dataPos, dataPos + COLOR_PARAMETERS);
-        const colorConverted = GifImageEncoder.#colorToNumber(color);
-        if (!this.table.includes(colorConverted)) {
-          this.table.push(colorConverted);
-        }
-        this.indices.set([this.table.indexOf(colorConverted)], pos);
+        setColorDefault(color, pos);
 
-        const colorQuantized = quantizer.quantize(dataPos);
-        const colorConvQuant = GifImageEncoder.#colorToNumber(colorQuantized);
-        if (!quantizedTable.includes(colorConvQuant)) {
-          quantizedTable.push(colorConvQuant);
-        }
-        quantizedIncides.set([quantizedTable.indexOf(colorConvQuant)], pos);
+        const colorQuantized = this.quantizer.quantize(dataPos);
+        setColorQuant(colorQuantized, pos);
       }
     }
 
-    if (this.table.length > MAX_COLORS) {
-      this.table = quantizedTable;
-      this.imageData = quantizer.quantizedImage;
-      this.indices = quantizedIncides;
-    }
-
+    if (this.table.length > MAX_COLORS) this.#replaceWithQuantized();
     this.#offsetTable();
+  }
+
+  #setUpQuantization(resolution) {
+    this.quantizer = new UniformQuantizer(this.imageData);
+    this.quantTable = [];
+    this.quantIndices = new Uint8Array(resolution);
+    this.indices = new Uint8Array(resolution);
+  }
+
+  #replaceWithQuantized() {
+    this.table = this.quantTable;
+    this.imageData = this.quantizer.quantizedImage;
+    this.indices = this.quantIndices;
   }
 
   //Make sure the table length is a power of two
@@ -134,7 +133,7 @@ class GifImageEncoder {
  The number is in reversed BGR order.
  Each color value represents two hexadecimal "digits"
   */
-  static #colorToNumber([ r, g, b ]) {
+  static colorToNumber([ r, g, b ]) {
     const blueShift = 16;
     const greenShift = 8;
     const values = [
@@ -202,6 +201,16 @@ class GifImageEncoder {
   #getColorsBits() {
     return Math.log2(this.table.length);
   }
+}
+
+function getColorSetter(table, indices) {
+  return (color, pos) => {
+    const colorConverted = GifImageEncoder.colorToNumber(color);
+    if (!table.includes(colorConverted)) {
+      table.push(colorConverted);
+    }
+    indices.set([table.indexOf(colorConverted)], pos);
+  };
 }
 
 /*
