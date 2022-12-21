@@ -1,4 +1,5 @@
 const CHANNEL_COUNT = 4;
+const COLOR_RANGE = 255;
 
 /*
 This file implements an algorithm created by Dominic Szablewski.
@@ -95,21 +96,25 @@ const TWO_BIT_MASK = 0b11000000;
 const TABLE_SIZE = 64;
 
 class Pixel {
-  constructor(r, g, b, a = 255) {
-    Object.assign(this, { r, g, b, a });
+  constructor(r, g, b, a = COLOR_RANGE) {
+    this.r = r;
+    this.g = g;
+    this.b = b;
+    this.a = a;
   }
 
   equals(pixel) {
-    return this.r === pixel.r && this.g === pixel.g &&
-      this.b === pixel.b && this.a === pixel.a;
+    const { r, g, b, a } = this;
+    return r === pixel.r && g === pixel.g && b === pixel.b && a === pixel.a;
   }
 
   clone() {
-    return new Pixel(this.r, this.g, this.b, this.a);
+    const { r, g, b, a } = this;
+    return new Pixel(r, g, b, a);
   }
 }
 
-//stub class with interface identical to real ImageData
+//Stub class with interface identical to real ImageData
 class ImageData {
   constructor(width, height) {
     this.width = width;
@@ -118,80 +123,84 @@ class ImageData {
   }
 }
 
-function compress(imageData) {
-  const length = imageData.width * imageData.height * CHANNEL_COUNT;
-  let pxPrevious = getDefaultPixel();
-  let px = pxPrevious.clone();
-  const pxEnd = length - CHANNEL_COUNT;
-  const bytes = [];
-  let run = 0;
-  const index = new Uint8Array(TABLE_SIZE);
-
-  for (let pxPos = 0; pxPos < length; pxPos += CHANNEL_COUNT) {
-    const colorArray = imageData.data.slice(pxPos, pxPos + CHANNEL_COUNT);
-    px = new Pixel(...colorArray);
-
-    if (px.equals(pxPrevious)) {
-      run++;
-      if (run === MAX_RUN_LENGTH || pxPos === pxEnd) {
-        bytes.push(TAG_RUN | (run - 1));
-        run = 0;
-      }
-    } else {
-      const indexPos = hashColor(px) % TABLE_SIZE;
-
-      if (run > 0) {
-        bytes.push(TAG_RUN | (run - 1));
-        run = 0;
-      }
-
-      if (px.equals(index[indexPos])) {
-        bytes.push(TAG_INDEX | indexPos);
-      } else {
-        index[indexPos] = px;
-
-        if (px.a === pxPrevious.a) {
-          const vr = px.r - pxPrevious.r;
-          const vg = px.g - pxPrevious.g;
-          const vb = px.b - pxPrevious.b;
-
-          const vgR = vr - vg;
-          const vgB = vb - vg;
-
-          if (
-            vr >= DIFF_RANGE && vr < DIFF_RANGE &&
-            vg >= DIFF_RANGE && vg < DIFF_RANGE &&
-            vb >= DIFF_RANGE && vb < DIFF_RANGE
-          ) {
-            bytes.push(TAG_DIFF | (vr + DIFF_RANGE) << 4 | (vg + DIFF_RANGE) << 2 | (vb + DIFF_RANGE));
-          } else if (
-            vgR >= LUMA_MISC_RANGE && vgR < LUMA_MISC_RANGE &&
-            vg >= LUMA_GREEN_RANGE && vg < LUMA_GREEN_RANGE &&
-            vgB >= LUMA_MISC_RANGE && vgB < LUMA_MISC_RANGE
-          ) {
-            bytes.push(TAG_LUMA | (vg + LUMA_GREEN_RANGE));
-            bytes.push((vgR + LUMA_MISC_RANGE) << 4 | (vgB + LUMA_MISC_RANGE));
-          } else {
-            bytes.push(TAG_RGB);
-            bytes.push(px.r);
-            bytes.push(px.g);
-            bytes.push(px.b);
-          }
-        } else {
-          bytes.push(TAG_RGBA);
-          bytes.push(px.r);
-          bytes.push(px.g);
-          bytes.push(px.b);
-          bytes.push(px.a);
-        }
-      }
-    }
-    pxPrevious = Object.assign({}, px);
+class QoiCompressor {
+  constructor() {
   }
 
-  bytes.push(...PADDING);
+  compress({ data }) {
+    const output = [];
+    const colorTable = new Uint8Array(TABLE_SIZE);
 
-  return bytes;
+    let previousPix = getDefaultPixel();
+    let currentPix = previousPix.clone();
+    let runLength = 0;
+
+    for (let pxPos = 0; pxPos < data.length; pxPos += CHANNEL_COUNT) {
+      const colorArray = data.slice(pxPos, pxPos + CHANNEL_COUNT);
+      currentPix = new Pixel(...colorArray);
+
+      if (currentPix.equals(previousPix)) {
+        runLength++;
+        if (runLength === MAX_RUN_LENGTH || pxPos === data.length - CHANNEL_COUNT) {
+          output.push(TAG_RUN | (runLength - 1));
+          runLength = 0;
+        }
+      } else {
+        const indexPos = hashColor(currentPix) % TABLE_SIZE;
+
+        if (runLength > 0) {
+          output.push(TAG_RUN | (runLength - 1));
+          runLength = 0;
+        }
+
+        if (currentPix.equals(colorTable[indexPos])) {
+          output.push(TAG_INDEX | indexPos);
+        } else {
+          colorTable[indexPos] = currentPix;
+
+          if (currentPix.a === previousPix.a) {
+            const vr = currentPix.r - previousPix.r;
+            const vg = currentPix.g - previousPix.g;
+            const vb = currentPix.b - previousPix.b;
+
+            const vgR = vr - vg;
+            const vgB = vb - vg;
+
+            if (
+              vr >= DIFF_RANGE && vr < DIFF_RANGE &&
+              vg >= DIFF_RANGE && vg < DIFF_RANGE &&
+              vb >= DIFF_RANGE && vb < DIFF_RANGE
+            ) {
+              output.push(TAG_DIFF | (vr + DIFF_RANGE) << 4 | (vg + DIFF_RANGE) << 2 | (vb + DIFF_RANGE));
+            } else if (
+              vgR >= LUMA_MISC_RANGE && vgR < LUMA_MISC_RANGE &&
+              vg >= LUMA_GREEN_RANGE && vg < LUMA_GREEN_RANGE &&
+              vgB >= LUMA_MISC_RANGE && vgB < LUMA_MISC_RANGE
+            ) {
+              output.push(TAG_LUMA | (vg + LUMA_GREEN_RANGE));
+              output.push((vgR + LUMA_MISC_RANGE) << 4 | (vgB + LUMA_MISC_RANGE));
+            } else {
+              output.push(TAG_RGB);
+              output.push(currentPix.r);
+              output.push(currentPix.g);
+              output.push(currentPix.b);
+            }
+          } else {
+            output.push(TAG_RGBA);
+            output.push(currentPix.r);
+            output.push(currentPix.g);
+            output.push(currentPix.b);
+            output.push(currentPix.a);
+          }
+        }
+      }
+      previousPix = currentPix.clone();
+    }
+
+    output.push(...PADDING);
+
+    return output;
+  }
 }
 
 function decompress(bytes, width, height) {
@@ -254,7 +263,7 @@ function getDefaultPixel() {
 
 const imageData = new ImageData(50, 50);
 imageData.data.set([255,65,43,24,245,24,235,4], 0);
-const compressed = compress(imageData);
+const compressed = (new QoiCompressor()).compress(imageData);
 console.log(decompress(compressed, 50, 50));
 
 function hashColor(color) {
