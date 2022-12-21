@@ -126,15 +126,6 @@ class Pixel {
   }
 }
 
-//Stub class with interface identical to real ImageData
-class ImageData {
-  constructor(width, height) {
-    this.width = width;
-    this.height = height;
-    this.data = new Uint8Array(width * height * CHANNEL_COUNT);
-  }
-}
-
 class QoiTable {
   #table;
 
@@ -148,7 +139,12 @@ class QoiTable {
   }
 
   set(pixel) {
-    this.#table[this.getPos(pixel)] = pixel;
+    if (pixel === undefined) return;
+    this.#table[this.getPos(pixel)] = pixel.clone();
+  }
+
+  get(value) {
+    return this.#table[value];
   }
 
   getPos(pixel) {
@@ -278,7 +274,7 @@ class QoiCompressor {
 }
 
 function decompress(bytes, width, height) {
-  const pixels = new ImageData(width, height);
+  const data = new Uint8Array(width * height * CHANNEL_COUNT);
   const index = new QoiTable();
   const pxLen = width * height * CHANNEL_COUNT;
 
@@ -304,7 +300,7 @@ function decompress(bytes, width, height) {
         px.b = bytes[p++];
         px.a = bytes[p++];
       } else if ((b1 & TWO_BIT_MASK) === TAG_INDEX) {
-        px = index[b1];
+        px = index.get(b1);
       } else if ((b1 & TWO_BIT_MASK) === TAG_DIFF) {
         px.r += ((b1 >> 4) & 0x03) - 2;
         px.rg += ((b1 >> 2) & 0x03) - 2;
@@ -322,20 +318,22 @@ function decompress(bytes, width, height) {
       index.set(px);
     }
 
-    pixels.data[pxPos] = px.r;
-    pixels.data[pxPos + 1] = px.g;
-    pixels.data[pxPos + 2] = px.b;
-    pixels.data[pxPos + 3] = px.a;
+    data[pxPos] = px.r;
+    data[pxPos + 1] = px.g;
+    data[pxPos + 2] = px.b;
+    data[pxPos + 3] = px.a;
   }
 
-  return pixels;
+  return data;
 }
 
 function getDefaultPixel() {
   return new Pixel(0, 0, 0);
 }
 
-const imageData = new ImageData(50, 50);
-imageData.data.set([255, 65, 43, 24, 245, 24, 235, 4, 24, 235, 4, 43, 24, 54, 24, 34, 12, 24, 33, 33, 33, 32, 33, 34, 32, 33, 34, 31, 54, 23, 43, 25, 24, 21, 43, 54, 13, 32, 43], 0);
-const compressed = new QoiCompressor().compress(imageData);
-console.log(decompress(compressed, 50, 50));
+// const imageData = new ImageData(50, 50);
+// imageData.data.set([255, 65, 43, 24, 245, 24, 235, 4, 24, 235, 4, 43, 24, 54, 24, 34, 12, 24, 33, 33, 33, 32, 33, 34, 32, 33, 34, 31, 54, 23, 43, 25, 24, 21, 43, 54, 13, 32, 43], 0);
+// const compressed = new QoiCompressor().compress(imageData);
+// console.log(decompress(compressed, 50, 50));
+
+export { QoiCompressor, decompress };
