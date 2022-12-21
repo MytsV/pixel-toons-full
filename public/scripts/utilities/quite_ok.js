@@ -53,7 +53,7 @@ Tag after which such differences are inserted:
 └───────┴─────────────────┴─────────────┴───────────┘
  */
 const TAG_LUMA = 0b10000000;
-const LUMA_GREEN_RANGE = 32;
+const LUMA_MAIN_RANGE = 32;
 const LUMA_MISC_RANGE = 8;
 
 /*
@@ -111,6 +111,14 @@ class Pixel {
   clone() {
     const { r, g, b, a } = this;
     return new Pixel(r, g, b, a);
+  }
+
+  getDifference(pixel) {
+    return {
+      r: this.r - pixel.r,
+      g: this.g - pixel.g,
+      b: this.b - pixel.b
+    };
   }
 
   toArray() {
@@ -194,9 +202,9 @@ class QoiCompressor {
     } else {
       this.colorTable.set(currentPix);
       if (currentPix.a === previousPix.a) {
-        this.#outputDifference(currentPix, previousPix);
+        this.#outputPartial(currentPix, previousPix);
       } else {
-        this.#outputRgba(currentPix);
+        this.#outputFull(currentPix);
       }
     }
   }
@@ -218,36 +226,52 @@ class QoiCompressor {
     this.output.push(TAG_INDEX | this.colorTable.getPos(pixel));
   }
 
-  #outputDifference(currentPix, previousPix) {
-    const vr = currentPix.r - previousPix.r;
-    const vg = currentPix.g - previousPix.g;
-    const vb = currentPix.b - previousPix.b;
+  #outputPartial(currentPix, previousPix) {
+    const diff = currentPix.getDifference(previousPix);
+    const inSmallRange = (value) => value >= DIFF_RANGE && value < DIFF_RANGE;
 
-    const vgR = vr - vg;
-    const vgB = vb - vg;
-
-    if (
-      vr >= DIFF_RANGE && vr < DIFF_RANGE &&
-      vg >= DIFF_RANGE && vg < DIFF_RANGE &&
-      vb >= DIFF_RANGE && vb < DIFF_RANGE
-    ) {
-      this.output.push(TAG_DIFF | (vr + DIFF_RANGE) << 4 | (vg + DIFF_RANGE) << 2 | (vb + DIFF_RANGE));
-    } else if (
-      vgR >= LUMA_MISC_RANGE && vgR < LUMA_MISC_RANGE &&
-      vg >= LUMA_GREEN_RANGE && vg < LUMA_GREEN_RANGE &&
-      vgB >= LUMA_MISC_RANGE && vgB < LUMA_MISC_RANGE
-    ) {
-      this.output.push(TAG_LUMA | (vg + LUMA_GREEN_RANGE));
-      this.output.push((vgR + LUMA_MISC_RANGE) << 4 | (vgB + LUMA_MISC_RANGE));
+    if (inSmallRange(diff.r) && inSmallRange(diff.g) && inSmallRange(diff.b)) {
+      this.#outputSmallDiff(diff);
+    } else if (QoiCompressor.#isLumaValid(diff)) {
+      this.#outputLuma(diff);
     } else {
-      this.output.push(TAG_RGB);
-      this.output.push(currentPix.r);
-      this.output.push(currentPix.g);
-      this.output.push(currentPix.b);
+      this.#outputRgb(currentPix);
     }
   }
 
-  #outputRgba(pixel) {
+  #outputSmallDiff(diff) {
+    //Pack differences in 6-bit value
+    const redShifted = (diff.r + DIFF_RANGE) << 4;
+    const greenShifted = (diff.g + DIFF_RANGE) << 2;
+    const blueShifted = diff.b + DIFF_RANGE;
+    const packed = redShifted | greenShifted | blueShifted;
+    this.output.push(TAG_DIFF | packed);
+  }
+
+  static #isLumaValid(diff) {
+    const diffRG = diff.r - diff.g;
+    const diffBG = diff.b - diff.g;
+    const isGreenValid = diff.g >= LUMA_MAIN_RANGE && diff.g < LUMA_MAIN_RANGE;
+    const isRGValid = diffRG >= LUMA_MISC_RANGE && diffRG < LUMA_MISC_RANGE;
+    const isBGValid = diffBG >= LUMA_MISC_RANGE && diffBG < LUMA_MISC_RANGE;
+    return isRGValid && isGreenValid && isBGValid;
+  }
+
+  #outputLuma(diff) {
+    const diffRG = diff.r - diff.g;
+    const diffBG = diff.b - diff.g;
+    this.output.push(TAG_LUMA | (diff.g + LUMA_MAIN_RANGE));
+    //Pack differences in a byte
+    const packed = (diffRG + LUMA_MISC_RANGE) << 4 | (diffBG + LUMA_MISC_RANGE);
+    this.output.push(packed);
+  }
+
+  #outputRgb(pixel) {
+    this.output.push(TAG_RGB);
+    this.output.push(pixel.r, pixel.g, pixel.b);
+  }
+
+  #outputFull(pixel) {
     this.output.push(TAG_RGBA);
     this.output.push(...pixel.toArray());
   }
@@ -312,6 +336,6 @@ function getDefaultPixel() {
 }
 
 const imageData = new ImageData(50, 50);
-imageData.data.set([255, 65, 43, 24, 245, 24, 235, 4, 24, 235, 4], 0);
+imageData.data.set([255, 65, 43, 24, 245, 24, 235, 4, 24, 235, 4, 43, 24, 54, 24, 34, 12, 24, 33, 33, 33, 32, 33, 34, 32, 33, 34, 31, 54, 23, 43, 25, 24, 21, 43, 54, 13, 32, 43], 0);
 const compressed = new QoiCompressor().compress(imageData);
 console.log(decompress(compressed, 50, 50));
