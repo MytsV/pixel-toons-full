@@ -145,6 +145,12 @@ class Layer {
     applyImageMixin(imageData);
     return imageData;
   }
+
+  setData(data) {
+    const imageData = new ImageData(this.width, this.height);
+    imageData.data.set(data);
+    this.context.putImageData(imageData, ...START_POS);
+  }
 }
 
 /*
@@ -417,11 +423,11 @@ class AnimationFile extends SimpleStateEmitter {
     this.appendFrame();
   }
 
-  appendFrame() {
+  appendFrame(frame) {
     const canvas = new Canvas(this.width, this.height);
-    const frame = new Frame(this.idGetter.get(), canvas);
-    this.#frames.push(frame);
-    this.#setCurrentFrame(frame);
+    const appended = frame ?? new Frame(this.idGetter.get(), canvas);
+    this.#frames.push(appended);
+    this.#setCurrentFrame(appended);
   }
 
   switchFrame(id) {
@@ -502,4 +508,4 @@ function drawLayer(context, layer) {
   context.globalAlpha = DEFAULT_OPACITY;
 }
 
-export { Canvas, AnimationFile };
+export { Canvas, AnimationFile, Frame, Layer };
