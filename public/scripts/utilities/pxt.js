@@ -134,18 +134,20 @@ class PxtDecoder {
 
         const layer = new Layer(layerId, width, height);
         layer.name = layerName;
-        layer.opacity = opacity;
+        layer.opacity = opacity / 255;
         const decompressed = new QoiDecompressor().decompress(data, width, height);
         layer.setData(decompressed);
         layers.push(layer);
       }
       const canvas = new Canvas(width, height);
+      canvas.layers.splice(0, canvas.layers.length);
       layers.forEach((layer) => canvas.appendLayer(layer));
       canvas.switchLayer(drawnId);
 
       const frame = new Frame(frameId, canvas, duration);
       frames.push(frame);
     }
+    file.frames.splice(0, file.frames.length);
     frames.forEach((frame) => file.appendFrame(frame));
     file.switchFrame(currentId);
     return file;
