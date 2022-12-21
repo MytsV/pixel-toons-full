@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
-import { QoiCompressor, decompress } from '../public/scripts/utilities/quite_ok.js';
+import { QoiCompressor, QoiDecompressor } from '../public/scripts/utilities/quite_ok.js';
 
 describe('QuiteOk compressor', () => {
   it('Can compress and decompress any image', () => testRandom());
@@ -18,7 +18,7 @@ async function testRandom() {
     data[i] = Math.floor(Math.random() * colorRange);
   }
   const compressed = new QoiCompressor().compress({ data });
-  const decompressed = decompress(compressed, imageSize, imageSize);
+  const decompressed = new QoiDecompressor().decompress(compressed, imageSize, imageSize);
   for (let i = 0; i < data.length; i++) {
     expect(decompressed[i]).to.equal(data[i]);
   }
