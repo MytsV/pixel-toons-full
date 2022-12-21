@@ -6,7 +6,7 @@ Parameters r, g, b range from 0 to 255.
 Parameter alpha ranges from 0 to 255.
  */
 class Color {
-  constructor(r, g, b, alpha = 255) {
+  constructor(r, g, b, alpha = colorRange) {
     const toCheck = [r, g, b, alpha];
     toCheck.forEach((value) => checkRange(value));
 
