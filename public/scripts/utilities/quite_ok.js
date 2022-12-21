@@ -94,27 +94,44 @@ const TWO_BIT_MASK = 0b11000000;
 
 const TABLE_SIZE = 64;
 
+class Pixel {
+  constructor(r, g, b, a = 255) {
+    Object.assign(this, { r, g, b, a });
+  }
+
+  equals(pixel) {
+    return this.r === pixel.r && this.g === pixel.g &&
+      this.b === pixel.b && this.a === pixel.a;
+  }
+
+  clone() {
+    return new Pixel(this.r, this.g, this.b, this.a);
+  }
+}
+
+//stub class with interface identical to real ImageData
+class ImageData {
+  constructor(width, height) {
+    this.width = width;
+    this.height = height;
+    this.data = new Uint8Array(width * height * CHANNEL_COUNT);
+  }
+}
+
 function compress(imageData) {
   const length = imageData.width * imageData.height * CHANNEL_COUNT;
-  let pxPrevious = {
-    r: 0,
-    g: 0,
-    b: 0,
-    a: 255
-  };
-  const px = Object.assign({}, pxPrevious);
+  let pxPrevious = getDefaultPixel();
+  let px = pxPrevious.clone();
   const pxEnd = length - CHANNEL_COUNT;
   const bytes = [];
   let run = 0;
   const index = new Uint8Array(TABLE_SIZE);
 
   for (let pxPos = 0; pxPos < length; pxPos += CHANNEL_COUNT) {
-    px.r = imageData.data[pxPos];
-    px.g = imageData.data[pxPos + 1];
-    px.b = imageData.data[pxPos + 2];
-    px.a = imageData.data[pxPos + 3];
+    const colorArray = imageData.data.slice(pxPos, pxPos + CHANNEL_COUNT);
+    px = new Pixel(...colorArray);
 
-    if (colorsEqual(px, pxPrevious)) {
+    if (px.equals(pxPrevious)) {
       run++;
       if (run === MAX_RUN_LENGTH || pxPos === pxEnd) {
         bytes.push(TAG_RUN | (run - 1));
@@ -128,7 +145,7 @@ function compress(imageData) {
         run = 0;
       }
 
-      if (colorsEqual(index[indexPos], px)) {
+      if (px.equals(index[indexPos])) {
         bytes.push(TAG_INDEX | indexPos);
       } else {
         index[indexPos] = px;
@@ -182,12 +199,7 @@ function decompress(bytes, width, height) {
   const index = new Uint8Array(TABLE_SIZE);
   const pxLen = width * height * CHANNEL_COUNT;
 
-  let px = {
-    r: 0,
-    g: 0,
-    b: 0,
-    a: 255
-  };
+  let px = getDefaultPixel();
 
   const chunksLen = bytes.length - PADDING.length;
   let run = 0;
@@ -236,23 +248,14 @@ function decompress(bytes, width, height) {
   return pixels;
 }
 
-//stub class with interface identical to real ImageData
-class ImageData {
-  constructor(width, height) {
-    this.width = width;
-    this.height = height;
-    this.data = new Uint8Array(width * height * CHANNEL_COUNT);
-  }
+function getDefaultPixel() {
+  return new Pixel(0, 0, 0);
 }
 
 const imageData = new ImageData(50, 50);
 imageData.data.set([255,65,43,24,245,24,235,4], 0);
 const compressed = compress(imageData);
 console.log(decompress(compressed, 50, 50));
-
-function colorsEqual(a, b) {
-  return a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
-}
 
 function hashColor(color) {
   return color.r * 3 + color.g * 5 + color.b * 7 + color.a * 11;
