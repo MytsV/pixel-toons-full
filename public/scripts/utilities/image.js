@@ -76,7 +76,7 @@ We use simple integer scaling.
  */
 function scale(image, degree) {
   if (degree < 1 || (degree | 0) !== degree) {
-    throw Error('Illegal amount value');
+    throw Error('Illegal degree value');
   }
 
   const scaled = new ImageData(image.width * degree, image.height * degree);
