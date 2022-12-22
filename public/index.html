@@ -25,17 +25,18 @@
       </div>
       <div id="main">
         <div id="toolbar" class="main-panel">
-          <div class="other-panel" id="state-button-container" style="display:none">
-            <div id="undo" class="state-button"></div>
-            <div id="redo" class="state-button"></div>
-          </div>
           <div id="tools">
 
           </div>
         </div>
         <div id="canvas-parent">
           <div id="coordinates"></div>
-          <div class="main-panel" id="tool-options"></div>
+          <div class="main-panel" id="tool-options">
+            <div id="state-button-container" class="tool-option-container">
+              <div id="undo" class="state-button"></div>
+              <div id="redo" class="state-button"></div>
+            </div>
+          </div>
           <div id="canvas-wrapper">
             <div class="canvas-element" id="canvas-background"></div>
             <div class="canvas-element" id="canvas-overlay"></div>
