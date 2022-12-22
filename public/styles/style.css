@@ -10,13 +10,11 @@ body {
   --main-panel-color-highlight: #82acff;
   --main-panel-color-shadow: #6092f1;
   --border-color: #42568b;
-  --border-size: 2pt;
-  --inter-element-spacing: 10pt;
+  --border-size: 1.8pt;
+  --inter-element-spacing: 4pt;
   --panel-height: 25pt;
   --panel-width: 100pt;
-
-  margin: var(--inter-element-spacing);
-  background-color: var(--main-panel-color);
+  margin: 0;
 }
 
 .container {
@@ -30,21 +28,22 @@ body {
 #main {
   flex-grow: 1;
   display: flex;
-  margin-top: var(--inter-element-spacing);
-  margin-bottom: var(--inter-element-spacing);
+  margin: var(--inter-element-spacing);
 }
 
 #toolbar {
-  width: 150pt;
+  width: 50pt;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  position: relative;
+  height: auto;
 }
 
 #tools {
   height: available;
   flex-grow: 1;
-  padding: 2pt 6pt;
-  margin-top: var(--inter-element-spacing);
+  margin: var(--inter-element-spacing);
 }
 
 #canvas-parent {
@@ -77,19 +76,27 @@ body {
 }
 
 .single-tool {
-  width: available;
-  height: 30pt;
+  aspect-ratio: 1;
+  width: 34pt;
+  height: 34pt;
   background-repeat: no-repeat;
   background-size: cover;
   image-rendering: pixelated;
-  margin-bottom: 7pt;
-  margin-top: 5pt;
+  margin-bottom: 6pt;
+  outline: var(--border-size) solid black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.active-tool {
-  border: none !important;
-  border-top: var(--border-size) solid var(--border-color) !important;
-  background-color: var(--border-color) !important;
+#eraser img {
+  width: 21pt;
+  height: 21pt;
+}
+
+.tool-image {
+  width: 23pt;
+  height: 23pt;
 }
 
 .state-button {
@@ -215,11 +222,7 @@ body {
 
 .main-panel {
   box-sizing: border-box;
-  background-color: var(--main-panel-color);
-  border-bottom: var(--border-size) solid var(--main-panel-color-shadow);
-  border-right: var(--border-size) solid var(--main-panel-color-shadow);
-  border-top: var(--border-size) solid var(--main-panel-color-highlight);
-  outline: var(--border-size) solid var(--border-color);
+  border: var(--border-size) solid black;
   position: relative;
   height: var(--panel-height);
 }
@@ -242,24 +245,17 @@ body {
 
 .text {
   font-family: 'Pixelite', serif;
-  color: white;
-  font-size: 15pt;
-  text-shadow:
-          2px  0 0 var(--border-color),
-          0 2px 0 var(--border-color),
-          0 -2px 0 var(--border-color),
-          -2px 0 0 var(--border-color),
-          -2px -2px 0 var(--border-color),
-          2px -2px 0 var(--border-color),
-          -2px  2px 0 var(--border-color),
-          2px  2px 0 var(--border-color);
+  color: black;
+  font-size: 8pt;
+  /*background: linear-gradient(90deg, red, #FF9A02, #2EFD2A, #00C2FF, #9E00FF);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; */
 }
 
 .menu-item {
-  padding: 5pt 20pt 4pt 20pt;
-  margin-top: -2pt;
+  padding: 6pt 12pt 0 12pt;
   width: max-content;
-  border-right: var(--border-size) solid #42568b;
   display: inline-block;
 }
 
