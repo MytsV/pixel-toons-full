@@ -46,30 +46,31 @@
           <div id="coordinates"></div>
         </div>
         <div id="sidebar" class="white-panel thing-container">
-          <div id="zoom-container">
-            <div id="zoom-out" class="zoom-button"></div>
-            <div id="zoom-in" class="zoom-button"></div>
+          <div id="color-picker" class="white-panel"></div>
+          <div id="palette" class="white-panel"></div>
+          <div id="navigation" class="white-panel">
+            <div id="zoom-container">
+              <div id="zoom-out" class="zoom-button"></div>
+              <div id="zoom-in" class="zoom-button"></div>
+            </div>
           </div>
-          <div class="main-panel label-panel"><span class="text">Layers</span></div>
-          <div id="layer-container" class="other-panel">
-
-          </div>
-          <div class="main-panel label-panel button" id="add-layer"><span class="text">New</span></div>
-          <input value="1" min="0" max="1" step="0.1" type="range" id="layer-opacity">
-          <div class="other-panel" id="layer-actions">
-            <div id="remove-layer" class="main-panel label-panel button"><span class="text">RMV</span></div>
-            <div id="move-layer-up" class="main-panel label-panel button"><span class="text">UP</span></div>
-            <div id="move-layer-down" class="main-panel label-panel button"><span class="text">DOWN</span></div>
-            <div id="merge-layers" class="main-panel label-panel button"><span class="text">MRG</span></div>
-            <div id="duplicate-layer" class="main-panel label-panel button"><span class="text">COPY</span></div>
-            <div id="rename-layer" class="main-panel label-panel button"><span class="text">RNM</span></div>
+          <div class="label-panel" id="element-choice"><span class="text button element-chosen" id="layer-chooser">Layers</span><span class="text button" id="frame-chooser">Frames</span></div>
+          <div id="layer-container" class="white-panel"></div>
+          <input value="1" min="0" max="1" step="0.1" type="range" id="layer-opacity" style="display: none">
+          <div class="white-panel" id="layer-actions">
+            <div id="add-layer" class="layer-action"></div>
+            <div id="remove-layer" class="layer-action"></div>
+            <div id="move-layer-up" class="layer-action"></div>
+            <div id="move-layer-down" class="layer-action"></div>
+            <div id="merge-layers" class="layer-action"></div>
+            <div id="duplicate-layer" class="layer-action"></div>
           </div>
         </div>
       </div>
       <div id="footer" style="display: none">
         <div id="frame-menu" class="white-panel">
           <div id="frame-label" class="menu-item-frames text">Frames</div>
-          <div id="add-frame" class="menu-item-frames text">Add</div>
+          <div id="add-frame" class="menu-item-frames text" style="display: none">Add</div>
           <div id="duplicate-frame" class="menu-item-frames text">Copy</div>
           <div id="opacity-menu" class="menu-item-frames text">Overlay opacity <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.2"></div>
           <button id="gif-export">Gif export</button>
