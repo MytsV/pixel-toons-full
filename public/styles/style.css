@@ -621,7 +621,7 @@ input {
 }
 
 #color-picker {
-  height: 80pt;
+  height: 110pt;
 }
 
 #palette {
@@ -858,4 +858,33 @@ input[type=range]:focus::-ms-fill-upper {
 .drop-down-item {
   padding: 5pt 10pt;
   border-bottom: var(--border-size) solid black;
+}
+
+#color-picker {
+  display: flex;
+}
+
+#picker-container {
+  flex-grow: 1;
+  height: inherit;
+  display: flex;
+  justify-content: center;
+}
+
+#wheel-canvas {
+  height: inherit;
+  aspect-ratio: 1;
+  padding: 5pt;
+}
+
+#rectangle-canvas {
+  position: absolute;
+  width: 60pt;
+  height: 60pt;
+  top: 25pt;
+}
+
+#color-chosen {
+  width: 30pt;
+  background-color: black;
 }

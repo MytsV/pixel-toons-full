@@ -283,7 +283,6 @@ export class Toolbar extends UiElement {
     this.container = document.getElementById('tools');
     this.#setUpTools();
     this.#setUpOptions();
-    //this.#setUpColorPicker();
     this.chosen = this.toolsInfo[0];
   }
 
@@ -339,6 +338,64 @@ export class Toolbar extends UiElement {
 
   #setUpPointer(canvas) {
     this.pointer.link(canvas);
+  }
+}
+
+const HUE_MAX = 360;
+const SATURATION_MAX = 100;
+
+export class ColorPicker {
+  constructor() {
+    this.wheel = document.getElementById('wheel-canvas');
+    this.rectangle = document.getElementById('rectangle-canvas');
+    this.hue = HUE_MAX;
+    this.#drawWheel();
+    this.#drawRectangle();
+  }
+
+  #drawWheel() {
+    const radius = this.wheel.getBoundingClientRect().height / 2;
+    const ctx = this.wheel.getContext('2d');
+    this.wheel.width = radius * 2;
+    this.wheel.height = radius * 2;
+
+    const toRadians = (2 * Math.PI) / HUE_MAX;
+    const step = 1 / radius;
+    for (let i = 0; i < HUE_MAX; i += step) {
+      const radians = i * toRadians;
+      const x = radius * Math.cos(radians), y = radius * Math.sin(radians);
+
+      ctx.strokeStyle = 'hsl(' + i + ', 100%, 50%)';
+      ctx.beginPath();
+      ctx.moveTo(radius, radius);
+      ctx.lineTo(radius + x, radius + y);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = '#ffffff';
+    ctx.arc(radius, radius, radius - 20, 0, 2 * Math.PI);
+    ctx.fill();
+
+    this.wheel.onclick = (event) => {
+
+    };
+  }
+
+  #drawRectangle() {
+    const height = this.wheel.getBoundingClientRect().height;
+    const ctx = this.rectangle.getContext('2d');
+    this.rectangle.height = height;
+    this.rectangle.width = this.rectangle.height;
+
+    const step = height / SATURATION_MAX;
+    const rectWidth = 3;
+
+    for (let i = 0; i < SATURATION_MAX; i += step) {
+      for (let j = 0; j < SATURATION_MAX; j += step) {
+        ctx.fillStyle = 'hsl(' + this.hue + `, ${j}%, ${i}%)`;
+        ctx.fillRect(Math.floor(i * step), Math.floor(j * step), rectWidth, rectWidth);
+      }
+    }
   }
 }
 
@@ -839,7 +896,6 @@ export class Preview extends UiElement {
     this.#setUpElements();
     this.encoder = new BmpEncoder(BmpVersions.BMP_32);
     this.playing = false;
-    this.playButton = document.getElementById('preview-animation');
   }
 
   #setUpButtons() {
@@ -921,16 +977,12 @@ export class Preview extends UiElement {
     this.container.style.display = SHOW_DISPLAY;
     const frontIndex = 2;
     this.background.style.zIndex = frontIndex.toString();
-    //this.playButton.classList.remove('play');
-    //this.playButton.classList.add('stop');
   }
 
   #hidePreviewElement() {
     this.container.style.display = HIDE_DISPLAY;
     const backIndex = 0;
     this.background.style.zIndex = backIndex.toString();
-    //this.playButton.classList.remove('stop');
-    //this.playButton.classList.add('play');
   }
 }
 
