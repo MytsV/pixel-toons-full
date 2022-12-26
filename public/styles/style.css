@@ -68,6 +68,7 @@ body {
   overflow: auto;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 #canvas-wrapper {
@@ -841,6 +842,20 @@ input[type=range]:focus::-ms-fill-upper {
 #to-main-page a:link {
   text-decoration: none;
 }
+
 #to-main-page a:hover {
   text-decoration: none;
+}
+
+.drop-down-menu {
+  background-color: white;
+  border: var(--border-size) solid black;
+  border-bottom: none;
+  width: 100pt;
+  z-index: 30;
+}
+
+.drop-down-item {
+  padding: 5pt 10pt;
+  border-bottom: var(--border-size) solid black;
 }

@@ -2,6 +2,7 @@ import { BmpEncoder, BmpVersions } from '../utilities/bmp_encoder.js';
 import * as conv from '../utilities/bytes_conversion.js';
 import { BucketFill, Eraser, Pencil, Pointer, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
+import { PxtDecoder, PxtEncoder } from '../utilities/pxt.js';
 
 const HIDE_DISPLAY = 'none';
 const SHOW_DISPLAY = 'block';
@@ -51,6 +52,43 @@ class Modal {
   }
 }
 
+class DropDownPopup {
+  constructor(elements) {
+    this.items = elements;
+  }
+
+  enable(x, y) {
+    this.element = document.createElement('div');
+    this.element.classList.add('drop-down-menu');
+    for (const [key, value] of Object.entries(this.items)) {
+      const item = document.createElement('div');
+      item.classList.add('drop-down-item', 'text', 'button');
+      item.innerText = key;
+      item.onclick = () => {
+        value();
+        this.disable();
+      };
+      this.element.appendChild(item);
+    }
+
+    const offsetSide = 20;
+    document.body.appendChild(this.element);
+
+    const left = x - offsetSide;
+    const top = y;
+    this.element.style.position = 'absolute';
+    this.element.style.left = left + 'px';
+    this.element.style.top = top + 'px';
+
+    this.element.onmouseleave = () => this.disable();
+  }
+
+  disable() {
+    document.body.removeChild(this.element);
+    this.element.onmouseleave = undefined;
+  }
+}
+
 class UiElement {
   constructor() {
     if (new.target === UiElement) {
@@ -78,18 +116,20 @@ export class StateButtons extends UiElement {
 const FILE_SIZE_LIMIT = 250;
 
 export class FileMenu extends UiElement {
-  constructor(createNewFile) {
+  constructor(createNewFile, openFile) {
     super();
     this.#setUpDependentButtons();
 
     this.createNewFile = createNewFile; //A function passed from the context
-    this.#setUpCreateButton();
+    this.openFile = openFile;
+    this.#setUpNewButton();
     this.#setUpCreateFinish();
     FileMenu.#setUpLimit();
   }
 
-  refresh({ canvas }) {
-    this.buttons.enableButtons(canvas);
+  refresh(file) {
+    this.buttons.enableButtons(file.canvas);
+    this.#setUpNewButton(file);
   }
 
   #setUpDependentButtons() {
@@ -110,10 +150,42 @@ export class FileMenu extends UiElement {
     conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.bmp');
   }
 
-  #setUpCreateButton() {
+  #setUpNewButton(file) {
     this.modal = new Modal('file-create-modal');
-    const createButton = document.getElementById('create-file');
-    createButton.onclick = () => this.modal.show();
+    const openFile = this.openFile;
+    const elements = {
+      'New': () => this.modal.show(),
+      'Open': () => {
+        const button = document.createElement('input');
+        button.type = 'file';
+        button.oninput = () => {
+          const reader = new FileReader();
+          reader.onload = function() {
+            const arrayBuffer = this.result;
+            const array = new Uint8Array(arrayBuffer);
+
+            const file = new PxtDecoder().decode(array);
+            openFile(file);
+          };
+          reader.readAsArrayBuffer(button.files[0]);
+        };
+        document.body.appendChild(button);
+        button.dispatchEvent(new MouseEvent('click', { view: window }));
+        document.body.removeChild(button);
+      },
+      'Save': () => {
+        const encoder = new PxtEncoder();
+        const data = encoder.encode(file);
+        const decoder = new PxtDecoder();
+        decoder.decode(data);
+        conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.pxt');
+      }
+    };
+    const button = document.getElementById('create-file');
+    const dropdown = new DropDownPopup(elements);
+    button.onclick = (event) => {
+      dropdown.enable(event.clientX, event.clientY);
+    };
   }
 
   #setUpCreateFinish() {
@@ -263,17 +335,6 @@ export class Toolbar extends UiElement {
     const container = document.getElementById('tool-options');
     container.innerHTML = '';
     toolInfo.options.forEach((option) => container.appendChild(option.getElement()));
-  }
-
-  #setUpColorPicker() {
-    const colorPicker = document.createElement('input');
-    colorPicker.type = 'color';
-    colorPicker.id = 'color-picker';
-
-    this.container.appendChild(colorPicker);
-    colorPicker.oninput = () => {
-      Tool.color = Color.fromHex(colorPicker.value);
-    };
   }
 
   #setUpPointer(canvas) {
