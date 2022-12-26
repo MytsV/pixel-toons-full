@@ -1,7 +1,9 @@
+import { authentication } from './utilities/database_handler.js';
+
 const publicKey = 'AIzaSyAncVp4HixyOKA3uLWD4fR4MZI37ScTX8g';
 
 const getAccount = async () => {
-  const id = window.localStorage.getItem('userId');
+  const id = authentication.getId();
   if (!id) {
     throw Error('Not signed in!');
   } else {

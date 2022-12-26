@@ -1,14 +1,15 @@
-const publicKey = 'AIzaSyAncVp4HixyOKA3uLWD4fR4MZI37ScTX8g';
+import { authentication } from './utilities/database_handler.js';
 
 const register = async () => {
   const emailElement = document.getElementById('email');
   const passwordElement = document.getElementById('password');
   const email = emailElement.value;
   const password = passwordElement.value;
-  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${publicKey}&email=${email}&password=${password}`, {
-    'method': 'POST',
+  authentication.register(email, password, {}).then(() => {
+    alert('Register successful');
+  }).catch((error) => {
+    alert(error.toString());
   });
-  console.log(await response.text());
 };
 
 const login = async () => {
@@ -16,11 +17,11 @@ const login = async () => {
   const passwordElement = document.getElementById('password');
   const email = emailElement.value;
   const password = passwordElement.value;
-  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${publicKey}&email=${email}&password=${password}`, {
-    'method': 'POST',
+  await authentication.login(email, password).then(() => {
+    alert('Login successful');
+  }).catch((error) => {
+    alert(error.toString());
   });
-  const data = await response.json();
-  window.localStorage.setItem('userId', data['idToken']);
 };
 
 window.onload = () => {
