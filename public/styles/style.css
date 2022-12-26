@@ -452,10 +452,6 @@ input {
 
 #preview-menu {
   position: relative;
-  float: right;
-  border-right: none;
-  border-left: var(--border-size) solid #42568b;
-  padding: 6pt 14pt 5pt 20pt;
 }
 
 #preview-animation {
