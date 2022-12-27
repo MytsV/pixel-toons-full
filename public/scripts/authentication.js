@@ -1,10 +1,13 @@
-import { authentication } from './utilities/database_handler.js';
+import { authentication, userDatabase } from './utilities/database_handler.js';
 
 const DISPLAY_SHOW = 'block';
 const DISPLAY_HIDE = 'none';
 
 const register = (values) => {
-  authentication.register(values).then(() => {
+  const { email, password } = values;
+  authentication.register({ email, password }).then(async () => {
+    values['email'] = values['password'] = undefined;
+    await userDatabase.createUser(authentication.getId(), values);
     alert('Register successful');
   }).catch((error) => {
     alert(error.toString());
@@ -56,7 +59,7 @@ const forms = [
       'password': 'password-register',
       'nickname': 'nickname',
       'biography': 'biography',
-      'date_of_birth': 'date-of-birth'
+      'dateOfBirth': 'date-of-birth'
     },
     register
   )
