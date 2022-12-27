@@ -30,7 +30,10 @@ class Form {
     const values = {};
     for (const [name, id] of Object.entries(this.inputs)) {
       const element = document.getElementById(id);
-      if (!element.value) throw Error('Please check the data');
+      if (!element.checkValidity()) {
+        element.focus();
+        throw Error('Please check the data');
+      }
       values[name] = element.value;
     }
     await this.action(values);

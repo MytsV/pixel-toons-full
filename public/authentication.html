@@ -12,9 +12,9 @@
       <a href="authentication.html"><span class="text">pixtoons</span></a>
     </div>
   </div>
-  <div id="register-form" style="display:none;">
+  <form id="register-form" style="display:none;">
     <div class="text">Email</div>
-    <input type="email" id="email-register" class="white-panel text-ordinary">
+    <input type="email" id="email-register" class="white-panel text-ordinary" required>
     <div class="text">Nickname</div>
     <input type="text" id="nickname" class="white-panel text-ordinary">
     <div class="text">Biography</div>
@@ -25,13 +25,13 @@
     <input type="file" id="avatar" class="white-panel text-ordinary">
     <div class="text">Password (6 symbols minimum)</div>
     <input type="password" id="password-register" class="white-panel text-ordinary">
-  </div>
-  <div id="login-form">
+  </form>
+  <form id="login-form">
     <div class="text">Email</div>
-    <input type="email" id="email-login" class="white-panel text-ordinary">
+    <input type="email" id="email-login" class="white-panel text-ordinary" required>
     <div class="text">Password (6 symbols minimum)</div>
-    <input type="password" id="password-login" class="white-panel text-ordinary">
-  </div>
+    <input type="password" id="password-login" class="white-panel text-ordinary" required>
+  </form>
 
   <div id="login" class="main-panel label-panel button"><span class="text">LOG IN</span></div>
   <div id="register" class="main-panel label-panel button"><span class="text">REGISTER</span></div>
