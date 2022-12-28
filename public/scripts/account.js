@@ -8,7 +8,11 @@ const getAccount = async () => {
     const userData = await userDatabase.getUser(id);
     for (const [key, value] of Object.entries(userData)) {
       const element = document.getElementById(key);
-      element.innerText = value;
+      if (key !== 'avatarUrl') {
+        element.innerText = value;
+      } else {
+        element.src = value;
+      }
     }
   }
 };

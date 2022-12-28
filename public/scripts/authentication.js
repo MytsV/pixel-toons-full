@@ -1,4 +1,4 @@
-import { authentication, userDatabase } from './utilities/database_handler.js';
+import { authentication, uploadFile, userDatabase } from './utilities/database_handler.js';
 
 const DISPLAY_SHOW = 'block';
 const DISPLAY_HIDE = 'none';
@@ -8,12 +8,19 @@ const register = (values) => {
   authentication.register({ email, password }).then(async () => {
     values['email'] = values['password'] = undefined;
     await userDatabase.createUser(authentication.getId(), values);
+    const avatarUrl = await uploadFile('avatars', getAvatar());
+    await userDatabase.setUserUrl(authentication.getId(), avatarUrl);
     alert('Register successful');
     redirect();
   }).catch((error) => {
     alert(error.toString());
   });
 };
+
+function getAvatar() {
+  const input = document.getElementById('avatar');
+  return input.files[0];
+}
 
 const login = async (values) => {
   await authentication.login(values).then(() => {
