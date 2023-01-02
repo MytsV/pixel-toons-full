@@ -354,7 +354,7 @@ export class Toolbar extends UiElement {
 
 const HUE_MAX = 360;
 const SL_MAX = 100;
-const IN_RADIUS = 150;
+const inRadius = 150;
 const outRadius = 200;
 
 export class ColorPicker {
@@ -368,40 +368,43 @@ export class ColorPicker {
   }
 
   #drawWheel() {
-    this.wheel.width = outRadius * 2;
-    this.wheel.height = outRadius * 2;
+    const size = outRadius * 2;
+    this.wheel.width = this.wheel.height = size;
     const ctx = this.wheel.getContext('2d');
-    for (let i = 0; i < this.wheel.width; i++) {
-      for (let j = 0; j < this.wheel.height; j++) {
-        const x = i - this.wheel.width / 2;
-        const y = this.wheel.height / 2 - j;
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        const x = i - size / 2;
+        const y = size / 2 - j;
         const length = Math.sqrt(x * x + y * y);
-        if (length < IN_RADIUS || length > outRadius) continue;
-
-        let angle = (Math.atan2(y, x) * 180) / Math.PI;
-
-        if (angle < 0) {
-          angle = Math.abs(angle);
-        } else {
-          angle = 2 * Math.PI - angle;
-        }
-
-        ctx.fillStyle = 'hsl(' + angle + ', 100%, 50%)';
+        if (length < inRadius || length > outRadius) continue;
+        ctx.fillStyle = 'hsl(' + ColorPicker.#getAngle(x, y) + ', 100%, 50%)';
         ctx.fillRect(i, j, 1, 1);
       }
     }
   }
 
+  static #getAngle(x, y) {
+    let angle = (Math.atan2(y, x) * 180) / Math.PI;
+    if (angle < 0) {
+      angle = Math.abs(angle);
+    } else {
+      angle = 2 * Math.PI - angle;
+    }
+    return angle;
+  }
+
   #setTrianglePos() {
-    const realWidth = IN_RADIUS * this.wheel.offsetWidth / outRadius - 10;
-    const triangleWidth = realWidth * (IN_RADIUS * 3 / Math.sqrt(3)) / (IN_RADIUS * 2);
-    const realTopOffset = this.wheel.offsetWidth - realWidth;
-    this.triangle.style.width = `${triangleWidth}px`;
-    this.triangle.style.top = `${realTopOffset / 2}px`;
+    const wheelWidth = this.wheel.offsetWidth;
+    const sizeOffset = 10;
+    const inWidth = inRadius * wheelWidth / outRadius;
+    const triangleWidth = inWidth * this.triangle.width / (inRadius * 2);
+    const realTopOffset = (wheelWidth - inWidth) / 2;
+    this.triangle.style.width = `${triangleWidth - sizeOffset}px`;
+    this.triangle.style.top = `${realTopOffset + sizeOffset / 2}px`;
   }
 
   #drawTriangle() {
-    const width = IN_RADIUS * 3 / Math.sqrt(3);
+    const width = inRadius * 3 / Math.sqrt(3);
     this.triangle.width = width;
     this.triangle.height = width * Math.sqrt(3) / 2;
     const stepX = this.triangle.width / SL_MAX;
@@ -414,7 +417,7 @@ export class ColorPicker {
         if (i >= xCenter - offset && i <= xCenter + offset) {
           const saturation = i / stepX;
           const lightness = j / stepY;
-          ctx.fillStyle = 'hsl(' + this.hue + `, ${saturation}%, ${lightness}%)`;
+          ctx.fillStyle = `hsl(${this.hue}, ${saturation}%, ${lightness}%)`;
           ctx.fillRect(i, j, 1, 1);
         }
       }
