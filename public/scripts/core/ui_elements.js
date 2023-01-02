@@ -353,58 +353,70 @@ export class Toolbar extends UiElement {
 }
 
 const HUE_MAX = 360;
-const SATURATION_MAX = 100;
+const SL_MAX = 100;
+const IN_RADIUS = 150;
+const outRadius = 200;
 
 export class ColorPicker {
   constructor() {
     this.wheel = document.getElementById('wheel-canvas');
-    this.rectangle = document.getElementById('rectangle-canvas');
+    this.triangle = document.getElementById('rectangle-canvas');
     this.hue = HUE_MAX;
     this.#drawWheel();
-    this.#drawRectangle();
+    this.#drawTriangle();
+    this.#setTrianglePos();
   }
 
   #drawWheel() {
-    const radius = this.wheel.getBoundingClientRect().height / 2;
+    this.wheel.width = outRadius * 2;
+    this.wheel.height = outRadius * 2;
     const ctx = this.wheel.getContext('2d');
-    this.wheel.width = radius * 2;
-    this.wheel.height = radius * 2;
+    for (let i = 0; i < this.wheel.width; i++) {
+      for (let j = 0; j < this.wheel.height; j++) {
+        const x = i - this.wheel.width / 2;
+        const y = this.wheel.height / 2 - j;
+        const length = Math.sqrt(x * x + y * y);
+        if (length < IN_RADIUS || length > outRadius) continue;
 
-    const toRadians = (2 * Math.PI) / HUE_MAX;
-    const step = 1 / radius;
-    for (let i = 0; i < HUE_MAX; i += step) {
-      const radians = i * toRadians;
-      const x = radius * Math.cos(radians), y = radius * Math.sin(radians);
+        let angle = (Math.atan2(y, x) * 180) / Math.PI;
 
-      ctx.strokeStyle = 'hsl(' + i + ', 100%, 50%)';
-      ctx.beginPath();
-      ctx.moveTo(radius, radius);
-      ctx.lineTo(radius + x, radius + y);
-      ctx.stroke();
+        if (angle < 0) {
+          angle = Math.abs(angle);
+        } else {
+          angle = 2 * Math.PI - angle;
+        }
+
+        ctx.fillStyle = 'hsl(' + angle + ', 100%, 50%)';
+        ctx.fillRect(i, j, 1, 1);
+      }
     }
-
-    ctx.fillStyle = '#ffffff';
-    ctx.arc(radius, radius, radius - 20, 0, 2 * Math.PI);
-    ctx.fill();
-
-    this.wheel.onclick = (event) => {
-
-    };
   }
 
-  #drawRectangle() {
-    const height = this.wheel.getBoundingClientRect().height;
-    const ctx = this.rectangle.getContext('2d');
-    this.rectangle.height = height;
-    this.rectangle.width = this.rectangle.height;
+  #setTrianglePos() {
+    const realWidth = IN_RADIUS * this.wheel.offsetWidth / outRadius - 10;
+    const triangleWidth = realWidth * (IN_RADIUS * 3 / Math.sqrt(3)) / (IN_RADIUS * 2);
+    const realTopOffset = this.wheel.offsetWidth - realWidth;
+    this.triangle.style.width = `${triangleWidth}px`;
+    this.triangle.style.top = `${realTopOffset / 2}px`;
+  }
 
-    const step = height / SATURATION_MAX;
-    const rectWidth = 3;
-
-    for (let i = 0; i < SATURATION_MAX; i += step) {
-      for (let j = 0; j < SATURATION_MAX; j += step) {
-        ctx.fillStyle = 'hsl(' + this.hue + `, ${j}%, ${i}%)`;
-        ctx.fillRect(Math.floor(i * step), Math.floor(j * step), rectWidth, rectWidth);
+  #drawTriangle() {
+    const width = IN_RADIUS * 3 / Math.sqrt(3);
+    this.triangle.width = width;
+    this.triangle.height = width * Math.sqrt(3) / 2;
+    const stepX = this.triangle.width / SL_MAX;
+    const stepY = this.triangle.height / SL_MAX;
+    const xCenter = this.triangle.width / 2;
+    const ctx = this.triangle.getContext('2d');
+    for (let i = 0; i < this.triangle.width; i++) {
+      for (let j = 0; j < this.triangle.height; j++) {
+        const offset = j * 2 / Math.sqrt(3) / 2;
+        if (i >= xCenter - offset && i <= xCenter + offset) {
+          const saturation = i / stepX;
+          const lightness = j / stepY;
+          ctx.fillStyle = 'hsl(' + this.hue + `, ${saturation}%, ${lightness}%)`;
+          ctx.fillRect(i, j, 1, 1);
+        }
       }
     }
   }

@@ -880,8 +880,6 @@ input[type=range]:focus::-ms-fill-upper {
 
 #rectangle-canvas {
   position: absolute;
-  width: 60pt;
-  height: 60pt;
   top: 25pt;
 }
 
