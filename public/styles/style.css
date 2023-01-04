@@ -878,7 +878,7 @@ input[type=range]:focus::-ms-fill-upper {
   padding: 5pt;
 }
 
-#rectangle-canvas {
+#triangle-canvas {
   position: absolute;
   top: 25pt;
 }
@@ -904,4 +904,11 @@ input[type=range]:focus::-ms-fill-upper {
   height: max-content;
   width: 100%;
   background-color: white;
+}
+
+.handle {
+  width: 5pt;
+  height: 5pt;
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.6);
 }

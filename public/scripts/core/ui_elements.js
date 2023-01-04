@@ -360,7 +360,9 @@ const outRadius = 200;
 export class ColorPicker {
   constructor() {
     this.wheel = document.getElementById('wheel-canvas');
-    this.triangle = document.getElementById('rectangle-canvas');
+    this.triangle = document.getElementById('triangle-canvas');
+    this.handleWheel = document.getElementById('handle-wheel');
+    this.handleTriangle = document.getElementById('handle-triangle');
     this.hue = HUE_MAX;
     this.#drawWheel();
     this.#drawTriangle();
@@ -377,10 +379,16 @@ export class ColorPicker {
         const y = size / 2 - j;
         const length = Math.sqrt(x * x + y * y);
         if (length < inRadius || length > outRadius) continue;
-        ctx.fillStyle = 'hsl(' + ColorPicker.#getAngle(x, y) + ', 100%, 50%)';
+        ctx.fillStyle = this.#getWheelColor(x, y).toString();
         ctx.fillRect(i, j, 1, 1);
       }
     }
+    this.wheel.onclick = (event) => this.#pickHue(event);
+  }
+
+  #getWheelColor(x, y) {
+    this.hue = ColorPicker.#getAngle(x, y);
+    return Color.fromHsl(this.hue, 1, 0.5);
   }
 
   static #getAngle(x, y) {
@@ -388,7 +396,7 @@ export class ColorPicker {
     if (angle < 0) {
       angle = Math.abs(angle);
     } else {
-      angle = 2 * Math.PI - angle;
+      angle = HUE_MAX - angle;
     }
     return angle;
   }
@@ -422,6 +430,26 @@ export class ColorPicker {
         }
       }
     }
+  }
+
+  #pickHue(event) {
+    let { x, y } = ColorPicker.#getRelativeCoordinates(event);
+    this.handleWheel.style.top = y;
+    this.handleWheel.style.left = x;
+    x *= outRadius / this.wheel.offsetWidth;
+    y *= outRadius / this.wheel.offsetWidth;
+    x -= outRadius / 2;
+    y = outRadius / 2 - y;
+    Tool.color = this.#getWheelColor(x, y);
+    this.#drawTriangle();
+  }
+
+  static #getRelativeCoordinates(event) {
+    const rect = event.target.getBoundingClientRect();
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
+    };
   }
 }
 
