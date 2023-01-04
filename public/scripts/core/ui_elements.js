@@ -361,8 +361,9 @@ export class ColorPicker {
   constructor() {
     this.wheel = document.getElementById('wheel-canvas');
     this.triangle = document.getElementById('triangle-canvas');
-    this.handleWheel = document.getElementById('handle-wheel');
-    this.handleTriangle = document.getElementById('handle-triangle');
+    this.colorDisplay = document.getElementById('color-chosen');
+    // this.handleWheel = document.getElementById('handle-wheel');
+    // this.handleTriangle = document.getElementById('handle-triangle');
     this.hue = HUE_MAX;
     this.#drawWheel();
     this.#drawTriangle();
@@ -383,7 +384,23 @@ export class ColorPicker {
         ctx.fillRect(i, j, 1, 1);
       }
     }
-    this.wheel.onclick = (event) => this.#pickHue(event);
+    this.wheel.onmousedown = (event) => {
+      this.wheelMoving = true;
+      this.#pickHue(event);
+    };
+    this.wheel.onmousemove = (event) => {
+      if (!this.wheelMoving) return;
+      this.#pickHue(event);
+    };
+    document.body.addEventListener('mouseup', () => {
+      if (!this.wheelMoving) return;
+      this.#drawTriangle();
+      this.wheelMoving = false;
+    });
+  }
+
+  #showColor(color) {
+    this.colorDisplay.style.backgroundColor = color.toString();
   }
 
   #getWheelColor(x, y) {
@@ -434,18 +451,20 @@ export class ColorPicker {
 
   #pickHue(event) {
     let { x, y } = ColorPicker.#getRelativeCoordinates(event);
-    this.handleWheel.style.top = y;
-    this.handleWheel.style.left = x;
     x *= outRadius / this.wheel.offsetWidth;
     y *= outRadius / this.wheel.offsetWidth;
     x -= outRadius / 2;
     y = outRadius / 2 - y;
     Tool.color = this.#getWheelColor(x, y);
-    this.#drawTriangle();
+    this.#showColor(Tool.color);
   }
 
   static #getRelativeCoordinates(event) {
     const rect = event.target.getBoundingClientRect();
+    // return {
+    //   x: event.layerX,
+    //   y: event.layerY
+    // }
     return {
       x: event.clientX - rect.left,
       y: event.clientY - rect.top

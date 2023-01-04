@@ -876,6 +876,7 @@ input[type=range]:focus::-ms-fill-upper {
   height: inherit;
   aspect-ratio: 1;
   padding: 5pt;
+  z-index: 6;
 }
 
 #triangle-canvas {
