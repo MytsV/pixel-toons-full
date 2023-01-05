@@ -913,3 +913,11 @@ input[type=range]:focus::-ms-fill-upper {
   position: absolute;
   background-color: rgba(0, 0, 0, 0.6);
 }
+
+#color-chosen {
+  font-size: 9pt;
+  writing-mode: vertical-rl;
+  user-select: text;
+  font-family: 'Pixelite', arial;
+  padding: 4pt;
+}

@@ -63,6 +63,14 @@ class Color {
     );
   }
 
+  toHex() {
+    const oneToHex = (val) => {
+      const hex = val.toString(16);
+      return hex.length === 1 ? '0' + hex : hex;
+    };
+    return '#' + oneToHex(this.r) + oneToHex(this.g) + oneToHex(this.b);
+  }
+
   //Converts color to RGBA CSS format
   toString() {
     return `rgba(${this.r},${this.g},${this.b},${this.alpha / colorRange})`;

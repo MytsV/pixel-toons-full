@@ -371,6 +371,11 @@ export class ColorPicker {
     this.#drawTriangle();
     this.#setTrianglePos();
     this.#showColor();
+    this.colorDisplay.onclick = () => {
+      const hex = window.prompt('Enter color', Tool.color.toHex());
+      Tool.color = Color.fromHex(hex);
+      this.#showColor();
+    };
   }
 
   #drawWheel() {
@@ -404,6 +409,7 @@ export class ColorPicker {
 
   #showColor() {
     this.colorDisplay.style.backgroundColor = Tool.color.toString();
+    this.colorDisplay.innerText = Tool.color.toHex();
   }
 
   #getWheelColor(x, y) {
@@ -498,6 +504,12 @@ export class ColorPicker {
       x: event.clientX - rect.left,
       y: event.clientY - rect.top
     };
+  }
+}
+
+class Palette {
+  constructor() {
+
   }
 }
 
