@@ -1,7 +1,7 @@
 import { Coordinates } from '../utilities/coordinates.js';
 import { Color } from '../utilities/color.js';
 
-const DEFAULT_PENCIL_COLOR = '#000000';
+const DEFAULT_PENCIL_COLOR = '#ff0000';
 const DEFAULT_THICKNESS = 1;
 
 /*

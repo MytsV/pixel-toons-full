@@ -354,6 +354,8 @@ export class Toolbar extends UiElement {
 
 const HUE_MAX = 360;
 const SL_MAX = 100;
+const PADDING_WHEEL = 10;
+
 const inRadius = 150;
 const outRadius = 200;
 
@@ -368,6 +370,7 @@ export class ColorPicker {
     this.#drawWheel();
     this.#drawTriangle();
     this.#setTrianglePos();
+    this.#showColor();
   }
 
   #drawWheel() {
@@ -385,7 +388,6 @@ export class ColorPicker {
       }
     }
     this.wheel.onmousedown = (event) => {
-      this.wheelMoving = true;
       this.#pickHue(event);
     };
     this.wheel.onmousemove = (event) => {
@@ -393,14 +395,15 @@ export class ColorPicker {
       this.#pickHue(event);
     };
     document.body.addEventListener('mouseup', () => {
+      this.triangleMoving = false;
       if (!this.wheelMoving) return;
       this.#drawTriangle();
       this.wheelMoving = false;
     });
   }
 
-  #showColor(color) {
-    this.colorDisplay.style.backgroundColor = color.toString();
+  #showColor() {
+    this.colorDisplay.style.backgroundColor = Tool.color.toString();
   }
 
   #getWheelColor(x, y) {
@@ -420,12 +423,11 @@ export class ColorPicker {
 
   #setTrianglePos() {
     const wheelWidth = this.wheel.offsetWidth;
-    const sizeOffset = 10;
     const inWidth = inRadius * wheelWidth / outRadius;
     const triangleWidth = inWidth * this.triangle.width / (inRadius * 2);
     const realTopOffset = (wheelWidth - inWidth) / 2;
-    this.triangle.style.width = `${triangleWidth - sizeOffset}px`;
-    this.triangle.style.top = `${realTopOffset + sizeOffset / 2}px`;
+    this.triangle.style.width = `${triangleWidth - PADDING_WHEEL}px`;
+    this.triangle.style.top = `${realTopOffset + PADDING_WHEEL / 2}px`;
   }
 
   #drawTriangle() {
@@ -450,21 +452,46 @@ export class ColorPicker {
   }
 
   #pickHue(event) {
-    let { x, y } = ColorPicker.#getRelativeCoordinates(event);
-    x *= outRadius / this.wheel.offsetWidth;
-    y *= outRadius / this.wheel.offsetWidth;
-    x -= outRadius / 2;
-    y = outRadius / 2 - y;
+    let { x, y } = ColorPicker.#getRelativeCoordinates(event, this.wheel);
+    x *= outRadius * 2 / this.wheel.offsetWidth;
+    y *= outRadius * 2 / this.wheel.offsetWidth;
+    x -= outRadius;
+    y = outRadius - y;
+    const dist = Math.sqrt(x * x + y * y);
+    if (dist < inRadius) {
+      if (!this.wheelMoving) {
+        this.triangleMoving = true;
+        this.wheelMoving = true;
+      }
+      this.#pickSL(event);
+      return;
+    } else if (dist > outRadius) { return; }
+    if (this.triangleMoving) return;
+    this.wheelMoving = true;
     Tool.color = this.#getWheelColor(x, y);
-    this.#showColor(Tool.color);
+    this.#showColor();
   }
 
-  static #getRelativeCoordinates(event) {
-    const rect = event.target.getBoundingClientRect();
-    // return {
-    //   x: event.layerX,
-    //   y: event.layerY
-    // }
+  #pickSL(event) {
+    if (!this.triangleMoving) return;
+    const { x, y } = ColorPicker.#getRelativeCoordinates(event, this.triangle);
+    const stepX = this.triangle.offsetWidth / SL_MAX;
+    const stepY = this.triangle.offsetHeight / SL_MAX;
+    const xCenter = this.triangle.offsetWidth / 2;
+    const offset = y * 2 / Math.sqrt(3) / 2;
+    if (x < xCenter - offset || x > xCenter + offset) return;
+    const saturation = x / stepX;
+    const lightness = y / stepY;
+    try {
+      Tool.color = Color.fromHsl(this.hue, saturation / SL_MAX, lightness / SL_MAX);
+      this.#showColor();
+    } catch (e) {
+      //It's okay, don't display error
+    }
+  }
+
+  static #getRelativeCoordinates(event, element) {
+    const rect = element.getBoundingClientRect();
     return {
       x: event.clientX - rect.left,
       y: event.clientY - rect.top
