@@ -364,9 +364,9 @@ export class ColorPicker {
     this.wheel = document.getElementById('wheel-canvas');
     this.triangle = document.getElementById('triangle-canvas');
     this.colorDisplay = document.getElementById('color-chosen');
-    // this.handleWheel = document.getElementById('handle-wheel');
-    // this.handleTriangle = document.getElementById('handle-triangle');
     this.hue = HUE_MAX;
+    this.saturation = 1;
+    this.lightness = 0.5;
     this.#drawWheel();
     this.#drawTriangle();
     this.#setTrianglePos();
@@ -408,7 +408,7 @@ export class ColorPicker {
 
   #getWheelColor(x, y) {
     this.hue = ColorPicker.#getAngle(x, y);
-    return Color.fromHsl(this.hue, 1, 0.5);
+    return Color.fromHsl(this.hue, this.saturation, this.lightness);
   }
 
   static #getAngle(x, y) {
@@ -480,10 +480,12 @@ export class ColorPicker {
     const xCenter = this.triangle.offsetWidth / 2;
     const offset = y * 2 / Math.sqrt(3) / 2;
     if (x < xCenter - offset || x > xCenter + offset) return;
-    const saturation = x / stepX;
-    const lightness = y / stepY;
+    const saturation = x / stepX / SL_MAX;
+    const lightness = y / stepY / SL_MAX;
     try {
-      Tool.color = Color.fromHsl(this.hue, saturation / SL_MAX, lightness / SL_MAX);
+      Tool.color = Color.fromHsl(this.hue, saturation, lightness);
+      this.saturation = saturation;
+      this.lightness = lightness;
       this.#showColor();
     } catch (e) {
       //It's okay, don't display error
