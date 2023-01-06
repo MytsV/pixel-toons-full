@@ -1,6 +1,5 @@
 import { Buffer } from './buffer.js';
 import { LzwCompressor } from './lzw_compression.js';
-import { scale } from './image.js';
 
 const COLOR_PARAMETERS = 3;
 const MAX_COLOR_PARAMETERS = 4;
@@ -59,8 +58,6 @@ class UniformQuantizer {
   }
 }
 
-const IMAGE_SCALE = 10;
-
 /*
 A wrapper which can be created from Frame defined in canvas.js
  */
@@ -72,7 +69,7 @@ class GifFrame {
 
   static from(canvasFrame) {
     const image = canvasFrame.canvas.getJoinedImage();
-    return new GifFrame(scale(image, IMAGE_SCALE), canvasFrame.duration);
+    return new GifFrame(image, canvasFrame.duration);
   }
 }
 

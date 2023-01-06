@@ -4,6 +4,7 @@ import { BucketFill, Eraser, Pencil, Pointer, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
 import { PxtDecoder, PxtEncoder } from '../utilities/pxt.js';
 import { GifEncoder, GifFrame } from '../utilities/gif_encoder.js';
+import { scale } from '../utilities/image.js';
 
 const HIDE_DISPLAY = 'none';
 const SHOW_DISPLAY = 'block';
@@ -115,6 +116,7 @@ export class StateButtons extends UiElement {
 }
 
 const FILE_SIZE_LIMIT = 250;
+const IMAGE_SIZE_LIMIT = 2000;
 
 export class FileMenu extends UiElement {
   constructor(createNewFile, openFile) {
@@ -131,6 +133,7 @@ export class FileMenu extends UiElement {
   refresh(file) {
     this.buttons.enableButtons(file);
     this.#setUpNewButton(file);
+    this.#setUpSlider(file.canvas);
   }
 
   #setUpDependentButtons() {
@@ -139,7 +142,7 @@ export class FileMenu extends UiElement {
       FileMenu.#exportImage();
     });
     this.buttons.addButton('export-to-bmp', ({ canvas }) => {
-      const image = canvas.getJoinedImage();
+      const image = scale(canvas.getJoinedImage(), FileMenu.#getEnlargement());
       const encoder = new BmpEncoder(BmpVersions.BMP_32);
       const data = encoder.encode(image);
       conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.bmp');
@@ -150,6 +153,20 @@ export class FileMenu extends UiElement {
       const data = encoder.encode(frames);
       conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.gif');
     });
+  }
+
+  #setUpSlider(canvas) {
+    const slider = document.getElementById('enlarge-slider');
+    const title = document.getElementById('enlarge-text');
+    slider.oninput = () => {
+      title.innerText = `Enlarge: ${slider.value}x`;
+    };
+    slider.max = (IMAGE_SIZE_LIMIT / Math.max(canvas.width, canvas.height)) | 0;
+  }
+
+  static #getEnlargement() {
+    const slider = document.getElementById('enlarge-slider');
+    return parseInt(slider.value);
   }
 
   #clear(canvas) {
@@ -163,27 +180,9 @@ export class FileMenu extends UiElement {
 
   #setUpNewButton(file) {
     this.modal = new Modal('file-create-modal');
-    const openFile = this.openFile;
     const elements = {
       'New': () => this.modal.show(),
-      'Open': () => {
-        const button = document.createElement('input');
-        button.type = 'file';
-        button.oninput = () => {
-          const reader = new FileReader();
-          reader.onload = function() {
-            const arrayBuffer = this.result;
-            const array = new Uint8Array(arrayBuffer);
-
-            const file = new PxtDecoder().decode(array);
-            openFile(file);
-          };
-          reader.readAsArrayBuffer(button.files[0]);
-        };
-        document.body.appendChild(button);
-        button.dispatchEvent(new MouseEvent('click', { view: window }));
-        document.body.removeChild(button);
-      },
+      'Open': () => this.#onOpen(),
       'Save': () => {
         const encoder = new PxtEncoder();
         const data = encoder.encode(file);
@@ -197,6 +196,26 @@ export class FileMenu extends UiElement {
     button.onclick = (event) => {
       dropdown.enable(event.clientX, event.clientY);
     };
+  }
+
+  #onOpen() {
+    const openFile = this.openFile;
+    const button = document.createElement('input');
+    button.type = 'file';
+    button.oninput = () => {
+      const reader = new FileReader();
+      reader.onload = function() {
+        const arrayBuffer = this.result;
+        const array = new Uint8Array(arrayBuffer);
+
+        const file = new PxtDecoder().decode(array);
+        openFile(file);
+      };
+      reader.readAsArrayBuffer(button.files[0]);
+    };
+    document.body.appendChild(button);
+    button.dispatchEvent(new MouseEvent('click', { view: window }));
+    document.body.removeChild(button);
   }
 
   #setUpCreateFinish() {

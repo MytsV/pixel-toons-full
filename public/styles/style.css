@@ -915,7 +915,7 @@ input[type=range]:focus::-ms-fill-upper {
 }
 
 #color-chosen {
-  font-size: 9pt;
+  font-size: 8pt;
   writing-mode: vertical-rl;
   user-select: text;
   font-family: 'Pixelite', arial;
