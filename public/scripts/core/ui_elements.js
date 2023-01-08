@@ -149,7 +149,8 @@ export class FileMenu extends UiElement {
     });
     this.buttons.addButton('export-to-gif', (file) => {
       const encoder = new GifEncoder();
-      const frames = file.frames.map((frame) => GifFrame.from(frame));
+      const scale = FileMenu.#getEnlargement();
+      const frames = file.frames.map((frame) => GifFrame.from(frame, scale));
       const data = encoder.encode(frames);
       conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.gif');
     });

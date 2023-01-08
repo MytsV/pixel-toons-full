@@ -1,5 +1,6 @@
 import { Buffer } from './buffer.js';
 import { LzwCompressor } from './lzw_compression.js';
+import { scale } from './image.js';
 
 const COLOR_PARAMETERS = 3;
 const MAX_COLOR_PARAMETERS = 4;
@@ -67,8 +68,8 @@ class GifFrame {
     this.duration = duration;
   }
 
-  static from(canvasFrame) {
-    const image = canvasFrame.canvas.getJoinedImage();
+  static from(canvasFrame, enlargement = 1) {
+    const image = scale(canvasFrame.canvas.getJoinedImage(), enlargement);
     return new GifFrame(image, canvasFrame.duration);
   }
 }
