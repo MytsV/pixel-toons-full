@@ -1028,7 +1028,7 @@ export class Preview extends UiElement {
     super();
     this.#setUpButtons();
     this.#setUpElements();
-    this.encoder = new BmpEncoder(BmpVersions.BMP_32);
+    this.encoder = new BmpEncoder(BmpVersions.BMP_24);
     this.playing = false;
   }
 
