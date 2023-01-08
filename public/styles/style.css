@@ -354,7 +354,6 @@ input[type=color]::-moz-color-swatch {
   margin-bottom: var(--inter-element-spacing);
   justify-content: space-between;
   padding: 5pt;
-  border-bottom: var(--border-size) solid black;
 }
 
 .zoom-button {
@@ -656,7 +655,7 @@ input {
 
 #navigation {
   margin-top: 6pt;
-  height: 100pt;
+  height: fit-content;
 }
 
 #entity-choice {
