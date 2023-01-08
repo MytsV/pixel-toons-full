@@ -7,28 +7,26 @@ import {
   Toolbar,
   ZoomButtonsManager,
   ShortcutsMenu,
-  Preview, ColorPicker
+  Preview, ColorPicker, Palette
 } from './core/ui_elements.js';
 import { ShortcutManager } from './core/key_shortcuts.js';
-import { GifEncoder, GifFrame } from './utilities/gif_encoder.js';
-import * as conv from './utilities/bytes_conversion.js';
-
-const setUpGifExporter = (file) => {
-
-};
 
 class Application {
   constructor() {
     this.canvasRenderer = new CanvasRenderer();
     this.uiElements = [
       new StateButtons(),
-      new FileMenu((width, height) => this.#setNewFile(width, height), (file) => this.#openFile(file)),
+      new FileMenu(
+        (width, height) => this.#setNewFile(width, height),
+        (file) => this.#openFile(file)
+      ),
       new Toolbar(),
       new EntityChooser(),
       new ZoomButtonsManager(this.canvasRenderer),
       new Preview(),
     ];
-    const colorPicker = new ColorPicker();
+    new ColorPicker();
+    new Palette();
     this.shortcuts = new ShortcutManager();
     this.uiElements.push(new ShortcutsMenu(this.shortcuts));
   }

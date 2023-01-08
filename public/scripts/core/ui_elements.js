@@ -8,7 +8,6 @@ import { scale } from '../utilities/image.js';
 
 const HIDE_DISPLAY = 'none';
 const SHOW_DISPLAY = 'block';
-const SHOW_DISPLAY_FLEX = 'flex';
 
 class VariableDependentButtons {
   constructor() {
@@ -393,11 +392,11 @@ export class ColorPicker {
     this.#drawWheel();
     this.#drawTriangle();
     this.#setTrianglePos();
-    this.#showColor();
+    updateColorDisplay();
     this.colorDisplay.onclick = () => {
       const hex = window.prompt('Enter color', Tool.color.toHex());
       Tool.color = Color.fromHex(hex);
-      this.#showColor();
+      updateColorDisplay();
     };
   }
 
@@ -428,11 +427,6 @@ export class ColorPicker {
       this.#drawTriangle();
       this.wheelMoving = false;
     });
-  }
-
-  #showColor() {
-    this.colorDisplay.style.backgroundColor = Tool.color.toString();
-    this.colorDisplay.innerText = Tool.color.toHex();
   }
 
   #getWheelColor(x, y) {
@@ -498,7 +492,7 @@ export class ColorPicker {
     if (this.triangleMoving) return;
     this.wheelMoving = true;
     Tool.color = this.#getWheelColor(x, y);
-    this.#showColor();
+    updateColorDisplay();
   }
 
   #pickSL(event) {
@@ -515,7 +509,7 @@ export class ColorPicker {
       Tool.color = Color.fromHsl(this.hue, saturation, lightness);
       this.saturation = saturation;
       this.lightness = lightness;
-      this.#showColor();
+      updateColorDisplay();
     } catch (e) {
       //It's okay, don't display error
     }
@@ -530,10 +524,43 @@ export class ColorPicker {
   }
 }
 
-class Palette {
+export class Palette {
   constructor() {
-
+    this.colors = [];
+    this.container = document.getElementById('palette-container');
+    this.addButton = document.getElementById('palette-add');
+    this.addButton.onclick = () => this.#addColor();
   }
+
+  #updatePalette() {
+    this.container.innerHTML = '';
+    for (const color of this.colors) {
+      this.container.appendChild(Palette.#createColorElement(color));
+    }
+  }
+
+  static #createColorElement(color) {
+    const element = document.createElement('div');
+    element.classList.add('palette-color');
+    element.style.backgroundColor = color.toString();
+    return element;
+  }
+
+  #addColor() {
+    this.colors.push(Tool.color);
+    this.#updatePalette();
+  }
+
+  static #selectColor(color) {
+    Tool.color = color;
+    updateColorDisplay();
+  }
+}
+
+function updateColorDisplay() {
+  const colorDisplay = document.getElementById('color-chosen');
+  colorDisplay.style.backgroundColor = Tool.color.toString();
+  colorDisplay.innerText = Tool.color.toHex();
 }
 
 export class ZoomButtonsManager extends UiElement {
