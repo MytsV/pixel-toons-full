@@ -1021,37 +1021,15 @@ export class EntityChooser extends UiElement {
   }
 }
 
-export class Preview extends UiElement {
+class FilePreviewer {
   #savedFrames;
 
-  constructor() {
-    super();
-    this.#setUpButtons();
-    this.#setUpElements();
+  constructor(container) {
+    this.container = container;
     this.encoder = new BmpEncoder(BmpVersions.BMP_24);
-    this.playing = false;
   }
 
-  #setUpButtons() {
-    this.buttons.addButton('preview-menu', (file) => this.#preview(file));
-  }
-
-  #setUpElements() {
-    this.background = document.getElementById('canvas-background');
-    this.container = document.getElementById('preview');
-  }
-
-  refresh(file) {
-    this.buttons.enableButtons(file);
-  }
-
-  #preview(file) {
-    if (!this.playing) this.#play(file);
-    else this.#stop();
-  }
-
-  #play(file) {
-    this.#showPreviewElement();
+  play(file) {
     this.playing = true;
     this.timeouts = [];
 
@@ -1092,10 +1070,9 @@ export class Preview extends UiElement {
     return data;
   }
 
-  #stop() {
+  stop() {
     this.playing = false;
     this.#setImage(null);
-    this.#hidePreviewElement();
     this.timeouts.forEach((id) => window.clearTimeout(id));
   }
 
@@ -1106,17 +1083,38 @@ export class Preview extends UiElement {
       this.container.style.backgroundImage = '';
     }
   }
+}
 
-  #showPreviewElement() {
-    this.container.style.display = SHOW_DISPLAY;
-    const frontIndex = 2;
-    this.background.style.zIndex = frontIndex.toString();
+export class Preview extends UiElement {
+  constructor() {
+    super();
+    this.#setUpButtons();
+    this.#setUpElements();
+    this.playing = false;
   }
 
-  #hidePreviewElement() {
-    this.container.style.display = HIDE_DISPLAY;
-    const backIndex = 0;
-    this.background.style.zIndex = backIndex.toString();
+  #setUpButtons() {
+    this.buttons.addButton('preview-menu', (file) => this.#play(file));
+  }
+
+  #setUpElements() {
+    this.modal = new Modal('preview-modal');
+    this.preview = new FilePreviewer(document.getElementById('preview'));
+  }
+
+  refresh(file) {
+    this.buttons.enableButtons(file);
+  }
+
+  #play(file) {
+    this.modal.show();
+    this.preview.play(file);
+    window.onclick = (event) => {
+      if (event.target === this.modal.element) {
+        this.preview.stop();
+        this.modal.hide();
+      }
+    };
   }
 }
 

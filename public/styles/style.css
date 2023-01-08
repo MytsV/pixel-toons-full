@@ -142,6 +142,7 @@ body {
   background-repeat: no-repeat;
   background-size: contain;
   image-rendering: pixelated;
+  display: block;
 }
 
 #entity-list {
@@ -417,8 +418,11 @@ input {
 }
 
 #preview {
-  display: none;
+  display: block;
   z-index: 10;
+  width: inherit;
+  height: inherit;
+  background-position: center;
 }
 
 #frame-container {
@@ -920,4 +924,8 @@ input[type=range]:focus::-ms-fill-upper {
   user-select: text;
   font-family: 'Pixelite', arial;
   padding: 4pt;
+}
+
+#preview-modal div {
+  padding: 0;
 }
