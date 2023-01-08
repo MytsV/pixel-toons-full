@@ -160,6 +160,7 @@ export class FileMenu extends UiElement {
     const slider = document.getElementById('enlarge-slider');
     const title = document.getElementById('enlarge-text');
     title.innerText = `Enlarge: 1x ${canvas.width}x${canvas.height}`;
+    slider.value = 1;
     slider.oninput = () => {
       const val = parseInt(slider.value);
       title.innerText = `Enlarge: ${val}x ${val * canvas.width}x${val * canvas.height}`;
