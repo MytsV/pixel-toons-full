@@ -159,8 +159,10 @@ export class FileMenu extends UiElement {
   #setUpSlider(canvas) {
     const slider = document.getElementById('enlarge-slider');
     const title = document.getElementById('enlarge-text');
+    title.innerText = `Enlarge: 1x ${canvas.width}x${canvas.height}`;
     slider.oninput = () => {
-      title.innerText = `Enlarge: ${slider.value}x`;
+      const val = parseInt(slider.value);
+      title.innerText = `Enlarge: ${val}x ${val * canvas.width}x${val * canvas.height}`;
     };
     slider.max = (IMAGE_SIZE_LIMIT / Math.max(canvas.width, canvas.height)) | 0;
   }

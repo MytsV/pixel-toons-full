@@ -929,3 +929,17 @@ input[type=range]:focus::-ms-fill-upper {
 #preview-modal div {
   padding: 0;
 }
+
+#export-to-bmp {
+  width: 170pt;
+  margin: 10pt 0;
+}
+
+#export-to-gif {
+  width: 170pt;
+  margin: 10pt 0;
+}
+
+#enlarge-text {
+  margin: 10pt 0;
+}
