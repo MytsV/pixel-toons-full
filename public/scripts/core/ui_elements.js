@@ -543,6 +543,7 @@ export class Palette {
     const element = document.createElement('div');
     element.classList.add('palette-color');
     element.style.backgroundColor = color.toString();
+    element.onclick = () => Palette.#selectColor(color);
     return element;
   }
 

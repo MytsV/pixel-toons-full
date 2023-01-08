@@ -632,6 +632,26 @@ input {
 #palette {
   margin-top: 6pt;
   height: 35pt;
+  display: flex;
+  flex-direction: row;
+}
+
+#palette-container {
+  flex-grow: 1;
+}
+
+#palette-add {
+  width: 30pt;
+  height: inherit;
+  border-left: var(--border-size) solid black;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+}
+
+#palette-add img {
+  width: 10pt;
+  height: 10pt;
 }
 
 #navigation {
@@ -942,4 +962,15 @@ input[type=range]:focus::-ms-fill-upper {
 
 #enlarge-text {
   margin: 10pt 0;
+}
+
+#palette-container {
+  display: block;
+  overflow: scroll;
+}
+
+.palette-color {
+  width: 20%;
+  aspect-ratio: 1;
+  display: inline-block;
 }
