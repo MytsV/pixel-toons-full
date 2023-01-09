@@ -4,7 +4,7 @@ import { BucketFill, Eraser, Pencil, Pointer, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
 import { PxtDecoder, PxtEncoder } from '../utilities/pxt.js';
 import { GifEncoder, GifFrame } from '../utilities/gif_encoder.js';
-import { scale } from '../utilities/image.js';
+import { flip, scale } from '../utilities/image.js';
 
 const HIDE_DISPLAY = 'none';
 const SHOW_DISPLAY = 'block';
