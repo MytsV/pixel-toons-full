@@ -136,7 +136,6 @@ export class FileMenu extends UiElement {
   }
 
   #setUpDependentButtons() {
-    this.buttons.addButton('clear-file', ({ canvas }) => this.#clear(canvas));
     this.buttons.addButton('export-image', () => {
       FileMenu.#exportImage();
     });
@@ -192,7 +191,8 @@ export class FileMenu extends UiElement {
         const decoder = new PxtDecoder();
         decoder.decode(data);
         conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.pxt');
-      }
+      },
+      'Clear': () => this.#clear(file.canvas),
     };
     const button = document.getElementById('create-file');
     const dropdown = new DropDownPopup(elements);
