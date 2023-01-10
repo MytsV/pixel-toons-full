@@ -265,7 +265,10 @@ class Canvas extends SimpleStateEmitter {
   }
 
   getJoinedImage() {
-    return this.context.getImageData(...START_POS, this.width, this.height);
+    const { width, height } = this;
+    const data = this.context.getImageData(...START_POS, width, height);
+    applyImageMixin(data);
+    return data;
   }
 
   //Creates a new layer and stacks in on top of other layers
