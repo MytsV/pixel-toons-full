@@ -1,6 +1,6 @@
 import { BmpEncoder, BmpVersions } from '../utilities/bmp_encoder.js';
 import * as conv from '../utilities/bytes_conversion.js';
-import { BucketFill, Eraser, Pencil, Pointer, Tool } from './tools.js';
+import { BucketFill, Eraser, Pencil, Pipette, Pointer, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
 import { PxtDecoder, PxtEncoder } from '../utilities/pxt.js';
 import { GifEncoder, GifFrame } from '../utilities/gif_encoder.js';
@@ -330,7 +330,8 @@ export class Toolbar extends UiElement {
     this.toolsInfo = [
       new ToolInfo(new Pencil(), 'Pencil'),
       new ToolInfo(new Eraser(), 'Eraser'),
-      new ToolInfo(new BucketFill(), 'Bucket Fill')
+      new ToolInfo(new BucketFill(), 'Bucket Fill'),
+      new ToolInfo(new Pipette(), 'Pipette')
     ];
     this.pointer = new Pointer();
 
@@ -579,7 +580,7 @@ export class Palette {
   }
 }
 
-function updateColorDisplay() {
+export function updateColorDisplay() {
   const colorDisplay = document.getElementById('color-chosen');
   colorDisplay.style.backgroundColor = Tool.color.toString();
   colorDisplay.innerText = Tool.color.toHex();

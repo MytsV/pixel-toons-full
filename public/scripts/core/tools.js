@@ -1,5 +1,6 @@
 import { Coordinates } from '../utilities/coordinates.js';
 import { Color } from '../utilities/color.js';
+import { updateColorDisplay } from './ui_elements.js';
 
 const DEFAULT_PENCIL_COLOR = '#ff0000';
 const DEFAULT_THICKNESS = 1;
@@ -400,4 +401,25 @@ class BucketFill extends Tool {
   }
 }
 
-export { Tool, Pencil, Eraser, BucketFill, Pointer };
+class Pipette extends PointedTool {
+  constructor() {
+    super();
+  }
+
+  setEvents() {
+    const { listenersCanvas } = this;
+    listenersCanvas.set('click', (event) => this.#onClick(event));
+    super.setEvents();
+  }
+
+  #onClick(event) {
+    const mouseCoords = new Coordinates(event.clientX, event.clientY);
+    const realCoords = this._toRealCoords(mouseCoords);
+    const color = this.canvas.image.getPixelColor(realCoords.x, realCoords.y);
+    color.alpha = 255;
+    Tool.color = color;
+    updateColorDisplay();
+  }
+}
+
+export { Tool, Pencil, Eraser, BucketFill, Pointer, Pipette };
