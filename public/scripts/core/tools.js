@@ -284,6 +284,58 @@ class Pointer extends PointedTool {
   }
 }
 
+class Line extends PointedTool {
+  #drawing;
+
+  constructor() {
+    super();
+    this.#drawing = false;
+  }
+
+  setEvents() {
+    const { listenersCanvas, listenersDocument } = this;
+
+    listenersCanvas.set('mousedown', (event) => this.#onMouseDown(event));
+    listenersCanvas.set('click', (event) => this.#onClick(event));
+    listenersDocument.set('mouseup', () => this.#onMouseUp());
+    listenersDocument.set('mousemove', (event) => this.#onMouseMove(event));
+    super.setEvents();
+  }
+
+  #onMouseDown(event) {
+    this._lastCoords = new Coordinates(event.clientX, event.clientY);
+    this.lastImage = this.canvas.image.clone();
+    this.#drawing = true;
+  }
+
+  #onClick(event) {
+    const mouseCoords = new Coordinates(event.clientX, event.clientY);
+    const canvasCoords = this._toRealCoords(mouseCoords);
+    this._drawPoint(this.getColor(), this._center(canvasCoords));
+    this.canvas.redraw();
+  }
+
+  #onMouseMove(event) {
+    if (!this.#drawing) return;
+    if (!this._isOffsetValid(event)) return;
+
+    const destAbs = new Coordinates(event.clientX, event.clientY);
+    const destReal = this._toRealCoords(destAbs);
+    const src = this._toRealCoords(this._lastCoords);
+
+    this.canvas.image = this.lastImage.clone();
+    this._plotLine(this.getColor(), this._center(src), this._center(destReal));
+    this.canvas.redraw();
+  }
+
+  #onMouseUp() {
+    if (this.#drawing) {
+      this.canvas.save();
+    }
+    this.#drawing = false;
+  }
+}
+
 /*
 Antialiasing is not suited for the application.
 Instead of native lineTo() function we use Bresenham's algorithm to draw a line.
@@ -422,4 +474,4 @@ class Pipette extends PointedTool {
   }
 }
 
-export { Tool, Pencil, Eraser, BucketFill, Pointer, Pipette };
+export { Tool, Pencil, Eraser, BucketFill, Pointer, Pipette, Line };

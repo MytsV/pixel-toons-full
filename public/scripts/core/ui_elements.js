@@ -1,6 +1,6 @@
 import { BmpEncoder, BmpVersions } from '../utilities/bmp_encoder.js';
 import * as conv from '../utilities/bytes_conversion.js';
-import { BucketFill, Eraser, Pencil, Pipette, Pointer, Tool } from './tools.js';
+import { BucketFill, Eraser, Line, Pencil, Pipette, Pointer, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
 import { PxtDecoder, PxtEncoder } from '../utilities/pxt.js';
 import { GifEncoder, GifFrame } from '../utilities/gif_encoder.js';
@@ -331,7 +331,8 @@ export class Toolbar extends UiElement {
       new ToolInfo(new Pencil(), 'Pencil'),
       new ToolInfo(new Eraser(), 'Eraser'),
       new ToolInfo(new BucketFill(), 'Bucket Fill'),
-      new ToolInfo(new Pipette(), 'Pipette')
+      new ToolInfo(new Pipette(), 'Pipette'),
+      new ToolInfo(new Line(), 'Line')
     ];
     this.pointer = new Pointer();
 
