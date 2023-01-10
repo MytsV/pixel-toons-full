@@ -4,7 +4,7 @@ import { BucketFill, Eraser, Pencil, Pointer, Tool } from './tools.js';
 import { Color } from '../utilities/color.js';
 import { PxtDecoder, PxtEncoder } from '../utilities/pxt.js';
 import { GifEncoder, GifFrame } from '../utilities/gif_encoder.js';
-import { flip, scale } from '../utilities/image.js';
+import { flip, FlipModes, scale } from '../utilities/image.js';
 
 const HIDE_DISPLAY = 'none';
 const SHOW_DISPLAY = 'block';
@@ -132,6 +132,7 @@ export class FileMenu extends UiElement {
   refresh(file) {
     this.buttons.enableButtons(file);
     this.#setUpNewButton(file);
+    this.#setUpEditButton(file);
     this.#setUpSlider(file.canvas);
   }
 
@@ -195,6 +196,26 @@ export class FileMenu extends UiElement {
       'Clear': () => this.#clear(file.canvas),
     };
     const button = document.getElementById('create-file');
+    const dropdown = new DropDownPopup(elements);
+    button.onclick = (event) => {
+      dropdown.enable(event.clientX, event.clientY);
+    };
+  }
+
+  #setUpEditButton({ canvas }) {
+    const elements = {
+      'Flip Horizontal': () => {
+        const flipped = flip(canvas.image);
+        canvas.image.data.set(flipped.data);
+        canvas.redraw();
+      },
+      'Flip Vertical': () => {
+        const flipped = flip(canvas.image, FlipModes.VERTICAL);
+        canvas.image.data.set(flipped.data);
+        canvas.redraw();
+      }
+    };
+    const button = document.getElementById('edit-file');
     const dropdown = new DropDownPopup(elements);
     button.onclick = (event) => {
       dropdown.enable(event.clientX, event.clientY);
