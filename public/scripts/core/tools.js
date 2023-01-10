@@ -187,6 +187,7 @@ class Pencil extends PointedTool {
     const canvasCoords = this._toRealCoords(mouseCoords);
     this._drawPoint(this.getColor(), this._center(canvasCoords));
     this.canvas.redraw();
+    this.canvas.save();
   }
 
   //When mouse is moved throughout canvas, we leave trail

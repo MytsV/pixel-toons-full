@@ -208,11 +208,13 @@ export class FileMenu extends UiElement {
         const flipped = flip(canvas.image);
         canvas.image.data.set(flipped.data);
         canvas.redraw();
+        canvas.save();
       },
       'Flip Vertical': () => {
         const flipped = flip(canvas.image, FlipModes.VERTICAL);
         canvas.image.data.set(flipped.data);
         canvas.redraw();
+        canvas.save();
       }
     };
     const button = document.getElementById('edit-file');
