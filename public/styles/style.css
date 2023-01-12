@@ -942,7 +942,7 @@ input[type=range]:focus::-ms-fill-upper {
   writing-mode: vertical-rl;
   user-select: text;
   font-family: 'Pixelite', arial;
-  -webkit-text-stroke-width: 2px;
+  -webkit-text-stroke-width: 0.5px;
   -webkit-text-stroke-color: white;
   padding: 4pt;
 }
