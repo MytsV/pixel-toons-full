@@ -273,7 +273,6 @@ class QoiCompressor {
   }
 }
 
-//TODO: refactor
 class QoiDecompressor {
   //Number of identical pixels read in succession
   #run;

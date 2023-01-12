@@ -8,9 +8,11 @@ This Buffer is more like a simple "disguised" Stack.
  */
 class Buffer {
   #data;
+  #length;
 
   constructor() {
-    this.#data = [];
+    this.#length = 0;
+    this.#data = new Uint8Array();
   }
 
   writeString(string) {
@@ -31,19 +33,23 @@ class Buffer {
   }
 
   writeByte(byte) {
-    this.#data.push(byte);
+    this.writeArray([ byte ]);
   }
 
   writeArray(array) {
-    this.#data.push(...array);
+    const temp = this.#data;
+    this.#data = new Uint8Array(this.length + array.length);
+    this.#data.set(temp);
+    this.#data.set(array, this.length);
+    this.#length += array.length;
   }
 
   get data() {
-    return Uint8Array.from(this.#data);
+    return this.#data;
   }
 
   get length() {
-    return this.#data.length;
+    return this.#length;
   }
 }
 

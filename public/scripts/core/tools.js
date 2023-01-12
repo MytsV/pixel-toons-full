@@ -1,7 +1,8 @@
 import { Coordinates } from '../utilities/coordinates.js';
 import { Color } from '../utilities/color.js';
+import { updateColorDisplay } from './ui_elements.js';
 
-const DEFAULT_PENCIL_COLOR = '#000000';
+const DEFAULT_PENCIL_COLOR = '#ff0000';
 const DEFAULT_THICKNESS = 1;
 
 /*
@@ -283,6 +284,58 @@ class Pointer extends PointedTool {
   }
 }
 
+class Line extends PointedTool {
+  #drawing;
+
+  constructor() {
+    super();
+    this.#drawing = false;
+  }
+
+  setEvents() {
+    const { listenersCanvas, listenersDocument } = this;
+
+    listenersCanvas.set('mousedown', (event) => this.#onMouseDown(event));
+    listenersCanvas.set('click', (event) => this.#onClick(event));
+    listenersDocument.set('mouseup', () => this.#onMouseUp());
+    listenersDocument.set('mousemove', (event) => this.#onMouseMove(event));
+    super.setEvents();
+  }
+
+  #onMouseDown(event) {
+    this._lastCoords = new Coordinates(event.clientX, event.clientY);
+    this.lastImage = this.canvas.image.clone();
+    this.#drawing = true;
+  }
+
+  #onClick(event) {
+    const mouseCoords = new Coordinates(event.clientX, event.clientY);
+    const canvasCoords = this._toRealCoords(mouseCoords);
+    this._drawPoint(this.getColor(), this._center(canvasCoords));
+    this.canvas.redraw();
+  }
+
+  #onMouseMove(event) {
+    if (!this.#drawing) return;
+    if (!this._isOffsetValid(event)) return;
+
+    const destAbs = new Coordinates(event.clientX, event.clientY);
+    const destReal = this._toRealCoords(destAbs);
+    const src = this._toRealCoords(this._lastCoords);
+
+    this.canvas.image = this.lastImage.clone();
+    this._plotLine(this.getColor(), this._center(src), this._center(destReal));
+    this.canvas.redraw();
+  }
+
+  #onMouseUp() {
+    if (this.#drawing) {
+      this.canvas.save();
+    }
+    this.#drawing = false;
+  }
+}
+
 /*
 Antialiasing is not suited for the application.
 Instead of native lineTo() function we use Bresenham's algorithm to draw a line.
@@ -400,4 +453,25 @@ class BucketFill extends Tool {
   }
 }
 
-export { Tool, Pencil, Eraser, BucketFill, Pointer };
+class Pipette extends PointedTool {
+  constructor() {
+    super();
+  }
+
+  setEvents() {
+    const { listenersCanvas } = this;
+    listenersCanvas.set('click', (event) => this.#onClick(event));
+    super.setEvents();
+  }
+
+  #onClick(event) {
+    const mouseCoords = new Coordinates(event.clientX, event.clientY);
+    const realCoords = this._toRealCoords(mouseCoords);
+    const color = this.canvas.getJoinedImage().getPixelColor(realCoords.x, realCoords.y);
+    color.alpha = 255;
+    Tool.color = color;
+    updateColorDisplay();
+  }
+}
+
+export { Tool, Pencil, Eraser, BucketFill, Pointer, Pipette, Line };

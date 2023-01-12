@@ -59,8 +59,6 @@ class UniformQuantizer {
   }
 }
 
-const IMAGE_SCALE = 10;
-
 /*
 A wrapper which can be created from Frame defined in canvas.js
  */
@@ -70,9 +68,9 @@ class GifFrame {
     this.duration = duration;
   }
 
-  static from(canvasFrame) {
-    const image = canvasFrame.canvas.getJoinedImage();
-    return new GifFrame(scale(image, IMAGE_SCALE), canvasFrame.duration);
+  static from(canvasFrame, enlargement = 1) {
+    const image = scale(canvasFrame.canvas.getJoinedImage(), enlargement);
+    return new GifFrame(image, canvasFrame.duration);
   }
 }
 
@@ -127,7 +125,7 @@ class GifImageEncoder {
   //Make sure the table length is a power of two
   #offsetTable() {
     const isPowerOfTwo = (x) => x && !(x & (x - 1));
-    while (!isPowerOfTwo(this.table.length) || (this.table.length === 1)) {
+    while (!isPowerOfTwo(this.table.length) || (this.table.length < 3)) {
       this.table.push(EMPTY_VALUE);
     }
   }

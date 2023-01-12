@@ -100,4 +100,24 @@ function scale(image, degree) {
   return scaled;
 }
 
-export { applyImageMixin, scale };
+const FlipModes = Object.freeze({
+  VERTICAL: 0,
+  HORIZONTAL: 1
+});
+
+function flip({ width, height, data }, mode = FlipModes.HORIZONTAL) {
+  const flipped = new ImageData(width, height);
+  for (let i = 0; i < height; i++) {
+    for (let j = 0; j < width; j++) {
+      const iNew = mode === FlipModes.VERTICAL ? height - i - 1 : i;
+      const jNew = mode === FlipModes.HORIZONTAL ? width - j - 1 : j;
+      const dataPos = (i * width + j) * COLOR_PARAMETERS;
+      const dataPosFlip = (iNew * width + jNew) * COLOR_PARAMETERS;
+      const color = data.slice(dataPos, dataPos + COLOR_PARAMETERS);
+      flipped.data.set(color, dataPosFlip);
+    }
+  }
+  return flipped;
+}
+
+export { applyImageMixin, scale, FlipModes, flip };

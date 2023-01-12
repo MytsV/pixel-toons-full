@@ -1,9 +1,10 @@
 import { BmpEncoder, BmpVersions } from '../utilities/bmp_encoder.js';
 import * as conv from '../utilities/bytes_conversion.js';
-import { BucketFill, Eraser, Pencil, Pointer, Tool } from './tools.js';
+import { BucketFill, Eraser, Line, Pencil, Pipette, Pointer, Tool } from './tools.js';
+import { Color } from '../utilities/color.js';
 import { PxtDecoder, PxtEncoder } from '../utilities/pxt.js';
 import { GifEncoder, GifFrame } from '../utilities/gif_encoder.js';
-import { Color } from '../utilities/color.js';
+import { flip, FlipModes, scale } from '../utilities/image.js';
 
 const HIDE_DISPLAY = 'none';
 const SHOW_DISPLAY = 'block';
@@ -52,7 +53,6 @@ class Modal {
   }
 }
 
-//TODO: refactoring
 class DropDownPopup {
   constructor(elements) {
     this.items = elements;
@@ -115,6 +115,7 @@ export class StateButtons extends UiElement {
 }
 
 const FILE_SIZE_LIMIT = 250;
+const IMAGE_SIZE_LIMIT = 2000;
 
 export class FileMenu extends UiElement {
   constructor(createNewFile, openFile) {
@@ -122,7 +123,7 @@ export class FileMenu extends UiElement {
     this.#setUpDependentButtons();
 
     this.createNewFile = createNewFile; //A function passed from the context
-    this.openNewFile = openFile;
+    this.openFile = openFile;
     this.#setUpNewButton();
     this.#setUpCreateFinish();
     FileMenu.#setUpLimit();
@@ -131,25 +132,44 @@ export class FileMenu extends UiElement {
   refresh(file) {
     this.buttons.enableButtons(file);
     this.#setUpNewButton(file);
+    this.#setUpEditButton(file);
+    this.#setUpSlider(file.canvas);
   }
 
   #setUpDependentButtons() {
-    this.buttons.addButton('clear-file', ({ canvas }) => this.#clear(canvas));
     this.buttons.addButton('export-image', () => {
       FileMenu.#exportImage();
     });
     this.buttons.addButton('export-to-bmp', ({ canvas }) => {
-      const image = canvas.getJoinedImage();
+      const image = scale(canvas.getJoinedImage(), FileMenu.#getEnlargement());
       const encoder = new BmpEncoder(BmpVersions.BMP_32);
       const data = encoder.encode(image);
       conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.bmp');
     });
     this.buttons.addButton('export-to-gif', (file) => {
       const encoder = new GifEncoder();
-      const frames = file.frames.map((frame) => GifFrame.from(frame));
+      const scale = FileMenu.#getEnlargement();
+      const frames = file.frames.map((frame) => GifFrame.from(frame, scale));
       const data = encoder.encode(frames);
       conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.gif');
     });
+  }
+
+  #setUpSlider(canvas) {
+    const slider = document.getElementById('enlarge-slider');
+    const title = document.getElementById('enlarge-text');
+    title.innerText = `Enlarge: 1x ${canvas.width}x${canvas.height}`;
+    slider.value = 1;
+    slider.oninput = () => {
+      const val = parseInt(slider.value);
+      title.innerText = `Enlarge: ${val}x ${val * canvas.width}x${val * canvas.height}`;
+    };
+    slider.max = (IMAGE_SIZE_LIMIT / Math.max(canvas.width, canvas.height)) | 0;
+  }
+
+  static #getEnlargement() {
+    const slider = document.getElementById('enlarge-slider');
+    return parseInt(slider.value);
   }
 
   #clear(canvas) {
@@ -162,11 +182,18 @@ export class FileMenu extends UiElement {
   }
 
   #setUpNewButton(file) {
-    this.createModal = new Modal('file-create-modal');
+    this.modal = new Modal('file-create-modal');
     const elements = {
-      'New': () => this.createModal.show(),
-      'Open': () => this.#open(),
-      'Save': () => this.#save(file),
+      'New': () => this.modal.show(),
+      'Open': () => this.#onOpen(),
+      'Save': () => {
+        const encoder = new PxtEncoder();
+        const data = encoder.encode(file);
+        const decoder = new PxtDecoder();
+        decoder.decode(data);
+        conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.pxt');
+      },
+      'Clear': () => this.#clear(file.canvas),
     };
     const button = document.getElementById('create-file');
     const dropdown = new DropDownPopup(elements);
@@ -175,11 +202,32 @@ export class FileMenu extends UiElement {
     };
   }
 
-  //TODO: refactoring
-  #open() {
+  #setUpEditButton({ canvas }) {
+    const elements = {
+      'Flip Horizontal': () => {
+        const flipped = flip(canvas.image);
+        canvas.image.data.set(flipped.data);
+        canvas.redraw();
+        canvas.save();
+      },
+      'Flip Vertical': () => {
+        const flipped = flip(canvas.image, FlipModes.VERTICAL);
+        canvas.image.data.set(flipped.data);
+        canvas.redraw();
+        canvas.save();
+      }
+    };
+    const button = document.getElementById('edit-file');
+    const dropdown = new DropDownPopup(elements);
+    button.onclick = (event) => {
+      dropdown.enable(event.clientX, event.clientY);
+    };
+  }
+
+  #onOpen() {
+    const openFile = this.openFile;
     const button = document.createElement('input');
     button.type = 'file';
-    const openNewFile = this.openNewFile;
     button.oninput = () => {
       const reader = new FileReader();
       reader.onload = function() {
@@ -187,21 +235,13 @@ export class FileMenu extends UiElement {
         const array = new Uint8Array(arrayBuffer);
 
         const file = new PxtDecoder().decode(array);
-        openNewFile(file);
+        openFile(file);
       };
       reader.readAsArrayBuffer(button.files[0]);
     };
     document.body.appendChild(button);
     button.dispatchEvent(new MouseEvent('click', { view: window }));
     document.body.removeChild(button);
-  }
-
-  #save(file) {
-    const encoder = new PxtEncoder();
-    const data = encoder.encode(file);
-    const decoder = new PxtDecoder();
-    decoder.decode(data);
-    conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.pxt');
   }
 
   #setUpCreateFinish() {
@@ -214,7 +254,7 @@ export class FileMenu extends UiElement {
         throw Error('Size values are illegal');
       }
       this.createNewFile(inputWidth.value, inputHeight.value);
-      this.createModal.hide();
+      this.modal.hide();
     };
   }
 
@@ -230,6 +270,7 @@ class ToolInfo {
     this.tool = tool;
     this.name = name;
     this.element = this.#createElement();
+    this.options = [];
   }
 
   #createElement() {
@@ -256,6 +297,32 @@ class ToolInfo {
     const imageName = this.name.toLowerCase();
     this.image.src = `./images/${imageName}.png`;
   }
+
+  addOption(option, listener) {
+    option.input.oninput = (event) => listener(event, this.tool);
+    this.options.push(option);
+  }
+}
+
+class ToolOptionRange {
+  constructor(name, min, max, step = 1) {
+    this.input = document.createElement('input');
+    this.input.type = 'range';
+    this.input.min = min;
+    this.input.max = max;
+    this.input.step = step.toString();
+    this.input.value = min;
+
+    this.name = name;
+  }
+
+  getElement() {
+    const element = document.createElement('span');
+    element.classList.add('tool-option');
+    element.appendChild(getTextElement(this.name));
+    element.appendChild(this.input);
+    return element;
+  }
 }
 
 export class Toolbar extends UiElement {
@@ -265,12 +332,15 @@ export class Toolbar extends UiElement {
     this.toolsInfo = [
       new ToolInfo(new Pencil(), 'Pencil'),
       new ToolInfo(new Eraser(), 'Eraser'),
-      new ToolInfo(new BucketFill(), 'Bucket Fill')
+      new ToolInfo(new BucketFill(), 'Bucket Fill'),
+      new ToolInfo(new Pipette(), 'Pipette'),
+      new ToolInfo(new Line(), 'Line')
     ];
     this.pointer = new Pointer();
 
     this.container = document.getElementById('tools');
     this.#setUpTools();
+    this.#setUpOptions();
     this.chosen = this.toolsInfo[0];
   }
 
@@ -289,6 +359,24 @@ export class Toolbar extends UiElement {
     });
   }
 
+  //To be refactored!
+  #setUpOptions() {
+    const thickMin = 1;
+    const thickMax = 10;
+    const pencilOption = new ToolOptionRange('Thickness', thickMin, thickMax);
+    this.toolsInfo[0].addOption(pencilOption, (event, tool) => {
+      tool.thickness = event.target.value;
+    });
+    const eraserOption = new ToolOptionRange('Thickness', thickMin, thickMax);
+    this.toolsInfo[1].addOption(eraserOption, (event, tool) => {
+      tool.thickness = event.target.value;
+    });
+    const bucketOption = new ToolOptionRange('tolerance', 0, 255);
+    this.toolsInfo[2].addOption(bucketOption, (event, tool) => {
+      tool.tolerance = parseFloat(event.target.value);
+    });
+  }
+
   #setChosen(toolInfo, canvas) {
     if (this.chosen) {
       this.chosen.tool.disable();
@@ -297,11 +385,208 @@ export class Toolbar extends UiElement {
     this.chosen = toolInfo;
     this.chosen.tool.link(canvas);
     this.chosen.enable();
+    //this.#enableOptions(toolInfo);
+  }
+
+  #enableOptions(toolInfo) {
+    const container = document.getElementById('tool-options');
+    container.innerHTML = '';
+    toolInfo.options.forEach((option) => container.appendChild(option.getElement()));
   }
 
   #setUpPointer(canvas) {
     this.pointer.link(canvas);
   }
+}
+
+const HUE_MAX = 360;
+const SL_MAX = 100;
+const PADDING_WHEEL = 10;
+
+const inRadius = 150;
+const outRadius = 200;
+
+export class ColorPicker {
+  constructor() {
+    this.wheel = document.getElementById('wheel-canvas');
+    this.triangle = document.getElementById('triangle-canvas');
+    this.colorDisplay = document.getElementById('color-chosen');
+    this.hue = HUE_MAX;
+    this.saturation = 1;
+    this.lightness = 0.5;
+    this.#drawWheel();
+    this.#drawTriangle();
+    this.#setTrianglePos();
+    updateColorDisplay();
+    this.colorDisplay.onclick = () => {
+      const hex = window.prompt('Enter color', Tool.color.toHex());
+      Tool.color = Color.fromHex(hex);
+      updateColorDisplay();
+    };
+  }
+
+  #drawWheel() {
+    const size = outRadius * 2;
+    this.wheel.width = this.wheel.height = size;
+    const ctx = this.wheel.getContext('2d');
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        const x = i - size / 2;
+        const y = size / 2 - j;
+        const length = Math.sqrt(x * x + y * y);
+        if (length < inRadius || length > outRadius) continue;
+        ctx.fillStyle = this.#getWheelColor(x, y).toString();
+        ctx.fillRect(i, j, 1, 1);
+      }
+    }
+    this.wheel.onmousedown = (event) => {
+      this.#pickHue(event);
+    };
+    this.wheel.onmousemove = (event) => {
+      if (!this.wheelMoving) return;
+      this.#pickHue(event);
+    };
+    document.body.addEventListener('mouseup', () => {
+      this.triangleMoving = false;
+      if (!this.wheelMoving) return;
+      this.#drawTriangle();
+      this.wheelMoving = false;
+    });
+  }
+
+  #getWheelColor(x, y) {
+    this.hue = ColorPicker.#getAngle(x, y);
+    return Color.fromHsl(this.hue, this.saturation, this.lightness);
+  }
+
+  static #getAngle(x, y) {
+    let angle = (Math.atan2(y, x) * 180) / Math.PI;
+    if (angle < 0) {
+      angle = Math.abs(angle);
+    } else {
+      angle = HUE_MAX - angle;
+    }
+    return angle;
+  }
+
+  #setTrianglePos() {
+    const wheelWidth = this.wheel.offsetWidth;
+    const inWidth = inRadius * wheelWidth / outRadius;
+    const triangleWidth = inWidth * this.triangle.width / (inRadius * 2);
+    const realTopOffset = (wheelWidth - inWidth) / 2;
+    this.triangle.style.width = `${triangleWidth - PADDING_WHEEL}px`;
+    this.triangle.style.top = `${realTopOffset + PADDING_WHEEL / 2}px`;
+  }
+
+  #drawTriangle() {
+    const width = inRadius * 3 / Math.sqrt(3);
+    this.triangle.width = width;
+    this.triangle.height = width * Math.sqrt(3) / 2;
+    const stepX = this.triangle.width / SL_MAX;
+    const stepY = this.triangle.height / SL_MAX;
+    const xCenter = this.triangle.width / 2;
+    const ctx = this.triangle.getContext('2d');
+    for (let i = 0; i < this.triangle.width; i++) {
+      for (let j = 0; j < this.triangle.height; j++) {
+        const offset = j * 2 / Math.sqrt(3) / 2;
+        if (i >= xCenter - offset && i <= xCenter + offset) {
+          const saturation = i / stepX;
+          const lightness = j / stepY;
+          ctx.fillStyle = `hsl(${this.hue}, ${saturation}%, ${lightness}%)`;
+          ctx.fillRect(i, j, 1, 1);
+        }
+      }
+    }
+  }
+
+  #pickHue(event) {
+    let { x, y } = ColorPicker.#getRelativeCoordinates(event, this.wheel);
+    x *= outRadius * 2 / this.wheel.offsetWidth;
+    y *= outRadius * 2 / this.wheel.offsetWidth;
+    x -= outRadius;
+    y = outRadius - y;
+    const dist = Math.sqrt(x * x + y * y);
+    if (dist < inRadius) {
+      if (!this.wheelMoving) {
+        this.triangleMoving = true;
+        this.wheelMoving = true;
+      }
+      this.#pickSL(event);
+      return;
+    } else if (dist > outRadius) { return; }
+    if (this.triangleMoving) return;
+    this.wheelMoving = true;
+    Tool.color = this.#getWheelColor(x, y);
+    updateColorDisplay();
+  }
+
+  #pickSL(event) {
+    if (!this.triangleMoving) return;
+    const { x, y } = ColorPicker.#getRelativeCoordinates(event, this.triangle);
+    const stepX = this.triangle.offsetWidth / SL_MAX;
+    const stepY = this.triangle.offsetHeight / SL_MAX;
+    const xCenter = this.triangle.offsetWidth / 2;
+    const offset = y * 2 / Math.sqrt(3) / 2;
+    if (x < xCenter - offset || x > xCenter + offset) return;
+    const saturation = x / stepX / SL_MAX;
+    const lightness = y / stepY / SL_MAX;
+    try {
+      Tool.color = Color.fromHsl(this.hue, saturation, lightness);
+      this.saturation = saturation;
+      this.lightness = lightness;
+      updateColorDisplay();
+    } catch (e) {
+      //It's okay, don't display error
+    }
+  }
+
+  static #getRelativeCoordinates(event, element) {
+    const rect = element.getBoundingClientRect();
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
+    };
+  }
+}
+
+export class Palette {
+  constructor() {
+    this.colors = [];
+    this.container = document.getElementById('palette-container');
+    this.addButton = document.getElementById('palette-add');
+    this.addButton.onclick = () => this.#addColor();
+  }
+
+  #updatePalette() {
+    this.container.innerHTML = '';
+    for (const color of this.colors) {
+      this.container.appendChild(Palette.#createColorElement(color));
+    }
+  }
+
+  static #createColorElement(color) {
+    const element = document.createElement('div');
+    element.classList.add('palette-color');
+    element.style.backgroundColor = color.toString();
+    element.onclick = () => Palette.#selectColor(color);
+    return element;
+  }
+
+  #addColor() {
+    this.colors.push(Tool.color);
+    this.#updatePalette();
+  }
+
+  static #selectColor(color) {
+    Tool.color = color;
+    updateColorDisplay();
+  }
+}
+
+export function updateColorDisplay() {
+  const colorDisplay = document.getElementById('color-chosen');
+  colorDisplay.style.backgroundColor = Tool.color.toString();
+  colorDisplay.innerText = Tool.color.toHex();
 }
 
 export class ZoomButtonsManager extends UiElement {
@@ -792,37 +1077,15 @@ export class EntityChooser extends UiElement {
   }
 }
 
-export class Preview extends UiElement {
+class FilePreviewer {
   #savedFrames;
 
-  constructor() {
-    super();
-    this.#setUpButtons();
-    this.#setUpElements();
-    this.encoder = new BmpEncoder(BmpVersions.BMP_32);
-    this.playing = false;
+  constructor(container) {
+    this.container = container;
+    this.encoder = new BmpEncoder(BmpVersions.BMP_24);
   }
 
-  #setUpButtons() {
-    this.buttons.addButton('preview-menu', (file) => this.#preview(file));
-  }
-
-  #setUpElements() {
-    this.background = document.getElementById('canvas-background');
-    this.container = document.getElementById('preview');
-  }
-
-  refresh(file) {
-    this.buttons.enableButtons(file);
-  }
-
-  #preview(file) {
-    if (!this.playing) this.#play(file);
-    else this.#stop();
-  }
-
-  #play(file) {
-    this.#showPreviewElement();
+  play(file) {
     this.playing = true;
     this.timeouts = [];
 
@@ -863,10 +1126,9 @@ export class Preview extends UiElement {
     return data;
   }
 
-  #stop() {
+  stop() {
     this.playing = false;
     this.#setImage(null);
-    this.#hidePreviewElement();
     this.timeouts.forEach((id) => window.clearTimeout(id));
   }
 
@@ -877,25 +1139,37 @@ export class Preview extends UiElement {
       this.container.style.backgroundImage = '';
     }
   }
-
-  #showPreviewElement() {
-    this.container.style.display = SHOW_DISPLAY;
-    const frontIndex = 2;
-    this.background.style.zIndex = frontIndex.toString();
-  }
-
-  #hidePreviewElement() {
-    this.container.style.display = HIDE_DISPLAY;
-    const backIndex = 0;
-    this.background.style.zIndex = backIndex.toString();
-  }
 }
 
-export class ColorPicker {
+export class Preview extends UiElement {
   constructor() {
-    this.picker = document.getElementById('picker-input');
-    this.picker.oninput = () => {
-      Tool.color = Color.fromHex(this.picker.value);
+    super();
+    this.#setUpButtons();
+    this.#setUpElements();
+    this.playing = false;
+  }
+
+  #setUpButtons() {
+    this.buttons.addButton('preview-menu', (file) => this.#play(file));
+  }
+
+  #setUpElements() {
+    this.modal = new Modal('preview-modal');
+    this.preview = new FilePreviewer(document.getElementById('preview'));
+  }
+
+  refresh(file) {
+    this.buttons.enableButtons(file);
+  }
+
+  #play(file) {
+    this.modal.show();
+    this.preview.play(file);
+    window.onclick = (event) => {
+      if (event.target === this.modal.element) {
+        this.preview.stop();
+        this.modal.hide();
+      }
     };
   }
 }

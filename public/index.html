@@ -16,8 +16,8 @@
         <div class="menu-item" id="create-file">
           <span class="text button">File</span>
         </div>
-        <div class="menu-item" id="clear-file">
-          <span class="text button">Clear</span>
+        <div class="menu-item" id="edit-file">
+          <span class="text button">Layer</span>
         </div>
         <div class="menu-item" id="export-image">
           <span class="text button">Export</span>
@@ -46,21 +46,26 @@
               <div class="canvas-element" id="canvas-overlay"></div>
               <div id="canvas-layers" class="canvas-element"></div>
               <canvas class="canvas-element" id="canvas-pointer"></canvas>
-              <div id="preview" class="canvas-element"></div>
             </div>
           </div>
           <div class="main-panel" id="canvas-bottom"><div id="coordinates"></div></div>
         </div>
         <div id="sidebar" class="main-panel thing-container">
           <div id="color-picker" class="white-panel">
+            <div id="color-chosen">#FF0000</div>
             <div id="picker-container">
-              <!-- <canvas id="wheel-canvas"></canvas>
-              <canvas id="rectangle-canvas"></canvas> -->
-              <input type="color" id="picker-input">
+              <canvas id="wheel-canvas"></canvas>
+              <canvas id="triangle-canvas"></canvas>
+<!--              <div class="handle" id="handle-wheel"></div>-->
+<!--              <div class="handle" id="handle-triangle"></div>-->
             </div>
-            <div id="color-chosen"></div>
           </div>
-          <div id="palette" class="white-panel"></div>
+          <div id="palette" class="white-panel">
+            <div id="palette-container"></div>
+            <div id="palette-add">
+              <img src="images/add.png">
+            </div>
+          </div>
           <div id="navigation" class="white-panel">
             <div id="zoom-container">
               <div id="zoom-out" class="zoom-button"></div>
@@ -97,10 +102,10 @@
     <div id="file-export-modal" class="modal">
       <div class="modal-content">
         <div class="main-panel label-panel"><span class="text">Export the file</span></div>
-        <div class="text">Enlarge</div>
-        <input type="range">
-        <div class="button text-ordinary" id="export-to-bmp">Export to BMP32</div>
-        <div class="button text-ordinary" id="export-to-gif">Export to GIF</div>
+        <div class="text" id="enlarge-text">Enlarge: 1x</div>
+        <input type="range" id="enlarge-slider" value="1" min="1" max="10">
+        <div class="main-panel label-panel button text-ordinary" id="export-to-bmp">Export to BMP32</div>
+        <div class="main-panel label-panel button text-ordinary" id="export-to-gif">Export to GIF</div>
       </div>
     </div>
 
@@ -116,6 +121,13 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <div id="preview-modal" class="modal">
+      <div class="modal-content">
+        <div id="preview" class="canvas-element"></div>
+      </div>
+    </div>
     </div>
   </body>
 

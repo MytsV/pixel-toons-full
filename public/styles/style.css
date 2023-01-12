@@ -142,6 +142,7 @@ body {
   background-repeat: no-repeat;
   background-size: contain;
   image-rendering: pixelated;
+  display: block;
 }
 
 #entity-list {
@@ -353,7 +354,6 @@ input[type=color]::-moz-color-swatch {
   margin-bottom: var(--inter-element-spacing);
   justify-content: space-between;
   padding: 5pt;
-  border-bottom: var(--border-size) solid black;
 }
 
 .zoom-button {
@@ -417,8 +417,11 @@ input {
 }
 
 #preview {
-  display: none;
+  display: block;
   z-index: 10;
+  width: inherit;
+  height: inherit;
+  background-position: center;
 }
 
 #frame-container {
@@ -628,11 +631,31 @@ input {
 #palette {
   margin-top: 6pt;
   height: 35pt;
+  display: flex;
+  flex-direction: row;
+}
+
+#palette-container {
+  flex-grow: 1;
+}
+
+#palette-add {
+  width: 30pt;
+  height: inherit;
+  border-left: var(--border-size) solid black;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+}
+
+#palette-add img {
+  width: 10pt;
+  height: 10pt;
 }
 
 #navigation {
   margin-top: 6pt;
-  height: 100pt;
+  height: fit-content;
 }
 
 #entity-choice {
@@ -876,12 +899,11 @@ input[type=range]:focus::-ms-fill-upper {
   height: inherit;
   aspect-ratio: 1;
   padding: 5pt;
+  z-index: 6;
 }
 
-#rectangle-canvas {
+#triangle-canvas {
   position: absolute;
-  width: 60pt;
-  height: 60pt;
   top: 25pt;
 }
 
@@ -906,4 +928,50 @@ input[type=range]:focus::-ms-fill-upper {
   height: max-content;
   width: 100%;
   background-color: white;
+}
+
+.handle {
+  width: 5pt;
+  height: 5pt;
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+#color-chosen {
+  font-size: 8pt;
+  writing-mode: vertical-rl;
+  user-select: text;
+  font-family: 'Pixelite', arial;
+  -webkit-text-stroke-width: 2px;
+  -webkit-text-stroke-color: white;
+  padding: 4pt;
+}
+
+#preview-modal div {
+  padding: 0;
+}
+
+#export-to-bmp {
+  width: 170pt;
+  margin: 10pt 0;
+}
+
+#export-to-gif {
+  width: 170pt;
+  margin: 10pt 0;
+}
+
+#enlarge-text {
+  margin: 10pt 0;
+}
+
+#palette-container {
+  display: block;
+  overflow: scroll;
+}
+
+.palette-color {
+  width: 20%;
+  aspect-ratio: 1;
+  display: inline-block;
 }

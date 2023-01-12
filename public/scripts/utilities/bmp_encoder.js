@@ -189,7 +189,7 @@ class BmpEncoder {
   as there is a bug with viewing transparent images in some browsers.
    */
   isLastEncodedTransparent() {
-    return this.#lastTransparent;
+    return this.#is32() ? this.#lastTransparent : false;
   }
 }
 
