@@ -52,3 +52,12 @@ npm run test
 #Start the server
 npm run start
 ```
+
+<h2>🛠 Technologies</h2>
+
+[![My Skills](https://skills.thijs.gg/icons?i=js,html,css)](https://skills.thijs.gg)
+
+* Modular JS on the frontend with <b>Web API</b>
+* No external libraries used!
+* <b>Babel</b> for deployment compilation
+* Unit-tests with <b>Mocha<b/>
