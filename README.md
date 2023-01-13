@@ -67,15 +67,43 @@ npm run start
 
 | Future features        | Implemented |
 |------------------------|-------------|
-| ⚙️ Integration of backend service | 🎬 Frames            |
-| 🚀 Assembly and deploy    | 🎨 Canvas & Layers            |
-|                        | 👩‍🎨 Tools |
-| | 🌠 BMP encoder |
-| | 🍿 LZW compression & GIF encoder |
-| | 👤 Database handling & Authentication |
-| | 💾 Own file format |
+| ⚙️ Integration of backend service | 🎬 [ Frames ](#frames)           |
+| 🚀 Assembly and deploy    | 🎨 [Canvas & Layers](#canvas)            |
+|                        | 👩‍🎨 [Tools](#tools) |
+| | 🌠 [BMP encoder](#bmp) |
+| | 🍿 [LZW compression & GIF encoder](#gif) |
+| | 👤 [Database handling & Authentication](#auth) |
+| | 💾 [Own file format](#pxt) |
 
 <a name ="features"></a>
 <h2>✨ Features</h2>
 
+<a name ="frames"></a>
 <h3>Frames</h3>
+
+> Implemented as a part of File class. Can have variable duration and order.
+
+<a name="canvas"></a>
+<h3>Canvas & Layers</h3>
+
+> Caching, implementations of Prototype and Memento patterns and high encapsulation.
+
+<a name="tools"></a>
+<h3>Tools</h3>
+
+> Convenient abstraction for easy creation of new tools
+
+<a name="bmp"></a>
+<h3>BMP encoder</h3>
+
+> Implementation of open-source file format specification. See code comments for source.
+
+<a name="gif"></a>
+<h3>LZW compression & GIF encoder</h3>
+
+> Implementation of LZW compression algorithm and popular file format. See code comments for source.
+
+<a name="auth"></a>
+<h3>Database handling & Authentication</h3>
+
+> Almost the only part using asynchronous programming. Implemented with Firebase. The public key in the files is secure to be shared.
