@@ -6,7 +6,9 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha --reporter spec",
-    "deploy": "gh-pages -d build"
+    "deploy": "gh-pages -d build",
+    "start": "http-server -c-1",
+    "check": "eslint --fix public/scripts/**/*.js"
   },
   "repository": {
     "type": "git",
