@@ -174,3 +174,8 @@ FrameData
 ) - ${Layer count} times
 
 ) - ${Frame count} times
+
+<a name ="credits"></a>
+<h2>❤️ Credits</h2>
+
+<a href="https://github.com/phoboslab">Dominic Szablewski<a/> - Quite OK Algorithm author
