@@ -18,9 +18,9 @@
     <a href="https://github.com/MytsV/pixel-toons-backend"><strong>⚙️ Explore the backend source code ⚙️</strong></a>
     <br />
     <br />
-    <a href="">Features</a>
+    <a href="#features">Features</a>
     ·
-    <a href="">Roadmap</a>
+    <a href="#roadmap">Roadmap</a>
     ·
     <a href="https://github.com/MytsV/pixel-toons-editor/issues">Report Bug</a>
     <br />
@@ -33,7 +33,7 @@
 
 </div>
 
-<h2>🚀 Get started</h2>
+<h2>🚀 Getting started</h2>
 
 <i>Installation via GitHub:</i>
 
@@ -60,4 +60,22 @@ npm run start
 * Modular JS on the frontend with <b>Web API</b>
 * No external libraries used!
 * <b>Babel</b> for deployment compilation
-* Unit-tests with <b>Mocha<b/>
+* Unit-tests with <b>Mocha</b>
+
+<a name ="roadmap"></a>
+<h2>🗺 Roadmap</h2>
+
+| Future features        | Implemented |
+|------------------------|-------------|
+| ⚙️ Integration of backend service | 🎬 Frames            |
+| 🚀 Assembly and deploy    | 🎨 Canvas & Layers            |
+|                        | 👩‍🎨 Tools |
+| | 🌠 BMP encoder |
+| | 🍿 LZW compression & GIF encoder |
+| | 👤 Database handling & Authentication |
+| | 💾 Own file format |
+
+<a name ="features"></a>
+<h2>✨ Features</h2>
+
+<h3>Frames</h3>
