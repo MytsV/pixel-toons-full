@@ -32,3 +32,23 @@
 ![screenshot](./docs/example.gif)
 
 </div>
+
+<h2>🚀 Get started</h2>
+
+<i>Installation via GitHub:</i>
+
+```bash
+git clone https://github.com/MytsV/pixel-toons-editor
+npm i --force
+```
+
+<i>Running the app:</i>
+
+```bash
+#Check and fix syntax via eslint
+npm run check
+#Run tests
+npm run test
+#Start the server
+npm run start
+```
