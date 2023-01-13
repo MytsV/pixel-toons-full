@@ -107,3 +107,70 @@ npm run start
 <h3>Database handling & Authentication</h3>
 
 > Almost the only part using asynchronous programming. Implemented with Firebase. The public key in the files is secure to be shared.
+
+<a name ="pxt"></a>
+<h2>💾 .PXT file format</h2>
+
+Consists of <b>five</b> structures:
+<br/>
+Header
+<br/>
+InfoHeader
+<br/>
+FrameData
+<br/>
+<span style="padding-left:20pt">CanvasData</span>
+<br/>
+<span style="padding-left:40pt">LayerData</span>
+
+<h3>Header</h3>
+
+| Field name      | Size      | Value & Description |
+|------------|-----------|-------------|
+| Signature | 3 bytes | "PXT" |
+| Version code | 1 byte | "1" |
+| Per pixel | 1 byte | "3" - RGB |
+
+<h3>InfoHeader</h3>
+
+| Field name      | Size      | Value & Description |
+|------------|-----------|-------------|
+| Width | 2 bytes | Width of canvas |
+| Height | 2 bytes | Height of canvas |
+| Frame count | 1 byte | Number of frames |
+| Current ID | 2 bytes | ID of a currently chosen frame |
+| Overlay ID | 2 bytes | ID of a frame, currently displayed underneath |
+
+(
+<h3>FrameData</h3>
+
+| Field name      | Size      | Value & Description |
+|------------|-----------|-------------|
+| ID | 2 bytes |  |
+| Name length | 1 byte | Length of the frame name in bytes |
+| Name | ${Name length} bytes |  |
+| Duration | 2 bytes | Duration in milliseconds |
+
+<h3>CanvasData</h3>
+
+| Field name      | Size      | Value & Description |
+|------------|-----------|-------------|
+| Drawn ID | 2 bytes | ID of currently chosen layer |
+| Layer count | 1 byte | Number of layers |
+
+(
+
+<h3>LayerData</h3>
+
+| Field name      | Size      | Value & Description |
+|------------|-----------|-------------|
+| ID | 2 bytes |  |
+| Name length | 1 byte | Length of the layer name in bytes |
+| Name | ${Name length} bytes |  |
+| Opacity | 1 byte | 0...255 |
+| Image data length | 4 bytes |  |
+| Image data | ${Image data length} bytes | Sequence of bytes, which represent an image. Compressed by <a href="https://github.com/phoboslab/qoi">Quite OK Algorithm</a>. |
+
+) - ${Layer count} times
+
+) - ${Frame count} times
