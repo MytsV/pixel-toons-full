@@ -10,6 +10,7 @@ import {
   Preview, ColorPicker, Palette
 } from './core/ui_elements.js';
 import { ShortcutManager } from './core/key_shortcuts.js';
+import { intervalSaver } from './utilities/interval_saver.js';
 
 class Application {
   constructor() {
@@ -29,6 +30,13 @@ class Application {
     new Palette();
     this.shortcuts = new ShortcutManager();
     this.uiElements.push(new ShortcutsMenu(this.shortcuts));
+
+    this.#setFileFromLocalStorage();
+  }
+
+  #setFileFromLocalStorage() {
+    const file = intervalSaver.retrieveFile();
+    if (file) this.#openFile(file);
   }
 
   #setNewFile(width, height) {

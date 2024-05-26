@@ -1,5 +1,6 @@
 import { applyImageMixin } from '../utilities/image.js';
 import { IdentifiedList } from '../utilities/intentified_list.js';
+import { intervalSaver } from '../utilities/interval_saver.js';
 
 //The minimum number of layers for which we perform caching
 const CACHE_MIN_LAYER_COUNT = 4;
@@ -426,6 +427,7 @@ class AnimationFile extends SimpleStateEmitter {
     this.#frames = new IdentifiedList();
     Object.assign(this, { width, height });
     this.appendFrame();
+    intervalSaver.setIntervalSave(this);
   }
 
   appendFrame(frame) {
