@@ -303,10 +303,11 @@ class QoiDecompressor {
   }
 
   #handleIndex(pixel, reader, byte) {
-    const { r, g, b } = this.colorTable.get(byte);
+    const { r, g, b, a } = this.colorTable.get(byte);
     pixel.r = r;
     pixel.g = g;
     pixel.b = b;
+    pixel.a = a;
   }
 
   #handleDiff(pixel, reader, byte) {
@@ -314,7 +315,6 @@ class QoiDecompressor {
     pixel.r += ((byte >> 4) & 0x03) - 2;
     pixel.g += ((byte >> 2) & 0x03) - 2;
     pixel.b += (byte & 0x03) - 2;
-    return pixel;
   }
 
   #handleLUMA(pixel, reader, byte) {
@@ -325,12 +325,10 @@ class QoiDecompressor {
     pixel.r += greenValueAdjusted - 8 + ((nextByte >> 4) & 0x0f);
     pixel.g += greenValueAdjusted;
     pixel.b += greenValueAdjusted - 8 + (nextByte & 0x0f);
-    return pixel;
   }
 
   #handleRun(pixel, reader, byte) {
     this.#run = byte & 0x3f;
-    return pixel;
   }
 
   decompress(bytes, width, height) {
@@ -346,11 +344,11 @@ class QoiDecompressor {
         const byte = reader.next();
         const handleByte = this.byteHandlers[byte];
         if (handleByte) {
-          handleByte(pixel, reader);
+          handleByte.apply(this, [pixel, reader]);
         }
         const handleMaskedByte = this.maskedByteHandlers[byte & TWO_BIT_MASK];
         if (!handleByte && handleMaskedByte) {
-          handleMaskedByte(pixel, reader, byte);
+          handleMaskedByte.apply(this, [pixel, reader, byte]);
         }
         this.colorTable.set(pixel);
       }
