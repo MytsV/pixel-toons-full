@@ -310,6 +310,7 @@ class QoiDecompressor {
   }
 
   #handleDiff(pixel, reader, byte) {
+    // Extracting individual bit pairs from the byte
     pixel.r += ((byte >> 4) & 0x03) - 2;
     pixel.g += ((byte >> 2) & 0x03) - 2;
     pixel.b += (byte & 0x03) - 2;
@@ -317,11 +318,13 @@ class QoiDecompressor {
   }
 
   #handleLUMA(pixel, reader, byte) {
-    const b2 = reader.next();
-    const vg = (byte & 0x3f) - 32;
-    pixel.r += vg - 8 + ((b2 >> 4) & 0x0f);
-    pixel.g += vg;
-    pixel.b += vg - 8 + (b2 & 0x0f);
+    const nextByte = reader.next();
+    // Extract the green value from the byte and adjust it
+    const greenValueAdjusted = (byte & 0x3f) - 32;
+    // Adjust components of the pixel
+    pixel.r += greenValueAdjusted - 8 + ((nextByte >> 4) & 0x0f);
+    pixel.g += greenValueAdjusted;
+    pixel.b += greenValueAdjusted - 8 + (nextByte & 0x0f);
     return pixel;
   }
 
