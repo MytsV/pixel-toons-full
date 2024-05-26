@@ -140,8 +140,8 @@ export class FileMenu extends UiElement {
   refresh(file) {
     this.buttons.enableButtons(file);
     this.#setUpNewButton(file);
-    this.#setUpEditButton(file);
-    this.#setUpSlider(file.canvas);
+    FileMenu.#setUpEditButton(file);
+    FileMenu.#setUpSlider(file.canvas);
   }
 
   #setUpDependentButtons() {
@@ -418,6 +418,7 @@ export class ColorPicker {
     this.saturation = 1;
     this.lightness = 0.5;
     this.#drawWheel();
+    this.#setWheelEvents();
     this.#drawTriangle();
     this.#setTrianglePos();
     updateColorDisplay();
@@ -432,6 +433,7 @@ export class ColorPicker {
     const size = outRadius * 2;
     this.wheel.width = this.wheel.height = size;
     const ctx = this.wheel.getContext('2d');
+
     for (let i = 0; i < size; i++) {
       for (let j = 0; j < size; j++) {
         const x = i - size / 2;
@@ -442,13 +444,18 @@ export class ColorPicker {
         ctx.fillRect(i, j, 1, 1);
       }
     }
+  }
+
+  #setWheelEvents() {
     this.wheel.onmousedown = (event) => {
       this.#pickHue(event);
     };
+
     this.wheel.onmousemove = (event) => {
       if (!this.wheelMoving) return;
       this.#pickHue(event);
     };
+
     document.body.addEventListener('mouseup', () => {
       this.triangleMoving = false;
       if (!this.wheelMoving) return;
@@ -489,6 +496,7 @@ export class ColorPicker {
     const stepY = this.triangle.height / SL_MAX;
     const xCenter = this.triangle.width / 2;
     const ctx = this.triangle.getContext('2d');
+
     for (let i = 0; i < this.triangle.width; i++) {
       for (let j = 0; j < this.triangle.height; j++) {
         const offset = j * 2 / Math.sqrt(3) / 2;
@@ -504,10 +512,12 @@ export class ColorPicker {
 
   #pickHue(event) {
     let { x, y } = ColorPicker.#getRelativeCoordinates(event, this.wheel);
+
     x *= outRadius * 2 / this.wheel.offsetWidth;
     y *= outRadius * 2 / this.wheel.offsetWidth;
     x -= outRadius;
     y = outRadius - y;
+
     const dist = Math.sqrt(x * x + y * y);
     if (dist < inRadius) {
       if (!this.wheelMoving) {
@@ -517,8 +527,10 @@ export class ColorPicker {
       this.#pickSL(event);
       return;
     } else if (dist > outRadius) { return; }
+
     if (this.triangleMoving) return;
     this.wheelMoving = true;
+
     Tool.color = this.#getWheelColor(x, y);
     updateColorDisplay();
   }
