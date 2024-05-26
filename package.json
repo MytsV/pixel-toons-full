@@ -8,7 +8,7 @@
     "test": "mocha --reporter spec",
     "deploy": "gh-pages -d build",
     "start": "http-server -c-1",
-    "check": "eslint --fix public/scripts/**/*.js"
+    "check": "eslint --fix public/scripts/**/*.js  public/scripts/*.js"
   },
   "repository": {
     "type": "git",
