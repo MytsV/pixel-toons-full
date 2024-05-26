@@ -20,7 +20,18 @@ const applyImageMixin = (imageData) => {
 //The number is four, because we use RGBA as our main format
 const COLOR_PARAMETERS = 4;
 
-//Set color to a pixel with (i, j) coordinates
+/**
+ * Set the color of a pixel at the specified coordinates.
+ *
+ * @param {number} i - The x-coordinate of the pixel.
+ * @param {number} j - The y-coordinate of the pixel.
+ * @param {Object} color - The color object containing the RGBA values.
+ * @param {number} color.r - The red component of the color (0-255).
+ * @param {number} color.g - The green component of the color (0-255).
+ * @param {number} color.b - The blue component of the color (0-255).
+ * @param {number} color.alpha - The alpha component of the color (0-255).
+ * @this {Object} The object containing image data and related methods.
+ */
 function setPixelColor(i, j, { r, g, b, alpha }) {
   const position = this.getPixelPosition(i, j);
 
@@ -30,7 +41,14 @@ function setPixelColor(i, j, { r, g, b, alpha }) {
   }
 }
 
-//Get color of a pixel with (i, j) coordinates
+/**
+ * Get the color of a pixel at the specified coordinates.
+ *
+ * @param {number} i - The x-coordinate of the pixel.
+ * @param {number} j - The y-coordinate of the pixel.
+ * @return {Color} The color object representing the RGBA values of the pixel.
+ * @this {Object} The object containing image data and related methods.
+ */
 function getPixelColor(i, j) {
   const position = this.getPixelPosition(i, j);
 
@@ -41,12 +59,26 @@ function getPixelColor(i, j) {
   return new Color(...colorArray);
 }
 
-//Get array index of a pixel with (i, j) coordinates
+/**
+ * Get the position within the data array
+ * for the pixel at the specified coordinates.
+ *
+ * @param {number} i - The x-coordinate of the pixel.
+ * @param {number} j - The y-coordinate of the pixel.
+ * @return {number} The position in the data array corresponding to the pixel.
+ * @this {Object} The object containing image data and related methods,
+ * including the width of the image.
+ */
 function getPixelPosition(i, j) {
   return (j * this.width + i) * COLOR_PARAMETERS;
 }
 
-//Prototype pattern implementation
+/**
+ * Create a deep copy of the image data.
+ *
+ * @return {ImageData} A deep copy of the image data.
+ * @this {ImageData} The object containing image data and related methods, including width and height.
+ */
 function clone() {
   const cloned = new ImageData(this.width, this.height);
   cloned.data.set(this.data);
@@ -54,7 +86,13 @@ function clone() {
   return cloned;
 }
 
-//Blend multiple images together
+/**
+ * Append images to the current image data.
+ *
+ * @param {...ImageData} images - The images to append.
+ * @return {ImageData} The image data with the appended images.
+ * @this {ImageData} The object containing image data and related methods.
+ */
 function append(...images) {
   const appendedData = this.clone();
   for (let i = 0; i < this.width; i++) {
