@@ -18,8 +18,11 @@ jobs:
         with:
           node-version: "16.x"
       - name: Install dependencies
+        working-directory: ./frontend
         run: npm i
       - name: Check format
+        working-directory: ./frontend
         run: npm run check
       - name: Run tests
+        working-directory: ./frontend
         run: npm run test
