@@ -122,3 +122,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Disable the fields count checking
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None
+
+APPEND_SLASH = False
+CSRF_COOKIE_SECURE = False
