@@ -1,5 +1,6 @@
 import { applyImageMixin } from '../utilities/image.js';
 import { IdentifiedList } from '../utilities/intentified_list.js';
+import { intervalSaver } from '../utilities/interval_saver.js';
 
 //The minimum number of layers for which we perform caching
 const CACHE_MIN_LAYER_COUNT = 4;
@@ -94,6 +95,10 @@ function IdGetter() {
     get: () => index++,
     refresh: () => {
       index = 0;
+    },
+    update: (maxIndex) => {
+      if (maxIndex < index) return;
+      index = maxIndex + 1;
     }
   };
 }
@@ -274,6 +279,12 @@ class Canvas extends SimpleStateEmitter {
   //Creates a new layer and stacks in on top of other layers
   appendLayer(layer) {
     const { width, height } = this;
+    if (layer) {
+      console.log('update');
+      this.idGetter.update(layer.id);
+    } else {
+      console.log('set new');
+    }
     const appended = layer ?? new Layer(this.idGetter.get(), width, height);
     this.#setDrawnLayer(appended);
     this.#layers.push(appended);
@@ -426,6 +437,7 @@ class AnimationFile extends SimpleStateEmitter {
     this.#frames = new IdentifiedList();
     Object.assign(this, { width, height });
     this.appendFrame();
+    intervalSaver.setIntervalSave(this);
   }
 
   appendFrame(frame) {

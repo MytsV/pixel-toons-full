@@ -198,8 +198,6 @@ export class FileMenu extends UiElement {
       'Save': () => {
         const encoder = new PxtEncoder();
         const data = encoder.encode(file);
-        const decoder = new PxtDecoder();
-        decoder.decode(data);
         conv.downloadLocalUrl(conv.bytesToUrl(data), 'image.pxt');
       },
       'Clear': () => this.#clear(file.canvas),
