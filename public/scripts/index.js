@@ -47,7 +47,7 @@ class Application {
   #refreshRenderer(file) {
     this.canvasRenderer.removeCanvases();
     this.canvasRenderer.appendCanvas(file.canvas);
-    this.canvasRenderer.setOverlay(file.overlay);
+    CanvasRenderer.setOverlay(file.overlay);
     this.uiElements.forEach((element) => element.refresh(file));
   }
 

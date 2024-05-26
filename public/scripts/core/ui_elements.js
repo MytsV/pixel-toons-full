@@ -1,6 +1,14 @@
 import { BmpEncoder, BmpVersions } from '../utilities/bmp_encoder.js';
 import * as conv from '../utilities/bytes_conversion.js';
-import { BucketFill, Eraser, Line, Pencil, Pipette, Pointer, Tool } from './tools.js';
+import {
+  BucketFill,
+  Eraser,
+  Line,
+  Pencil,
+  Pipette,
+  Pointer,
+  Tool
+} from './tools.js';
 import { Color } from '../utilities/color.js';
 import { PxtDecoder, PxtEncoder } from '../utilities/pxt.js';
 import { GifEncoder, GifFrame } from '../utilities/gif_encoder.js';
@@ -155,14 +163,15 @@ export class FileMenu extends UiElement {
     });
   }
 
-  #setUpSlider(canvas) {
+  static #setUpSlider(canvas) {
     const slider = document.getElementById('enlarge-slider');
     const title = document.getElementById('enlarge-text');
     title.innerText = `Enlarge: 1x ${canvas.width}x${canvas.height}`;
     slider.value = 1;
     slider.oninput = () => {
       const val = parseInt(slider.value);
-      title.innerText = `Enlarge: ${val}x ${val * canvas.width}x${val * canvas.height}`;
+      const { width, height } = canvas;
+      title.innerText = `Enlarge: ${val}x ${val * width}x${val * height}`;
     };
     slider.max = (IMAGE_SIZE_LIMIT / Math.max(canvas.width, canvas.height)) | 0;
   }
@@ -202,7 +211,7 @@ export class FileMenu extends UiElement {
     };
   }
 
-  #setUpEditButton({ canvas }) {
+  static #setUpEditButton({ canvas }) {
     const elements = {
       'Flip Horizontal': () => {
         const flipped = flip(canvas.image);
@@ -386,12 +395,6 @@ export class Toolbar extends UiElement {
     this.chosen.tool.link(canvas);
     this.chosen.enable();
     //this.#enableOptions(toolInfo);
-  }
-
-  #enableOptions(toolInfo) {
-    const container = document.getElementById('tool-options');
-    container.innerHTML = '';
-    toolInfo.options.forEach((option) => container.appendChild(option.getElement()));
   }
 
   #setUpPointer(canvas) {
@@ -806,16 +809,6 @@ class FrameMenu extends UiElement {
     this.buttons.addButton('merge-entities', () => {
       throw Error('Merge operation is not implemented for frames');
     });
-  }
-
-  #setUpOpacity() {
-    this.overlayElement = document.getElementById('canvas-overlay');
-    this.opacity.onclick = (event) => {
-      event.stopPropagation();
-    };
-    this.opacity.oninput = () => {
-      this.overlayElement.style.opacity = this.opacity.value;
-    };
   }
 
   refresh(file) {

@@ -4,7 +4,10 @@ Set of functions which define how canvas is rendered into HTML.
 import { Color } from '../utilities/color.js';
 import { BmpEncoder, BmpVersions } from '../utilities/bmp_encoder.js';
 import { applyImageMixin } from '../utilities/image.js';
-import { bytesToBase64, setImageBase64 } from '../utilities/bytes_conversion.js';
+import {
+  bytesToBase64,
+  setImageBase64
+} from '../utilities/bytes_conversion.js';
 
 /*
 Constants associated with zoom system
@@ -48,7 +51,7 @@ class CanvasRenderer {
     CanvasRenderer.#setUpImage('canvas-background', image);
   }
 
-  setOverlay(canvas) {
+  static setOverlay(canvas) {
     const image = canvas ? canvas.getJoinedImage() : null;
     CanvasRenderer.#setUpImage('canvas-overlay', image);
   }

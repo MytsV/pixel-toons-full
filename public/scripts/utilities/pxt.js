@@ -127,8 +127,8 @@ class PxtDecoder {
 
     const frameCount = this.reader.readByte();
     const currentId = this.reader.readInteger(TWO_BYTES);
-    //UNUSED. Feature will be implemented later
-    const overlayId = this.reader.readInteger(TWO_BYTES);
+    // Reading overlayId. This feature will be implemented later
+    this.reader.readInteger(TWO_BYTES);
     const frames = this.#getFrameData(frameCount);
 
     file.frames.splice(0, file.frames.length);
@@ -141,8 +141,8 @@ class PxtDecoder {
     for (let i = 0; i < frameCount; i++) {
       const frameId = this.reader.readInteger(TWO_BYTES);
       const frameNameLength = this.reader.readByte();
-      //UNUSED. Feature will be implemented later
-      const frameName = this.reader.readString(frameNameLength);
+      //Reading frameName. Feature will be implemented later
+      this.reader.readString(frameNameLength);
       const duration = this.reader.readInteger(TWO_BYTES);
       const canvas = this.#getCanvasFromData();
 

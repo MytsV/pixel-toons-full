@@ -467,7 +467,8 @@ class Pipette extends PointedTool {
   #onClick(event) {
     const mouseCoords = new Coordinates(event.clientX, event.clientY);
     const realCoords = this._toRealCoords(mouseCoords);
-    const color = this.canvas.getJoinedImage().getPixelColor(realCoords.x, realCoords.y);
+    const { x, y } = realCoords;
+    const color = this.canvas.getJoinedImage().getPixelColor(x, y);
     color.alpha = 255;
     Tool.color = color;
     updateColorDisplay();
