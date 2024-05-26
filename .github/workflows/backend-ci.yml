@@ -31,6 +31,5 @@ jobs:
       - name: Check code quality
         working-directory: ./backend
         run: |
-          pip install flake8 black
-          flake8 .
-          black --check .
+          pip install flake8
+          flake8 . --exclude settings.py

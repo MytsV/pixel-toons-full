@@ -12,7 +12,8 @@ class TestRecognizeDigit(TestCase):
         self.factory = RequestFactory()
 
     def test_recognize_digit(self):
-        image_path = os.path.join(settings.BASE_DIR, "assets", "sample_digit.png")
+        image_path = os.path.join(
+            settings.BASE_DIR, "assets", "sample_digit.png")
         # Load the sample image from the assets folder
         # The image is a digit 3 from MNIST train dataset
         with open(image_path, "rb") as f:

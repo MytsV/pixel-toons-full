@@ -22,6 +22,7 @@ def preprocess_image(image):
     img_array = img_array.reshape(1, 28, 28, 1)
     return img_array
 
+
 @require_POST
 @csrf_exempt
 def recognize_digit(request):
