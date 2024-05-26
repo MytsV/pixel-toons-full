@@ -276,11 +276,67 @@ class QoiCompressor {
 class QoiDecompressor {
   //Number of identical pixels read in succession
   #run;
+  constructor() {
+    this.byteHandlers = {
+      [TAG_RGB]: this.#handleRGB,
+      [TAG_RGBA]: this.#handleRGBA
+    };
+    this.maskedByteHandlers = {
+      [TAG_INDEX]: this.#handleIndex,
+      [TAG_DIFF]: this.#handleDiff,
+      [TAG_LUMA]: this.#handleLUMA,
+      [TAG_RUN]: this.#handleRun
+    };
+  }
+
+  #handleRGB(pixel, reader) {
+    pixel.r = reader.next();
+    pixel.g = reader.next();
+    pixel.b = reader.next();
+  }
+
+  #handleRGBA(pixel, reader) {
+    pixel.r = reader.next();
+    pixel.g = reader.next();
+    pixel.b = reader.next();
+    pixel.a = reader.next();
+  }
+
+  #handleIndex(pixel, reader, byte) {
+    const { r, g, b } = this.colorTable.get(byte);
+    pixel.r = r;
+    pixel.g = g;
+    pixel.b = b;
+  }
+
+  #handleDiff(pixel, reader, byte) {
+    // Extracting individual bit pairs from the byte
+    pixel.r += ((byte >> 4) & 0x03) - 2;
+    pixel.g += ((byte >> 2) & 0x03) - 2;
+    pixel.b += (byte & 0x03) - 2;
+    return pixel;
+  }
+
+  #handleLUMA(pixel, reader, byte) {
+    const nextByte = reader.next();
+    // Extract the green value from the byte and adjust it
+    const greenValueAdjusted = (byte & 0x3f) - 32;
+    // Adjust components of the pixel
+    pixel.r += greenValueAdjusted - 8 + ((nextByte >> 4) & 0x0f);
+    pixel.g += greenValueAdjusted;
+    pixel.b += greenValueAdjusted - 8 + (nextByte & 0x0f);
+    return pixel;
+  }
+
+  #handleRun(pixel, reader, byte) {
+    this.#run = byte & 0x3f;
+    return pixel;
+  }
 
   decompress(bytes, width, height) {
     this.#initDecompressing(width, height);
     const reader = getByteReader(bytes, bytes.length - PADDING.length);
-    let pixel = getDefaultPixel();
+    const pixel = getDefaultPixel();
     this.#run = 0;
 
     for (let pxPos = 0; pxPos < this.length; pxPos += CHANNEL_COUNT) {
@@ -288,29 +344,13 @@ class QoiDecompressor {
         this.#run--;
       } else if (reader.canRead()) {
         const byte = reader.next();
-        if (byte === TAG_RGB) {
-          pixel.r = reader.next();
-          pixel.g = reader.next();
-          pixel.b = reader.next();
-        } else if (byte === TAG_RGBA) {
-          pixel.r = reader.next();
-          pixel.g = reader.next();
-          pixel.b = reader.next();
-          pixel.a = reader.next();
-        } else if ((byte & TWO_BIT_MASK) === TAG_INDEX) {
-          pixel = this.colorTable.get(byte);
-        } else if ((byte & TWO_BIT_MASK) === TAG_DIFF) {
-          pixel.r += ((byte >> 4) & 0x03) - 2;
-          pixel.g += ((byte >> 2) & 0x03) - 2;
-          pixel.b += (byte & 0x03) - 2;
-        } else if ((byte & TWO_BIT_MASK) === TAG_LUMA) {
-          const b2 = reader.next();
-          const vg = (byte & 0x3f) - 32;
-          pixel.r += vg - 8 + ((b2 >> 4) & 0x0f);
-          pixel.g += vg;
-          pixel.b += vg - 8 + (b2 & 0x0f);
-        } else if ((byte & TWO_BIT_MASK) === TAG_RUN) {
-          this.#run = byte & 0x3f;
+        const handleByte = this.byteHandlers[byte];
+        if (handleByte) {
+          handleByte(pixel, reader);
+        }
+        const handleMaskedByte = this.maskedByteHandlers[byte & TWO_BIT_MASK];
+        if (!handleByte && handleMaskedByte) {
+          handleMaskedByte(pixel, reader, byte);
         }
         this.colorTable.set(pixel);
       }
