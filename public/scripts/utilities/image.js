@@ -77,7 +77,8 @@ function getPixelPosition(i, j) {
  * Create a deep copy of the image data.
  *
  * @return {ImageData} A deep copy of the image data.
- * @this {ImageData} The object containing image data and related methods, including width and height.
+ * @this {ImageData} The object containing image data
+ * and related methods, including width and height.
  */
 function clone() {
   const cloned = new ImageData(this.width, this.height);
