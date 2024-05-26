@@ -1,0 +1,35 @@
+name: Test and format check a Django app
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  integrate:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+
+      # - name: Install dependencies
+        # working-directory: ./backend
+        # run: |
+          # python -m pip install --upgrade pip
+          # pip install -r requirements.txt
+
+      # - name: Run tests
+        # working-directory: ./backend
+        # run: python manage.py test
+
+      - name: Check code quality
+        working-directory: ./backend
+        run: |
+          pip install flake8
+          flake8 . --exclude settings.py

@@ -1,0 +1,28 @@
+name: Build, test and format check a Node.js console app
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  integrate:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16.x"
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm i
+      - name: Check format
+        working-directory: ./frontend
+        run: npm run check
+      - name: Run tests
+        working-directory: ./frontend
+        run: npm run test

@@ -1,0 +1,134 @@
+<html lang="en">
+
+  <head>
+    <title>Pixel-Toons</title>
+    <link rel="stylesheet" href="./styles/style.css">
+    <script type="module" src="./scripts/index.js"></script>
+    <link rel="icon" type="image/x-icon" href="./images/favicon.ico">
+  </head>
+
+  <body>
+    <div class="container">
+      <div id="menu" class="main-panel">
+        <div class="menu-item" id="to-main-page">
+          <a href="authentication.html"><span class="text">pixtoons</span></a>
+        </div>
+        <div class="menu-item" id="create-file">
+          <span class="text button">File</span>
+        </div>
+        <div class="menu-item" id="edit-file">
+          <span class="text button">Layer</span>
+        </div>
+        <div class="menu-item" id="export-image">
+          <span class="text button">Export</span>
+        </div>
+        <div class="menu-item" id="shortcuts">
+          <span class="text button">Shortcuts</span>
+        </div>
+        <div id="preview-menu" class="menu-item"><span class="text button">Preview</span></div>
+      </div>
+      <div id="main">
+        <div id="toolbar" class="main-panel">
+          <div id="tools">
+
+          </div>
+        </div>
+        <div id="canvas-parent">
+          <div class="main-panel" id="tool-options">
+            <div id="state-button-container" class="tool-option-container">
+              <div id="undo" class="state-button"></div>
+              <div id="redo" class="state-button"></div>
+            </div>
+          </div>
+          <div id="canvas-wrapper-wrapper">
+            <div id="canvas-wrapper">
+              <div class="canvas-element" id="canvas-background"></div>
+              <div class="canvas-element" id="canvas-overlay"></div>
+              <div id="canvas-layers" class="canvas-element"></div>
+              <canvas class="canvas-element" id="canvas-pointer"></canvas>
+            </div>
+          </div>
+          <div class="main-panel" id="canvas-bottom"><div id="coordinates"></div></div>
+        </div>
+        <div id="sidebar" class="main-panel thing-container">
+          <div id="color-picker" class="white-panel">
+            <div id="color-chosen">#FF0000</div>
+            <div id="picker-container">
+              <canvas id="wheel-canvas"></canvas>
+              <canvas id="triangle-canvas"></canvas>
+<!--              <div class="handle" id="handle-wheel"></div>-->
+<!--              <div class="handle" id="handle-triangle"></div>-->
+            </div>
+          </div>
+          <div id="palette" class="white-panel">
+            <div id="palette-container"></div>
+            <div id="palette-add">
+              <img src="images/add.png">
+            </div>
+          </div>
+          <div id="navigation" class="white-panel">
+            <div id="zoom-container">
+              <div id="zoom-out" class="zoom-button"></div>
+              <div id="zoom-in" class="zoom-button"></div>
+            </div>
+          </div>
+          <div class="label-panel" id="entity-choice"><span class="text button entity-chosen" id="show-layers">Layers</span><span class="text button" id="show-frames">Frames</span></div>
+          <div id="entity-list" class="white-panel"></div>
+          <div class="white-panel" id="entity-actions">
+            <div id="add-entity" class="entity-action"></div>
+            <div id="remove-entity" class="entity-action"></div>
+            <div id="move-entity-up" class="entity-action"></div>
+            <div id="move-entity-down" class="entity-action"></div>
+            <div id="merge-entities" class="entity-action"></div>
+            <div id="duplicate-entity" class="entity-action"></div>
+          </div>
+        </div>
+      </div>
+
+    <div id="file-create-modal" class="modal">
+      <div class="modal-content">
+        <div class="main-panel label-panel"><span class="text">Create a new file</span></div>
+        <div id="file-create-form">
+          <div class="text">Width</div>
+          <input type="number" id="width-input" value="50" class="white-panel text-ordinary">
+          <div class="text">Height</div>
+          <input type="number" id="height-input" value="50" class="white-panel text-ordinary">
+          <div class="text-ordinary" id="limit">Limit is 250x250</div>
+          <div id="create-file-final" class="main-panel label-panel button"><span class="text">CREATE</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="file-export-modal" class="modal">
+      <div class="modal-content">
+        <div class="main-panel label-panel"><span class="text">Export the file</span></div>
+        <div class="text" id="enlarge-text">Enlarge: 1x</div>
+        <input type="range" id="enlarge-slider" value="1" min="1" max="10">
+        <div class="main-panel label-panel button text-ordinary" id="export-to-bmp">Export to BMP32</div>
+        <div class="main-panel label-panel button text-ordinary" id="export-to-gif">Export to GIF</div>
+      </div>
+    </div>
+
+    <div id="shortcuts-modal" class="modal">
+      <div class="modal-content">
+        <div id="shortcuts-table">
+          <div class="white-panel label-panel table-header">
+            <span class="text">Action</span>
+          </div>
+          <div class="white-panel label-panel table-header">
+            <span class="text">Shortcut</span>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="preview-modal" class="modal">
+      <div class="modal-content">
+        <div id="preview" class="canvas-element"></div>
+      </div>
+    </div>
+    </div>
+  </body>
+
+</html>
